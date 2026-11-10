@@ -17,7 +17,7 @@
   function cfg() { return window.SNAP_CONFIG || {}; }
   function url() {
     var c = cfg();
-    return String(c.alertUrl || ((c.workerUrl || "https://cool-thunder-a280.vishnu1234stm.workers.dev") + "/alert"));
+    return String(c.alertUrl || ((c.workerUrl || "https://vishnupush.thevishnusharmaapp.workers.dev") + "/alert"));
   }
   function ls(k, v) {
     try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) {}

@@ -137,7 +137,7 @@ jobs:
         if: env.HAS_KEYSTORE == 'true'
         env:
           SECRET: ${{ secrets.BROADCAST_SECRET }}
-          URL: ${{ vars.PUSH_WORKER_URL || 'https://cool-thunder-a280.vishnu1234stm.workers.dev' }}
+          URL: ${{ vars.PUSH_WORKER_URL || 'https://vishnupush.thevishnusharmaapp.workers.dev' }}
           INST: ${{ inputs.institute_id }}
           APPNAME: ${{ steps.inst.outputs.app_name }}
         run: |

@@ -9,7 +9,7 @@
   if (window.SnapFiles) return;
   var PART = 8 * 1024 * 1024, off = false;
 
-  function WK() { var c = window.SNAP_CONFIG || {}; return String(c.workerUrl || "https://cool-thunder-a280.vishnu1234stm.workers.dev").replace(/\/+$/, ""); }
+  function WK() { var c = window.SNAP_CONFIG || {}; return String(c.workerUrl || "https://vishnupush.thevishnusharmaapp.workers.dev").replace(/\/+$/, ""); }
   function user() {
     try { var v = window.vishnuFirebase; if (v && v.auth && v.auth.currentUser) return v.auth.currentUser; } catch (e) {}
     try { return window.firebase && firebase.auth && firebase.auth().currentUser; } catch (e) { return null; }

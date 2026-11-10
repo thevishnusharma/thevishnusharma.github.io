@@ -114,7 +114,7 @@
       });
     },
     notif: function (done) {
-      var url = "https://cool-thunder-a280.vishnu1234stm.workers.dev";
+      var url = "https://vishnupush.thevishnusharmaapp.workers.dev";
       done("Notifications", "Students ko push bhejein",
         '<div class="asp-card asp-ctr" style="padding:20px 15px"><div class="asp-bell">' + ico("bell") + '</div><div style="font-size:1rem;font-weight:800">Students ko notification</div><p>App band ho tab bhi students ke phone par aati hai.</p>' +
         '<div class="asp-act"><button type="button" class="asp-btn" data-go="sendnotif">' + ico("send") + ' Notification bhejein</button></div></div>' +

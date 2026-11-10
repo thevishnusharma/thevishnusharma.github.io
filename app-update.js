@@ -81,7 +81,7 @@
     var later = ov.querySelector("#sau-later"); if (later) later.onclick = function () { snooze(state.build); ov.remove(); };
   }
   function fastUrl(u) {                                   /* v288: Cloudflare ke raste tez download (ping ok ho tabhi) */
-    var W = "https://cool-thunder-a280.vishnu1234stm.workers.dev", m = /^https:\/\/github\.com\/[^\/]+\/[^\/]+\/releases\/download\/([^\/]+)\/([^\/]+\.apk)$/.exec(u);
+    var W = "https://vishnupush.thevishnusharmaapp.workers.dev", m = /^https:\/\/github\.com\/[^\/]+\/[^\/]+\/releases\/download\/([^\/]+)\/([^\/]+\.apk)$/.exec(u);
     if (!m) return Promise.resolve(u);
     var ctrl = window.AbortController ? new AbortController() : null, t = setTimeout(function () { try { ctrl && ctrl.abort(); } catch (e) {} }, 3000);
     var p = W + "/apk/" + m[1] + "/" + m[2];

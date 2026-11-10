@@ -16,7 +16,7 @@ jobs:
       - name: Push bhejo
         env:
           SECRET: ${{ secrets.BROADCAST_SECRET }}
-          URL: ${{ vars.PUSH_WORKER_URL || 'https://cool-thunder-a280.vishnu1234stm.workers.dev' }}
+          URL: ${{ vars.PUSH_WORKER_URL || 'https://vishnupush.thevishnusharmaapp.workers.dev' }}
           MSG: ${{ github.event.head_commit.message }}
         run: |
           if [ -z "$SECRET" ]; then echo "BROADCAST_SECRET nahi — skip"; exit 0; fi

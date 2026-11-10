@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.github.com https://firestore.googleapis.com https://cool-thunder-a280.vishnu1234stm.workers.dev; base-uri 'self'; form-action 'self'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.github.com https://firestore.googleapis.com https://vishnupush.thevishnusharmaapp.workers.dev; base-uri 'self'; form-action 'self'; object-src 'none'">
 <style>
 :root{--bg:#000;--ink:#f6f0e2;--mut:#a9a290;--gold:#f2b705;--gold2:#f7d154;--red:#d9291c;--line:#241e12;--card:#0c0a06;color-scheme:dark}
 *{box-sizing:border-box}html{overflow-x:hidden;scroll-behavior:smooth;scroll-padding-top:72px}
@@ -389,7 +389,7 @@ body{font-size:17px}
     window.location.href=chromeIntent(u);
   }
   /* v288: tez download — Cloudflare Worker ke raste (worker ready ho tabhi), warna seedha GitHub */
-  var WORKER="https://cool-thunder-a280.vishnu1234stm.workers.dev",proxyOk=false,pingP=Promise.resolve();
+  var WORKER="https://vishnupush.thevishnusharmaapp.workers.dev",proxyOk=false,pingP=Promise.resolve();
   function fastUrl(u){var m=/^https:\/\/github\.com\/[^\/]+\/[^\/]+\/releases\/download\/([^\/]+)\/([^\/]+\.apk)$/.exec(u||"");if(!m)return Promise.resolve(u);return pingP.then(function(){if(!proxyOk)return u;var p=WORKER+"/apk/"+m[1]+"/"+m[2],c=window.AbortController?new AbortController():null,t=setTimeout(function(){c&&c.abort()},4000);return fetch(p,{method:"HEAD",signal:c?c.signal:undefined}).then(function(r){clearTimeout(t);return r.ok?p:u}).catch(function(){return u})})}
   try{var _c=window.AbortController?new AbortController():null,_t=setTimeout(function(){_c&&_c.abort()},4000);pingP=fetch(WORKER+"/apk/ping",{signal:_c?_c.signal:undefined}).then(function(r){return r.json()}).then(function(j){clearTimeout(_t);proxyOk=!!(j&&j.ok)}).catch(function(){})}catch(e){}
   /* v290: Chrome me APK ko page ke andar hi download karke save karte hain (progress dikhta hai).

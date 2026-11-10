@@ -85,7 +85,7 @@ Isse is institute se uska access turant band ho jaayega. (Uska Firebase Auth log
 
 /* v168 — Owner Panel: App Alerts (Worker /alerts se; sirf owner ka Firebase token chalta hai) */
 (function(){
-  var W=(window.SNAP_CONFIG&&window.SNAP_CONFIG.workerUrl)||"https://cool-thunder-a280.vishnu1234stm.workers.dev";
+  var W=(window.SNAP_CONFIG&&window.SNAP_CONFIG.workerUrl)||"https://vishnupush.thevishnusharmaapp.workers.dev";
   function esc(x){return String(x==null?"":x).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
   function ago(t){var m=Math.floor((Date.now()-t)/6e4);return m<1?"abhi":m<60?m+" min":m<1440?Math.floor(m/60)+" ghante":Math.floor(m/1440)+" din"}
   async function call(path,method){
@@ -180,7 +180,7 @@ function ownerBrandingEdit(id){
 
 /* ===== v176: Owner Dashboard (plan/expiry/students/storage), Recount, CSV, APK build button ===== */
 async function ownerWorkerCall(path,method,body){
-  const W=(window.SNAP_CONFIG&&window.SNAP_CONFIG.workerUrl)||"https://cool-thunder-a280.vishnu1234stm.workers.dev";
+  const W=(window.SNAP_CONFIG&&window.SNAP_CONFIG.workerUrl)||"https://vishnupush.thevishnusharmaapp.workers.dev";
   const u=(ownerGetAuth().currentUser||firebase.auth().currentUser);if(!u||!u.email)throw new Error("Owner login chahiye");
   const r=await fetch(W+path,{method:method||"GET",headers:Object.assign({Authorization:"Bearer "+await u.getIdToken()},body?{"Content-Type":"application/json"}:{}),body:body?JSON.stringify(body):undefined});
   const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)throw new Error(j.error||("HTTP "+r.status));return j;

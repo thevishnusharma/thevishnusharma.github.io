@@ -5,7 +5,7 @@
 (function () {
   "use strict";
   // ⬇️ Cloudflare Worker deploy karne ke baad uska URL yahan daalein (PUSH_SETUP_FREE_REALTIME.md dekhein)
-  var PUSH_WORKER_URL = "https://cool-thunder-a280.vishnu1234stm.workers.dev";
+  var PUSH_WORKER_URL = "https://vishnupush.thevishnusharmaapp.workers.dev";
 
   var OPT_OUT = "savya_push_optout_v1", SUB_KEY = "snap_fcm_topic_v1", ASKED = "snap_fcm_asked_v1";
   function getCap() {

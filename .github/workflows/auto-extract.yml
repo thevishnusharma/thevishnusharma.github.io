@@ -86,7 +86,7 @@ jobs:
         if: steps.ext.outputs.found == '1' && github.event_name == 'push'
         env:
           SECRET: ${{ secrets.BROADCAST_SECRET }}
-          URL: ${{ vars.PUSH_WORKER_URL || 'https://cool-thunder-a280.vishnu1234stm.workers.dev' }}
+          URL: ${{ vars.PUSH_WORKER_URL || 'https://vishnupush.thevishnusharmaapp.workers.dev' }}
           SITE: ${{ vars.SITE_URL || 'https://thevishnusharma.github.io' }}
           BUILD: ${{ steps.ext.outputs.build }}
           MSG: ${{ github.event.head_commit.message }}

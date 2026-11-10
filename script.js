@@ -680,7 +680,7 @@ async function _withBusy(e,fn){const f=e&&e.target,b=f&&f.querySelector&&f.query
    2) Students class/subject chunks ko selected practice ke waqt load karte hain (bank-chunks.js + IndexedDB).
    3) Admin jab bank me kuch likhta (add/edit/delete) tab live sync apne aap chalu ho jata hai. */
 function _bankAfterCheapLoad(){try{renderBank()}catch(_e){}try{typeof refreshExistingSubjectChapterDropdowns=="function"&&refreshExistingSubjectChapterDropdowns()}catch(_e){}try{window.SavyaExtras&&window.SavyaExtras.syncPracticeFilters&&window.SavyaExtras.syncPracticeFilters()}catch(_e){}}
-function _bankWorkerUrl(){return"https://cool-thunder-a280.vishnu1234stm.workers.dev"}
+function _bankWorkerUrl(){return"https://vishnupush.thevishnusharmaapp.workers.dev"}
 function _bankCheapLoad(){
   try{
     const a=typeof getAuth=="function"?getAuth():null,u=a&&a.currentUser,isAdminUser=!!(u&&!u.isAnonymous&&u.email);
