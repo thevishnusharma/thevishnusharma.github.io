@@ -1,0 +1,108 @@
+name: Auto Extract Zip
+
+# Repo ke root me koi *.zip upload karo -> ye khud:
+#   1) extract karke files adjust karta hai,
+#   2) version.json ka build apne-aap +1 karta hai (agar zip me tumne pehle se bada build nahi diya) + sab files sync (stamp-version),
+#   3) commit/push, phir naya version LIVE hone ka intezar karke sirf Owner ko notification bhejta hai.
+# Commit message (zip upload karte waqt) me tag likh sakte ho:
+#   [quiet]  -> notification nahi jayegi (update phir bhi app kholne par lag jayega)
+#   [force]  -> admin/owner par "Update zaroori hai" parda (minBuild = naya build). Students par kabhi nahi (exam safe).
+# .github/workflows wali files bhi tabhi jaati hain jab repo secret WORKFLOW_PAT set ho
+# (GitHub ka default token workflow files push nahi kar sakta). PAT nahi hai to pehle jaisa:
+# .github zip se hata diya jaata hai, baaki sab normal extract hota hai.
+# Notification ke liye repo secret BROADCAST_SECRET (pehle se hai) + Cloudflare worker.js (v259) deploy hona chahiye.
+
+on:
+  push:
+    paths:
+      - '*.zip'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-extract
+  cancel-in-progress: false
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    env:
+      HAS_PAT: ${{ secrets.WORKFLOW_PAT != '' }}
+    outputs:
+      found: ${{ steps.ext.outputs.found }}
+      build: ${{ steps.ext.outputs.build }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          token: ${{ secrets.WORKFLOW_PAT || github.token }}
+
+      - name: Extract all zip files
+        id: ext
+        env:
+          MSG: ${{ github.event.head_commit.message }}
+        run: |
+          shopt -s nullglob dotglob
+          found=0
+          if [ -f version.json ]; then cp version.json /tmp/prev-version.json; else echo '{"web":"1.0.0","build":0,"minBuild":0}' > /tmp/prev-version.json; fi
+          for z in *.zip; do
+            found=1
+            rm -rf /tmp/x && mkdir /tmp/x
+            unzip -q -o "$z" -d /tmp/x
+            rm -rf /tmp/x/__MACOSX
+
+            items=(/tmp/x/*)
+            if [ ${#items[@]} -eq 1 ] && [ -d "${items[0]}" ]; then
+              src="${items[0]}"
+            else
+              src=/tmp/x
+            fi
+
+            rm -rf "$src/.git"
+            if [ "$HAS_PAT" != "true" ]; then rm -rf "$src/.github"; fi
+            cp -a "$src"/. .
+            rm -f "$z"
+          done
+
+          if [ "$found" -eq 1 ]; then
+            FORCE=""
+            case "$MSG" in *"[force]"*) FORCE="--force";; esac
+            if [ -f scripts/auto-bump.js ]; then
+              node scripts/auto-bump.js /tmp/prev-version.json $FORCE
+              node scripts/stamp-version.js || echo "stamp-version warning (ignored)"
+            fi
+            git config user.name "github-actions"
+            git config user.email "github-actions@github.com"
+            git add -A
+            git commit -m "Auto extract zip" || echo "No changes"
+            git pull --rebase
+            git push
+            echo "found=1" >> "$GITHUB_OUTPUT"
+            echo "build=$(node -p "require('./version.json').build")" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Live hone ka intezar + Admin/Student/Owner ko notification
+        if: steps.ext.outputs.found == '1' && github.event_name == 'push'
+        env:
+          SECRET: ${{ secrets.BROADCAST_SECRET }}
+          URL: ${{ vars.PUSH_WORKER_URL || 'https://cool-thunder-a280.vishnu1234stm.workers.dev' }}
+          SITE: ${{ vars.SITE_URL || 'https://thevishnusharma.github.io' }}
+          BUILD: ${{ steps.ext.outputs.build }}
+          MSG: ${{ github.event.head_commit.message }}
+        run: |
+          case "$MSG" in *"[quiet]"*) echo "[quiet] — notification skip"; exit 0;; esac
+          if [ -z "$SECRET" ]; then echo "BROADCAST_SECRET nahi — notification skip"; exit 0; fi
+          ok=0
+          for i in $(seq 1 30); do
+            LIVE=$(curl -fsS "$SITE/version.json?t=$(date +%s)" 2>/dev/null | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(JSON.parse(s).build)}catch(e){console.log(0)}})")
+            if [ "$LIVE" = "$BUILD" ]; then ok=1; break; fi
+            sleep 10
+          done
+          if [ "$ok" != "1" ]; then echo "Naya build abhi live confirm nahi hua (5 min) — phir bhi notification bhej raha hu"; fi
+          LINE=$(printf '%s' "$MSG" | head -n1 | sed -E 's/\[(quiet|force|notify:[a-z]+)\]//g' | sed -E 's/^[[:space:]]+|[[:space:]]+$//g' | cut -c1-120)
+          case "$LINE" in ""|"Add files via upload"*|"Auto extract"*|"Upload"*) LINE="";; esac
+          if [ -n "$LINE" ]; then BODY="$LINE — app kholte hi update apne-aap lag jayega."; else BODY="App me naya update aaya hai — app kholte hi apne-aap lag jayega."; fi
+          export BODY
+          PAYLOAD=$(node -e 'console.log(JSON.stringify({secret:process.env.SECRET,audience:"owner",kind:"web",title:"The Vishnu Sharma update",body:process.env.BODY}))')
+          curl -fsS -X POST "$URL/broadcast" -H 'Content-Type: text/plain' --data "$PAYLOAD"
