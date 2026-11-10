@@ -1,0 +1,29 @@
+SETUP STEPS (ek ek karke)
+
+STEP 1 - Files replace karein
+  Is zip ki saari 9 files ko repo ke MAIN folder me daalein (jahan question-generator.html hai).
+  Same naam ki file apne aap replace hogi. 3 files nayi hain:
+  paper-format-pdf.js, presence-ping.js, owner-live.js
+  GitHub: repo kholein -> Add file -> Upload files -> sab drag karein -> Commit changes.
+
+STEP 2 - Firestore rules publish karein (zaroori)
+  Firebase Console -> Firestore Database -> Rules -> purana text hatakar
+  firestore.rules ka poora text paste karein -> Publish.
+  (Isse Owner ko online users dikhte hain. Bina iske card me warning aayega.)
+
+STEP 3 - Cache (sw.js)
+  sw.js me cache version v260 se v261 kar diya gaya hai (zip me already hai).
+  Agle update par ise v262, v263... karte jayein.
+
+STEP 4 - 1-2 minute ruko, phir app/page reload karein
+  Mobile me app poori band karke dobara kholein.
+
+STEP 5 - Check karein
+  a) Paper generator -> "Paper Format PDF" button dikhe, PDF banakar dekhein:
+     koi option na kate, saare set apne aap save hon.
+  b) Owner app kholein -> upar "Live users" card dikhe
+     (online/registered students aur admins).
+  c) Student ya admin login karke 1 minute ruko, Owner card me online count badhna chahiye.
+
+STEP 6 - Agar APK bundle me files andar hain
+  To GitHub Actions se APK dobara build karein. Agar APK sirf website kholta hai, kuch nahi karna.

@@ -1,0 +1,207 @@
+/* =====================================================================
+   The Vishnu Sharma — LIQUID GLASS (iOS style) — the ONLY theme of the app.
+   Loaded last in <head>. Frosted translucent surfaces, specular edges,
+   capsule controls, floating glass tab bar, vivid wallpaper behind.
+   ===================================================================== */
+:root{
+  --lg-ink:#0b1b3b; --lg-mut:#52617f; --lg-blue:#0a84ff; --lg-green:#34c759; --lg-red:#ff3b30;
+  --lg-edge:rgba(255,255,255,.72);
+  --lg-fill:linear-gradient(145deg,rgba(255,255,255,.80),rgba(255,255,255,.52));
+  --lg-fill-soft:linear-gradient(145deg,rgba(255,255,255,.68),rgba(255,255,255,.44));
+  --lg-shadow:0 6px 18px rgba(36,60,130,.13);
+  --lg-hi:inset 0 1.5px 0 rgba(255,255,255,.95),inset 0 -1px 0 rgba(255,255,255,.35);
+  --lg-blur:blur(26px) saturate(185%);
+  --lg-tint:linear-gradient(150deg,rgba(70,150,255,.88),rgba(88,86,235,.82));
+  --lg-wall:radial-gradient(58% 46% at 12% 8%,#8fc6ff 0,transparent 62%),radial-gradient(48% 42% at 92% 14%,#cdb0ff 0,transparent 62%),radial-gradient(55% 46% at 86% 92%,#ffb8d6 0,transparent 62%),radial-gradient(48% 42% at 8% 88%,#a2f0d8 0,transparent 62%),linear-gradient(160deg,#eaf3ff,#f4edff);
+  /* remap legacy variables used all over the app */
+  --navy:#0b1b3b;--navy-dark:#0b1b3b;--navy2:#13265a;--blue:#0a84ff;--soft:rgba(255,255,255,.55);--muted:#52617f;--line:rgba(255,255,255,.6);
+  --card-bg:rgba(255,255,255,.5);--body-bg:transparent;--radius:26px;--shadow:var(--lg-shadow);
+  --sn-blue:#0a84ff;--sn-blue2:#0a6cff;--sn-bg:transparent;--sn-line:rgba(255,255,255,.65);--sn-ink:#0b1b3b;--sn-mut:#52617f;
+  --bm-bg:transparent;--bm-card:rgba(255,255,255,.5);--bm-tx:#0b1b3b;--bm-navy:#1b2f78;
+  --oa-bg:transparent;--oa-ink:#0b1b3b;--oa-mut:#52617f;
+}
+html{background:#e9f1ff!important}
+body{background:transparent!important;color:var(--lg-ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter",system-ui,"Noto Sans Devanagari",sans-serif;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:var(--lg-wall);pointer-events:none}
+a{color:var(--lg-blue)}
+::selection{background:rgba(10,132,255,.25)}
+.muted-text,.field-row label,.section-title{color:var(--lg-mut)}
+.section-title{color:var(--lg-ink)!important;border-bottom:1px solid rgba(255,255,255,.7)!important}
+.field-row label{color:var(--lg-mut)!important}
+
+/* ---------- 1. GLASS SURFACES (big containers: real blur) ---------- */
+.card,.hero-card,.cd-card,.cd-hero,.cd-self-rank,.cd-util-card,.sn-quote,.sn-tile,.sn-row,.sn-faq,.sn-about,.sn-srow,
+.test-analysis-sheet,.result-header-card,.perf-card,.gamified-card,.resume-exam-banner-card,.bm-card,.bm-sheet,.bm-tablewrap,
+.ssp-card,.ssp-grp,.asp-card,.asp-grp,.oa-card,.oa-k,.oa-qa button,.oa-s,.examgr-card,.sol-q-card,#sn-sheet,
+[id$="-modal"]>div,[id$="-modal"]>form.card,.list-box,.searchable-select-list,
+:is(#student-dashboard-home,#admin-dashboard-home) :is(.cd-card,.cd-hero,.cd-self-rank){
+  background:var(--lg-fill)!important;
+  
+  border:1px solid var(--lg-edge)!important;border-radius:26px!important;
+  box-shadow:var(--lg-shadow),var(--lg-hi)!important;color:var(--lg-ink);
+}
+.list-box{background:none!important;border:0!important;box-shadow:none!important}
+.card,.hero-card{animation:none}
+.card{padding:22px}
+/* list items (lighter glass, small blur) */
+.item,.test-card,#test-cards-list>*,.examgr-report-row,.chapter-choice,.section-row,.bm-item,.sn-faq,.q-text,.sol-explanation,.rs-meta-chip,.stat,.badge-item-game,
+.options-list button,.q-nav-grid button,.mode-btn,.lang-btn,.test-tab-chip,.examgr-akey-tab,.bm-tabs button,.bm-qa button,.cd-pill-switch,.test-card-btn.solution,.test-card-btn.analysis,.test-card-btn.weak,.test-card-btn.reattempt,
+.examgr-reports-summary-card,.sol-question-text,.ssp-note,.asp-note,.oa-pill,.oa-fc button,.oa-ac button,.oa-adm,.owner-mini-btn,.cd-icon-circle,.proof-field-missing{
+  background:var(--lg-fill-soft)!important;
+  border:1px solid rgba(255,255,255,.7)!important;border-radius:18px!important;
+  box-shadow:0 4px 14px rgba(36,60,130,.09),inset 0 1px 0 rgba(255,255,255,.9)!important;color:var(--lg-ink);
+}
+.options-list button:hover,.chapter-choice:hover{background:rgba(255,255,255,.75)!important;transform:translateY(-1px)}
+.options-list button.selected,.chapter-choice.selected,.test-tab-chip:not(.active).on{background:linear-gradient(145deg,rgba(120,185,255,.55),rgba(150,130,255,.38))!important;border-color:rgba(255,255,255,.9)!important;color:var(--lg-ink)!important}
+.sol-option{background:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.7)!important;border-radius:16px}
+.sol-option.correct-opt{background:rgba(52,199,89,.22)!important;border-color:rgba(52,199,89,.6)!important}
+.sol-option.wrong-opt{background:rgba(255,59,48,.18)!important;border-color:rgba(255,59,48,.55)!important}
+.cd-icon-circle{border-radius:50%!important;box-shadow:0 3px 10px rgba(36,60,130,.14),inset 0 1px 0 #fff!important}
+/* coloured dashboard cards: keep glass, add a soft tint */
+:is(#student-dashboard-home,#admin-dashboard-home,.cd-grid) .cd-card.cd-blue{background:linear-gradient(145deg,rgba(255,255,255,.6),rgba(120,185,255,.34))!important}
+:is(#student-dashboard-home,#admin-dashboard-home,.cd-grid) .cd-card.cd-green{background:linear-gradient(145deg,rgba(255,255,255,.6),rgba(190,150,255,.34))!important}
+:is(#student-dashboard-home,#admin-dashboard-home,.cd-grid) .cd-card.cd-orange{background:linear-gradient(145deg,rgba(255,255,255,.6),rgba(255,170,150,.34))!important}
+:is(#student-dashboard-home,#admin-dashboard-home,.cd-grid) .cd-card.cd-teal{background:linear-gradient(145deg,rgba(255,255,255,.6),rgba(130,235,200,.34))!important}
+:is(#student-dashboard-home,#admin-dashboard-home,.cd-grid) .cd-card.cd-purple,:is(#student-dashboard-home,#admin-dashboard-home,.cd-grid) .cd-card.cd-indigo{background:linear-gradient(145deg,rgba(255,255,255,.6),rgba(160,160,255,.34))!important}
+:is(#student-dashboard-home,#admin-dashboard-home,.cd-grid) .cd-card.cd-gold,:is(#student-dashboard-home,#admin-dashboard-home,.cd-grid) .cd-card.cd-pink,:is(#student-dashboard-home,#admin-dashboard-home,.cd-grid) .cd-card.cd-red{background:linear-gradient(145deg,rgba(255,255,255,.6),rgba(255,200,130,.34))!important}
+.cd-card-title,.cd-hero h2,.cd-section-title,.test-analysis-title{color:var(--lg-ink)!important}
+.cd-card-sub,.cd-hero p,.test-analysis-meta{color:var(--lg-mut)!important}
+
+/* ---------- 2. TINTED GLASS (vibrant, white text) ---------- */
+.cd-promo,.sn-perf,.sn-banner,.cd-podium,.exam-header,.ssp-hero,.asp-hero,.bm-bcard,.bm-bhero,#ssp-page .ssp-top,#asp-page .asp-top,
+.qnav-fab,.examgr-details-head .examgr-date-badge,.bm-next{
+  background:var(--lg-tint)!important;
+  border:1px solid rgba(255,255,255,.55)!important;color:#fff;
+  box-shadow:0 12px 30px rgba(50,90,230,.30),inset 0 1.5px 0 rgba(255,255,255,.6),inset 0 -10px 22px rgba(30,40,170,.18)!important;
+}
+.cd-promo,.sn-perf,.sn-banner,.cd-podium,.ssp-hero,.asp-hero,.bm-bcard,.bm-bhero{border-radius:26px!important}
+.exam-header{border-radius:0 0 26px 26px!important}
+.exam-header:before{display:none}
+#ssp-page .ssp-top,#asp-page .asp-top{border-radius:0 0 24px 24px!important}
+.cd-promo h3,.sn-perf b,.sn-banner,.exam-title-text,.exam-meta-text{color:#fff!important}
+.qnav-fab{border-radius:50%!important}
+.sn-ring span{background:rgba(20,50,170,.75)!important}
+/* ---------- 3. BUTTONS ---------- */
+.btn-primary,button[type=submit],.test-card-btn.start,.cd-pill-switch button.active,.test-tab-chip.active,.tab.active,.examgr-action-btn.primary,.ssp-btn,.asp-btn,.ssp-big,.asp-big,.bm-btn,#submit-test,#result-screen .btn-primary,.cd-arrow-btn,.oa-fc button.on,.owner-mini-primary,.sn-seg button.on,.ssp-seg button.on,.asp-seg button.on,.bm-tabs button.on{
+  background:linear-gradient(180deg,rgba(104,176,255,.96),rgba(10,118,255,.94))!important;
+  color:#fff!important;border:1px solid rgba(255,255,255,.6)!important;border-radius:999px!important;
+  box-shadow:0 8px 20px rgba(10,118,255,.36),inset 0 1.5px 0 rgba(255,255,255,.75),inset 0 -8px 14px rgba(0,70,210,.2)!important;
+  font-weight:700;letter-spacing:.1px;
+}
+.btn-secondary,.btn-ghost,.btn-pager,.examgr-action-btn,.examgr-rd-nav-btn,.examgr-rd-icon-btn,.cd-promo-btn,.ssp-mini,.asp-mini,.ssp-btn.o,.asp-btn.o,.test-analysis-close,.menu-btn,.owner-mini-btn,.bm-btn.ghost{
+  background:var(--lg-fill-soft)!important;color:var(--lg-ink)!important;border:1px solid rgba(255,255,255,.8)!important;border-radius:999px!important;
+  
+  box-shadow:0 4px 14px rgba(36,60,130,.12),inset 0 1.5px 0 rgba(255,255,255,.95)!important;font-weight:700;
+}
+.cd-arrow-btn{box-shadow:0 4px 10px rgba(10,118,255,.3),inset 0 1px 0 rgba(255,255,255,.7)!important}
+.btn-danger,.ssp-btn.r,.asp-btn.r,.owner-mini-danger,.examgr-delete-btn,.test-card-btn.resume{
+  background:linear-gradient(180deg,rgba(255,130,120,.95),rgba(255,59,48,.92))!important;color:#fff!important;border:1px solid rgba(255,255,255,.6)!important;border-radius:999px!important;
+  box-shadow:0 8px 20px rgba(255,59,48,.3),inset 0 1.5px 0 rgba(255,255,255,.7)!important}
+.btn-chunky-green,.ssp-btn.g,.asp-btn.g,.ssp-mini.g,.asp-mini.g,.bm-bcard .bm-tag{
+  background:linear-gradient(180deg,rgba(110,225,140,.96),rgba(40,190,80,.94))!important;color:#fff!important;border:1px solid rgba(255,255,255,.6)!important;border-radius:999px!important;
+  box-shadow:0 8px 20px rgba(52,199,89,.3),inset 0 1.5px 0 rgba(255,255,255,.7)!important}
+.cd-promo-btn{color:var(--lg-blue)!important}
+button:active{transform:scale(.96)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 2px 6px rgba(20,40,100,.15)!important}
+button{transition:transform .3s cubic-bezier(.34,1.56,.64,1),background .2s,box-shadow .2s}
+button:disabled{opacity:.5}
+/* ---------- 4. INPUTS ---------- */
+input,select,textarea,.searchable-select-input,.field-row input,.field-row select,.field-row textarea,#sn-search,.bm-tools input,.bm-tools select,.bm-form input,.bm-form select,.bm-form textarea,#asp-page #institute-joincode-input{
+  background-color:rgba(255,255,255,.5)!important;color:var(--lg-ink)!important;
+  border:1px solid rgba(255,255,255,.85)!important;border-radius:16px!important;
+  box-shadow:inset 0 2px 6px rgba(36,60,130,.10),inset 0 1px 0 rgba(255,255,255,.6)!important;
+  
+}
+input::placeholder,textarea::placeholder{color:#7b88a6}
+input:focus,select:focus,textarea:focus,.searchable-select-input:focus{outline:none!important;background-color:rgba(255,255,255,.78)!important;border-color:rgba(10,132,255,.75)!important;box-shadow:0 0 0 4px rgba(10,132,255,.2),inset 0 1px 0 #fff!important}
+input[type=checkbox],input[type=radio]{accent-color:var(--lg-blue);box-shadow:none!important}
+/* ---------- 5. HEADER, TABS, FLOATING TAB BAR ---------- */
+.site-header{background:var(--lg-fill)!important;border-bottom:1px solid var(--lg-edge);box-shadow:0 8px 28px rgba(36,60,130,.12),var(--lg-hi)!important;border-radius:0 0 26px 26px}
+.site-title{color:var(--lg-ink)!important}.site-sub{color:var(--lg-mut)!important}
+.logo-img{background:rgba(255,255,255,.7)!important;border-radius:14px!important}
+.tab{background:var(--lg-fill-soft)!important;color:var(--lg-ink)!important;border:1px solid rgba(255,255,255,.8)!important;border-radius:999px!important;box-shadow:inset 0 1px 0 #fff!important}
+#sn-nav{left:14px!important;right:14px!important;bottom:calc(10px + env(safe-area-inset-bottom,0px))!important;border-radius:34px!important;border:1px solid var(--lg-edge)!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.7),rgba(255,255,255,.38))!important;
+  box-shadow:0 8px 24px rgba(36,60,130,.2),var(--lg-hi)!important;padding:6px!important}
+#sn-nav button{color:#5b6b8c!important;border-radius:28px!important;background:none!important;box-shadow:none!important;border:0!important}
+#sn-nav button.on{color:var(--lg-blue)!important;background:linear-gradient(145deg,rgba(255,255,255,.95),rgba(255,255,255,.55))!important;box-shadow:0 4px 14px rgba(36,60,130,.18),inset 0 1px 0 #fff!important}
+:root{--snh:84px}
+#sn-sheet-bg,.qnav-backdrop{background:rgba(20,35,80,.28)!important;}
+#sn-sheet{border-radius:30px 30px 0 0!important;border-bottom:0!important}
+#sn-sheet button{background:var(--lg-fill-soft)!important;border:1px solid rgba(255,255,255,.8)!important;border-radius:18px!important;color:var(--lg-ink)!important}
+#exam-sidebar{background:var(--lg-fill)!important;border:1px solid var(--lg-edge)!important}
+#exam-sidebar:before{background:rgba(11,27,59,.18)!important}
+/* ---------- 6. OVERLAYS / MODALS ---------- */
+.test-analysis-overlay,.bm-modal,#app-install-modal,#bank-edit-modal,#move-chapter-modal,[id$="-modal"][style*="position:fixed"]{background:rgba(20,35,80,.30)!important;}
+.test-analysis-overlay.examgr-overlay-full{background:var(--lg-wall)!important;}
+.test-analysis-overlay.examgr-overlay-full .test-analysis-sheet{background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important}
+.test-analysis-sheet{border-radius:30px!important}
+#examgr-report-photo-overlay{background:rgba(10,15,35,.85)!important}
+/* full-screen pages get their own wallpaper (they cover the app) */
+#sn-page,#ssp-page,#asp-page,#bm-admin,#exam-screen,#solution-screen{background:var(--lg-wall)!important}
+#exam-screen{background:transparent!important}
+#solution-screen{background:transparent!important}
+#bm-admin .bm-side{background:linear-gradient(180deg,rgba(40,70,170,.78),rgba(60,50,170,.72))!important;border-right:1px solid rgba(255,255,255,.45);border-radius:0 26px 26px 0}
+#bm-admin .bm-nav.on{background:rgba(255,255,255,.28)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
+#bm-admin .bm-burger{background:var(--lg-tint)!important}
+.bm-toast,.toast{background:rgba(255,255,255,.75)!important;color:var(--lg-ink)!important;border:1px solid var(--lg-edge)!important;border-radius:22px!important;box-shadow:var(--lg-shadow),var(--lg-hi)!important}
+/* ---------- 7. SETTINGS PAGES ---------- */
+.ssp-row,.asp-row{background:transparent!important;border-bottom:1px solid rgba(255,255,255,.6)!important;color:var(--lg-ink)}
+.ssp-grp,.asp-grp{overflow:hidden}
+.ssp-tx small,.asp-tx small,.sn-srow small,.sn-row small,.sn-tile small,.sn-faq p,.ssp-card p,.asp-card p{color:var(--lg-mut)!important}
+.ssp-ic,.asp-ic,.ssp-tile,.asp-tile,.sn-row .i,.sn-tile .i{box-shadow:inset 0 1.5px 0 rgba(255,255,255,.6),0 4px 10px rgba(36,60,130,.18)}
+.ssp-av,.asp-av{background:rgba(255,255,255,.85)!important}
+.ssp-sec,.asp-sec{color:var(--lg-mut)!important}
+/* iOS switch + segmented control */
+.sn-sw i,.ssp-sw i,.asp-sw i{background:rgba(120,130,160,.35)!important;box-shadow:inset 0 1px 3px rgba(0,0,0,.18)}
+.sn-sw i:after,.ssp-sw i:after,.asp-sw i:after{background:#fff!important;box-shadow:0 3px 8px rgba(0,0,0,.28),inset 0 1px 0 #fff}
+.sn-sw input:checked+i,.ssp-sw input:checked+i,.asp-sw input:checked+i{background:var(--lg-green)!important}
+.sn-seg,.ssp-seg,.asp-seg{background:rgba(255,255,255,.4)!important;border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 2px 5px rgba(36,60,130,.1);border-radius:999px!important}
+.sn-seg button,.ssp-seg button,.asp-seg button{background:none!important;color:var(--lg-mut)!important;box-shadow:none!important;border:0!important}
+.sn-seg button.on,.ssp-seg button.on,.asp-seg button.on{color:var(--lg-ink)!important;background:linear-gradient(145deg,#fff,rgba(255,255,255,.7))!important;box-shadow:0 3px 10px rgba(36,60,130,.2)!important}
+/* ---------- 8. RESULT SCREEN (deep liquid wallpaper, white text) ---------- */
+#result-screen{background:radial-gradient(60% 45% at 15% 10%,#4f8bff 0,transparent 65%),radial-gradient(50% 40% at 90% 20%,#9b6bff 0,transparent 65%),radial-gradient(55% 45% at 80% 95%,#ff6fae 0,transparent 65%),linear-gradient(160deg,#102a78,#3a2a9a)!important}
+#result-screen .card,.result-header-card,.perf-card{background:linear-gradient(145deg,rgba(255,255,255,.26),rgba(255,255,255,.1))!important;border:1px solid rgba(255,255,255,.45)!important;color:#fff!important}
+#result-screen .btn-secondary{color:#fff!important;background:rgba(255,255,255,.2)!important}
+.exam-progress-track{background:rgba(255,255,255,.55)!important;border-radius:99px}
+.exam-progress-fill{background:linear-gradient(90deg,#0a84ff,#bf5af2,#ff2d92)!important}
+.progress-bar-container,.bm-bar,.oa-bar{background:rgba(255,255,255,.55)!important;border-radius:99px}
+.timer-box{background:rgba(255,255,255,.22)!important;border:1px solid rgba(255,255,255,.55)!important;}
+.q-text{border-left:1px solid rgba(255,255,255,.7)!important;border-radius:22px!important}
+.q-nav-grid button.answered{background:linear-gradient(135deg,#6ee18c,#28be50)!important;color:#fff!important}
+.q-nav-grid button.not-answered{background:linear-gradient(135deg,#ff8a80,#ff3b30)!important;color:#fff!important}
+.q-nav-grid button.review{background:linear-gradient(135deg,#ffd666,#ff9f0a)!important;color:#fff!important}
+/* ---------- 9. OWNER APP ---------- */
+.oa-hero{background:var(--lg-tint)!important;border:1px solid rgba(255,255,255,.55);box-shadow:0 12px 30px rgba(50,90,230,.3),inset 0 1.5px 0 rgba(255,255,255,.6)}
+.oa-lg{background:var(--lg-tint)!important}
+.oa-tab{left:14px!important;right:14px;transform:none!important;width:auto!important;max-width:452px;margin:0 auto;bottom:calc(10px + env(safe-area-inset-bottom,0px))!important;border-radius:34px!important;border:1px solid var(--lg-edge)!important;background:linear-gradient(145deg,rgba(255,255,255,.7),rgba(255,255,255,.38))!important;box-shadow:0 8px 24px rgba(36,60,130,.2),var(--lg-hi)!important}
+.oa-tab button.on{color:var(--lg-blue)!important}
+.oa-fab{background:var(--lg-tint)!important;box-shadow:0 12px 28px rgba(50,90,230,.4),inset 0 1.5px 0 rgba(255,255,255,.6)!important}
+
+/* ---------- PERFORMANCE (lag fix) ----------
+   Blur (backdrop-filter) bahut mehenga hai: sirf kuch bade/kam elements par, aur camera scan / low-end phone par bilkul band.
+   html.lg-scan  = OMR scan camera khula hai (perf-lite.js lagata hai)
+   html.lg-lite  = kam RAM/CPU wala phone ya ?lite=1  (?lite=0 se band) */
+html:not(.lg-lite):not(.lg-scan) :is(#sn-nav,.oa-tab,#sn-sheet,.site-header,.test-analysis-sheet,[id$="-modal"]>div,#exam-sidebar,.bm-toast,.toast){-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%)}
+html:not(.lg-lite):not(.lg-scan) :is(#sn-sheet-bg,.qnav-backdrop,.bm-modal){-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
+html .test-analysis-overlay.examgr-overlay-full,html .test-analysis-overlay.examgr-overlay-full .test-analysis-sheet,html .test-analysis-overlay{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.lg-lite *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+/* scan ke time poore DOM par '*' rule nahi (style recalc se camera start der se hota tha) — sirf jin par blur/animation hai */
+html.lg-scan :is(.card,.cd-card,#exam-sidebar,.qnav-fab,.qnav-backdrop,.result-header-card,.perf-card,.test-analysis-overlay,.test-analysis-sheet,.site-header,.toast,.bm-toast){-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.lg-scan :is(.timer-box,.cd-podium-crown,.bm-live){animation:none!important}
+html.lg-scan #sn-nav,html.lg-scan .oa-tab,html.lg-scan .qnav-fab{display:none!important}
+html.lg-lite{--lg-fill:linear-gradient(145deg,rgba(255,255,255,.9),rgba(255,255,255,.72));--lg-fill-soft:linear-gradient(145deg,rgba(255,255,255,.82),rgba(255,255,255,.64));--lg-shadow:0 2px 8px rgba(36,60,130,.1)}
+html.lg-lite *{text-shadow:none!important}
+html.lg-lite .card,html.lg-lite .cd-card,html.lg-lite .item,html.lg-lite .test-card,html.lg-lite button{box-shadow:0 1px 4px rgba(36,60,130,.1)!important}
+html.lg-lite body::before{background:linear-gradient(160deg,#e3eeff,#f3ecff)}
+/* ---------- 10. SCROLLBARS, FALLBACKS, PRINT ---------- */
+*{scrollbar-width:thin;scrollbar-color:rgba(80,100,160,.35) transparent}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .card,.cd-card,.cd-hero,.sn-row,.sn-tile,.test-analysis-sheet,#sn-nav,#sn-sheet,.ssp-card,.asp-card,.ssp-grp,.asp-grp,.bm-card,.bm-sheet{background:rgba(255,255,255,.88)!important}
+}
+@media (prefers-reduced-transparency:reduce){
+  .card,.cd-card,.cd-hero,.sn-row,.sn-tile,.test-analysis-sheet,#sn-nav,#sn-sheet,.ssp-card,.asp-card,.ssp-grp,.asp-grp,.bm-card,.bm-sheet{background:rgba(255,255,255,.92)!important;}
+}
+@media print{
+  body::before{display:none}
+  *{}
+}

@@ -1,0 +1,9 @@
+
+@media (max-width: 640px) {
+  #bulk-preview-table thead { display: none; }
+  #bulk-preview-table, #bulk-preview-table tbody, #bulk-preview-table tr, #bulk-preview-table td { display: block; width: 100%; }
+  #bulk-preview-table tr { border-top: 2px solid #cbd5e1; padding: 8px 0; }
+  #bulk-preview-table td { padding: 4px 6px !important; }
+  #bulk-preview-table td:first-child { display: inline-block; width: auto; }
+  #bulk-preview-table td:nth-child(2) { display: inline-block; width: auto; font-weight: 700; }
+}

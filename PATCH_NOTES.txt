@@ -1,0 +1,25 @@
+PATCH NOTES (sirf padhne ke liye, GitHub par upload nahi karni). Naye files: own-backend.js, migrate-to-own-backend.html, migrate-to-own-backend.js
+
+=========== index.html (< purana, > naya)
+2248a2249
+> <script defer src="own-backend.js?v=1"></script>
+
+=========== question-generator.html (< purana, > naya)
+441a442
+> <script src="own-backend.js?v=1"></script>
+
+=========== firebase-config.js (< purana, > naya)
+71a72,74
+>     /* HYBRID MODE (own-backend.js): SNAP_CONFIG.ownBackend me jo collections likhi hain sirf wahi apne backend par jati hain,
+>        baaki sab Firebase par. enabled:false (default) ho to ye line kuch nahi badalti. */
+>     try { if (window.SnapOwnBackend) window.vishnuFirebase.db = window.SnapOwnBackend.wrap(window.vishnuFirebase.db); } catch (e) { console.warn('own-backend wrap fail:', e); }
+
+=========== app-config.js (< purana, > naya)
+8a9,14
+>   // HYBRID MODE: kuch collections free apne backend par. enabled:false = sab kuch Firebase par (kill-switch). enabled:true = chalu.
+>   ownBackend: {
+>     enabled: false,
+>     url: "https://snaptestpro-backend.onrender.com",
+>     collections: ["questionBank", "deletedQuestions", "seedExclusions", "draftQuestions", "pdfDrafts"]
+>   },
+

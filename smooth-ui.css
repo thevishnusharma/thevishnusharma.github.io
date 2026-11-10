@@ -1,0 +1,73 @@
+/* =====================================================================
+   The Vishnu Sharma — SMOOTH UI layer (v1.4.7)
+   index.html me sabse LAST load hota hai, isliye purane heavy rules ko override karta hai.
+   Maksad: scroll/page-switch/tap par zero lag, aur overlay ke peeche home page kabhi na hilay.
+   ===================================================================== */
+
+/* 1) Smooth-scroll animation band: window.scrollTo(0,0) ab turant hota hai.
+      (Pehle ye 300-600ms animate hota tha -> batch/page khulte waqt home page peeche "ghoomta" dikhta tha) */
+html{scroll-behavior:auto!important}
+
+/* 2) Wallpaper ko apni GPU layer par rakho — scroll par baar baar repaint nahi hota */
+body::before{transform:translateZ(0);will-change:transform;contain:strict}
+
+/* 3) BLUR HATAO jahan scroll ke saath chalta hai.
+      backdrop-filter har frame par peeche ka content dobara blur karta hai = sabse bada lag.
+      Surfaces pehle se 80-90% white hain, isliye look lagbhag same rehta hai. */
+.card,.hero-card,.cd-card,.result-header-card,.perf-card,#result-screen .card,
+.site-header,#sn-nav,.oa-tab,#sn-sheet,#exam-sidebar,.test-analysis-overlay,.test-analysis-sheet,
+[id$="-modal"]>div,[id$="-modal"]>form.card,.bm-toast,.toast,.bm-modal,#sn-sheet-bg,.qnav-backdrop,
+html:not(.lg-lite):not(.lg-scan) :is(#sn-nav,.oa-tab,#sn-sheet,.site-header,.test-analysis-sheet,[id$="-modal"]>div,#exam-sidebar,.bm-toast,.toast,#sn-sheet-bg,.qnav-backdrop,.bm-modal){
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+/* blur hata diya to floating nav / header thoda zyada opaque rakho taaki text saaf padhe */
+#sn-nav,.oa-tab{background:linear-gradient(145deg,rgba(255,255,255,.94),rgba(246,249,255,.90))!important}
+.site-header{background:linear-gradient(145deg,rgba(255,255,255,.95),rgba(246,249,255,.9))!important}
+#sn-sheet,#exam-sidebar{background:rgba(255,255,255,.97)!important}
+.bm-toast,.toast{background:rgba(255,255,255,.95)!important}
+
+/* 4) Bhaari transition:all aur bouncy easing hatao — sirf GPU-friendly properties animate karo */
+button,.btn-primary,.btn-secondary,.btn-danger,.btn-ghost,.btn-pager,.mode-btn,.tab,.lang-btn,
+.test-tab-chip,.test-card-btn,.chapter-choice,.options-list button,.cd-card,.sn-tile,.sn-row{
+  transition-property:transform,opacity,background-color,box-shadow,border-color,color!important;
+  transition-timing-function:cubic-bezier(.2,.8,.2,1)!important;transition-duration:.12s!important}
+button:active{transition-duration:.06s!important}
+/* hover-lift sirf asli mouse wale devices par (touch par "chipka hua hover" jhatka deta tha) */
+@media (hover:none){
+  .options-list button:hover,.chapter-choice:hover,.btn-primary:hover,.btn-secondary:hover,.btn-danger:hover,
+  .btn-ghost:hover,.btn-pager:hover,.test-card-btn:hover,.perf-card:hover,.btn-chunky-green:hover,.qnav-fab:hover,
+  .q-nav-grid button:hover{transform:none!important;filter:none!important}
+}
+
+/* 5) Lambi lists: jo item screen se bahar hai usse browser render hi nahi karta (admin lists, students, bank, tests) */
+#test-cards-list>*,.test-card,.item,.bm-item,.bm-row,.bm-prog,.bx-prog,.examgr-report-row,.sol-q-card,
+.board-result-sheet-wrap,#students-directory-list>*,#bank-list>*,.pdf-draft-list>*{
+  content-visibility:auto;contain-intrinsic-size:auto 92px}
+.board-result-sheet-wrap{contain-intrinsic-size:auto 520px}
+.sol-q-card{contain-intrinsic-size:auto 420px}
+
+/* 6) OVERLAY PAGES (Batch, Analysis/More, Settings, Admin panel)
+      - poori screen cover  - apna scroll  - scroll peeche ke page tak leak nahi hota */
+#bm-student,#sn-page,#ssp-page,#asp-page,#bm-admin,#bm-admin .bm-main,#bm-admin .bm-side,
+.bm-sheet,.bm-viewer,.test-analysis-sheet,#exam-sidebar,.searchable-select-list,.sl-chat{
+  overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+#bm-student,#sn-page,#ssp-page,#asp-page,#bm-admin{isolation:isolate}
+/* Overlay khulte hi: peeche ka scroll lock, aur peeche ka home paint hi na ho (GPU/CPU bachta hai) */
+html.sn-ovl,html.sn-ovl body{overflow:hidden!important}
+html.sn-ovl #student-form>:not(#sn-nav),html.sn-ovl #admin-panel{visibility:hidden}
+html.sn-ovl #sn-nav{visibility:visible}
+
+/* 7) Page khulne ka halka (GPU) animation — sirf opacity + transform */
+@keyframes snOvlIn{from{opacity:0;transform:translate3d(0,10px,0)}to{opacity:1;transform:none}}
+#bm-student:not(.bm-hidden),#sn-page[style*="block"],#ssp-page[style*="block"],#asp-page[style*="block"],#bm-admin{animation:snOvlIn .16s cubic-bezier(.2,.8,.2,1) both}
+
+/* 8) Infinite animations sirf jahan zaroori — baaki band (battery + frame drops) */
+html.lg-lite .bm-live,html.lg-lite .timer-box.low-time,html.lg-lite .cd-podium-crown{animation:none!important}
+.timer-box.low-time{animation-duration:1.6s}
+
+/* 9) Touch: 300ms tap delay nahi, aur scroll containers smooth momentum */
+.bm-tabs,.test-tabs-row,.admin-tabs,.analysis-table-wrap,.bm-tablewrap{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+
+/* 10) User ne "reduce motion" chuna ho to saari animation band */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}

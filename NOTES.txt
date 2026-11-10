@@ -1,0 +1,5 @@
+v243 - Question Bank list ab ap-ap load hoti hai (admin)
+Frontend repo (snaptestpro.github.io) me 5 files upload karo:
+script.js, sw.js, version.json, app-config.js, package.json
+(Backend repo me kuch nahi badla. index.html pichli v242 wali hi rahegi.)
+Upload ke baad app 2 baar refresh karo.

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="The Vishnu Sharma student account and data deletion">
+  <title>Delete Account &amp; Data — The Vishnu Sharma</title>
+  <style>
+    :root{font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif;color:#172033;background:#f4f6fb}body{margin:0}.wrap{max-width:680px;margin:24px auto;padding:0 16px}.card{background:white;border:1px solid #e2e8f0;border-radius:16px;padding:24px;box-shadow:0 8px 28px #1e293b0c}h1{color:#172554;line-height:1.2}label{display:block;font-weight:650;margin:14px 0 5px}input{box-sizing:border-box;width:100%;padding:12px;border:1px solid #94a3b8;border-radius:9px;font:inherit}button{width:100%;margin-top:18px;padding:13px;border:0;border-radius:9px;background:#b91c1c;color:white;font:inherit;font-weight:700;cursor:pointer}button:disabled{opacity:.6}.notice{padding:13px;border-left:4px solid #d97706;background:#fffbeb;border-radius:8px}a{color:#1d4ed8}.muted{color:#475569}#status{min-height:1.5em}
+  </style>
+</head>
+<body><main class="wrap"><article class="card">
+  <h1>The Vishnu Sharma account/data deletion</h1>
+  <p class="muted">Students can permanently delete their account and linked app data here. Last updated: 15 October 2026.</p>
+  <p>This request deletes the student profile and credential documents, linked test results, scan reports, mistake data, login sessions, profile photo stored in the profile, and batch membership records from the app database. It cannot recall exports already downloaded by an institute or provider backups before their normal expiry. See the <a href="/privacy.html">Privacy Policy</a>.</p>
+  <p class="notice"><strong>Before continuing:</strong> Deletion is permanent. Enter the registered mobile number and account password to verify ownership. Do not send your password to an institute or support contact. If you no longer have access to the account, contact the institute admin using the support information they provided.</p>
+  <form id="delete-form">
+    <label for="mobile">Registered 10-digit mobile number</label><input id="mobile" name="mobile" type="tel" inputmode="numeric" autocomplete="tel" maxlength="10" required>
+    <label for="confirm-mobile">Type the same mobile number again</label><input id="confirm-mobile" name="confirm-mobile" type="tel" inputmode="numeric" autocomplete="off" maxlength="10" required>
+    <label for="password">Account password</label><input id="password" name="password" type="password" autocomplete="current-password" required>
+    <button id="submit" type="submit">Permanently delete account and data</button>
+  </form>
+  <p id="status" role="status" aria-live="polite"></p>
+  <p><a href="/terms.html">Terms</a> · <a href="/">The Vishnu Sharma</a></p>
+</article></main>
+<script src="/app-config.js"></script><script src="/server-auth.js"></script>
+<script>
+document.getElementById("delete-form").addEventListener("submit", async function (event) {
+  event.preventDefault();
+  var mobile = document.getElementById("mobile").value.replace(/\D/g, "").slice(-10);
+  var typed = document.getElementById("confirm-mobile").value.replace(/\D/g, "").slice(-10);
+  var password = document.getElementById("password").value;
+  var status = document.getElementById("status"), button = document.getElementById("submit");
+  if (!/^\d{10}$/.test(mobile) || typed !== mobile || !password) { status.textContent = "Mobile number aur password dobara check karein."; return; }
+  if (!window.confirm("Account aur linked data permanently delete hoga. Ye undo nahi ho sakta. Kya aap continue karna chahte hain?")) return;
+  button.disabled = true; button.textContent = "Deletion request process ho rahi hai…"; status.textContent = "Ownership verify ho rahi hai. Is page ko band na karein.";
+  try {
+    await window.SnapAuth.deleteMyAccount(mobile, typed, password);
+    document.getElementById("delete-form").hidden = true;
+    status.textContent = "Account aur linked app data delete ho gaya hai.";
+  } catch (error) {
+    status.textContent = "Delete request complete nahi hui: " + (error && error.message || "Connection error") + ". Aap details check karke dobara try kar sakte hain.";
+    button.disabled = false; button.textContent = "Permanently delete account and data";
+  }
+});
+</script></body></html>

@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths-ignore: ['*.zip']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: JS syntax check (sab .js / .mjs)
+        run: |
+          fail=0
+          for f in $(git ls-files '*.js' '*.mjs' | grep -v '^push-worker/node_modules'); do
+            node --check "$f" 2>/tmp/err || { echo "SYNTAX ERROR: $f"; cat /tmp/err; fail=1; }
+          done
+          exit $fail
+      - name: Version sync
+        run: node scripts/stamp-version.js --check
+      - name: Precache files maujood hain
+        run: node scripts/check-precache.js
+      - name: Unit tests
+        run: node scripts/run-unit-tests.js
+
+  # Firebase Security Rules (Firestore + Storage) — Emulator par.
+  # Cross-institute read/write ke negative tests isi me hain (tests/security-rules.test.js).
+  rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: 17
+      - run: npm ci --no-audit --no-fund
+      - name: Security rules tests (emulator)
+        run: npm run test:rules

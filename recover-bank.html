@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>Question Recovery</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#f1f5f9;margin:0;padding:14px;color:#0f172a}
+.card{background:#fff;border-radius:14px;padding:14px;margin:0 auto 12px;max-width:760px;box-shadow:0 2px 10px #0001}
+h1{font-size:20px;margin:0 0 6px}h2{font-size:16px;margin:0 0 8px}
+button{background:#2563eb;color:#fff;border:0;border-radius:10px;padding:10px 14px;font-size:15px;font-weight:600;margin:4px 4px 4px 0}
+button.g{background:#16a34a}button.o{background:#d97706}button:disabled{opacity:.45}
+input[type=text]{padding:9px;border:1px solid #cbd5e1;border-radius:8px;width:100%;box-sizing:border-box;font-size:15px}
+.row{display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-top:1px solid #e2e8f0}.row small{color:#475569;display:block}
+#log{white-space:pre-wrap;font:12px/1.5 ui-monospace,monospace;background:#0f172a;color:#d1fae5;border-radius:10px;padding:10px;max-height:260px;overflow:auto}
+.note{background:#fef9c3;border-radius:10px;padding:10px;font-size:14px}
+</style></head><body>
+<div class="card"><h1>🛟 Question Recovery</h1>
+<div class="note">Ye page sirf <b>jodta</b> hai — kuch delete/overwrite nahi karta. Backend me jo questions pehle se hain unhe nahi chhoota. Admin login ke saath kholo (jis browser me app chalate ho).</div>
+<p id="who">Login check ho raha hai…</p>
+<div id="loginBox" style="display:none">
+<p style="font-size:14px;margin:0 0 6px">Is browser me admin login nahi hai (app me hoga, par ye alag browser hai). Yahin admin email-password se login karo — sirf isi page ke liye, kuch save nahi hota.</p>
+<input id="em" type="text" placeholder="Admin email" autocomplete="username" style="margin-bottom:6px">
+<input id="pw" type="text" placeholder="Password" autocomplete="current-password" style="margin-bottom:6px;-webkit-text-security:disc">
+<button id="login">🔑 Login</button></div></div>
+
+<div class="card"><h2>1️⃣ Scan — kahan-kahan purane questions bache hain</h2>
+<p style="font-size:14px;margin:0 0 6px">Backend ki list se mila kar dikhata hai ki saved copies me kaun-se questions backend me <b>nahi</b> hain (Firebase reads: 0).</p>
+<button id="scan" disabled>🔍 Scan karo</button>
+<div id="groups"></div></div>
+
+<div class="card"><h2>2️⃣ (Optional) Firebase me bhi dhoondo</h2>
+<p style="font-size:14px;margin:0 0 6px">Agar upar kuch na mile: asli Firebase database me un classes ke questions dhoondta hai. Reads utne hi lagenge jitne questions mile (~200-300), poora bank nahi padhta.</p>
+<input id="cls" type="text" value="class_9, class9, 9">
+<button id="fbscan" class="o" disabled>🔥 Firebase me dhoondo</button></div>
+
+<div class="card"><h2>3️⃣ Wapas jodo</h2>
+<p style="font-size:14px;margin:0 0 6px">Upar se jo group chuna hai (✔) wahi backend me add honge.</p>
+<button id="restore" class="g" disabled>♻️ Chune hue questions backend me daalo</button>
+<div id="log">Ready.</div></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="app-config.js"></script>
+<script src="firebase-config.js"></script>
+<script src="bank-idb.js"></script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i)};
+var WORKER='https://cool-thunder-a280.vishnu1234stm.workers.dev';
+var cfg=(window.SNAP_CONFIG&&window.SNAP_CONFIG.ownBackend)||{};
+var BACK=String(cfg.url||'').replace(/\/+$/,'');
+var COLL='questionBank', PRI={firebase:0,idb:1,local:2,worker:3};
+var backendIds=null, groups={}; // groups["source|class"] = {src,cls,docs:[{id,data}]}
+function log(m){var e=$('log');e.textContent+=(e.dataset.i?'':'');e.dataset.i=1;e.textContent+='\n'+m;e.scrollTop=e.scrollHeight}
+function user(){var a=window.vishnuFirebase&&window.vishnuFirebase.auth;return a&&a.currentUser}
+function tok(){var u=user();return u?u.getIdToken():Promise.resolve('')}
+function api(method,path,body){return tok().then(function(t){return fetch(BACK+path,{method:method,headers:Object.assign({Authorization:'Bearer '+t,'X-App-Build':String(cfg.build||(window.SNAP_CONFIG&&window.SNAP_CONFIG.build)||'')},body?{'Content-Type':'application/json'}:{}),body:body?JSON.stringify(body):undefined})})
+ .then(function(r){return r.json().catch(function(){return{}}).then(function(j){if(!r.ok)throw new Error((j&&j.error)||('HTTP '+r.status));return j})})}
+function conv(v){ // Firestore/plain value -> backend JSON
+  if(v===undefined)return undefined; if(v===null||typeof v!=='object')return v;
+  if(v instanceof Date)return{__ts:v.getTime()};
+  if(typeof v.toMillis==='function'&&typeof v.toDate==='function')return{__ts:v.toMillis()};
+  if(Array.isArray(v))return v.map(function(x){var c=conv(x);return c===undefined?null:c});
+  var o={};Object.keys(v).forEach(function(k){var c=conv(v[k]);if(c!==undefined)o[k]=c});return o}
+function clean(raw){var d=conv(raw)||{};delete d.id;delete d.updatedAt;delete d.createdAt;d.updatedAt={__ts:Date.now()};return d}
+function add(src,id,data){
+  if(!id||backendIds.has(id))return; var cls=String((data&&data.classId)||'(class nahi)');
+  var k=src+'|'+cls; var g=groups[k]=groups[k]||{src:src,cls:cls,docs:[]}; g.docs.push({id:id,data:data});}
+function render(){
+  var keys=Object.keys(groups).sort(); var h='';
+  if(!keys.length)h='<p><b>Backend se bahar koi question nahi mila</b> in saved copies me.</p>';
+  keys.forEach(function(k,i){var g=groups[k],s=(g.docs[0].data&&(g.docs[0].data.text||g.docs[0].data.textHI))||'';
+    h+='<div class="row"><input type="checkbox" '+(/(^|[^0-9])9($|[^0-9])/.test(g.cls)?'checked ':'')+'data-k="'+k.replace(/"/g,'&quot;')+'" id="c'+i+'"><label for="c'+i+'"><b>'+g.docs.length+' question</b> · '+g.cls+' · source: '+g.src+'<small>jaise: '+String(s).replace(/[<>&]/g,'').slice(0,70)+'</small></label></div>'});
+  $('groups').innerHTML=h; $('restore').disabled=!keys.length}
+function loadBackendIds(){
+  backendIds=new Set(); var off=0;
+  function page(){return api('GET','/api/collections/'+COLL+'/documents?limit=1000&offset='+off).then(function(r){
+    (r.docs||[]).forEach(function(d){backendIds.add(d.id)}); if((r.docs||[]).length===1000){off+=1000;return page()}})}
+  return page()}
+$('scan').onclick=async function(){
+  this.disabled=true; groups={};
+  try{
+    log('Backend ki list le raha hu…'); await loadBackendIds(); log('Backend me abhi: '+backendIds.size+' question');
+    try{var w=await fetch(WORKER+'/bank').then(function(r){return r.json()}); if(Array.isArray(w)){log('Worker copy: '+w.length);w.forEach(function(q){add('worker',q.id,q)})}}catch(e){log('Worker copy nahi mili: '+e.message)}
+    try{var a=window.__bankIdb&&await window.__bankIdb.get(); if(a&&a.length){log('Is browser ki saved copy (IndexedDB): '+a.length);a.forEach(function(q){add('idb',q.id,q)})}}catch(e){}
+    try{var l=JSON.parse(localStorage.getItem('savya_bank_cache')||'null'); var la=Array.isArray(l)?l:(l&&l.arr||l&&l.data); if(Array.isArray(la)&&la.length){log('Browser localStorage copy: '+la.length);la.forEach(function(q){add('local',q.id,q)})}}catch(e){}
+    render(); log('Scan poora. Upar dekho kaun-sa group backend me nahi hai.');
+  }catch(e){log('❌ '+e.message)}
+  this.disabled=false};
+$('fbscan').onclick=async function(){
+  this.disabled=true;
+  try{
+    if(!backendIds){log('Pehle Scan karo');this.disabled=false;return}
+    var raw=firebase.firestore(); var list=$('cls').value.split(',').map(function(x){return x.trim()}).filter(Boolean);
+    if(!list.length){log('Class likho');this.disabled=false;return}
+    if(!confirm('Firebase se in classes ke questions padhega ('+list.join(', ')+'). Reads utne hi lagenge jitne questions mile. Aage badhein?')){this.disabled=false;return}
+    var n=0, seen={}; function take(snap){snap.forEach(function(d){if(seen[d.id])return;seen[d.id]=1;n++;add('firebase',d.id,d.data())})}
+    for(var i=0;i<list.length;i+=10){ take(await raw.collection(COLL).where('classId','in',list.slice(i,i+10)).get()) }
+    var FP=firebase.firestore.FieldPath.documentId();   // doc ID "class9-..." se bhi dhoondo (classId field khali/alag ho tab bhi)
+    var pre=[]; list.forEach(function(c){var m=String(c).match(/(\d{1,2})$/); if(m){['class'+m[1]+'-','class_'+m[1]+'-'].forEach(function(p){if(pre.indexOf(p)<0)pre.push(p)})}});
+    for(var j=0;j<pre.length;j++){ take(await raw.collection(COLL).orderBy(FP).startAt(pre[j]).endAt(pre[j]+'\uf8ff').get()) }
+    log('Firebase me '+list.join('/')+' ke '+n+' question mile (reads ≈ '+n+')'); render();
+  }catch(e){log('❌ Firebase: '+e.message)}
+  this.disabled=false};
+$('restore').onclick=async function(){
+  var picked=[].slice.call(document.querySelectorAll('#groups input:checked')).map(function(c){return groups[c.dataset.k]});
+  if(!picked.length){log('Pehle koi group tick karo');return}
+  var byId={}; picked.forEach(function(g){g.docs.forEach(function(d){var p=byId[d.id]; if(!p||PRI[g.src]<PRI[p.src])byId[d.id]={src:g.src,data:d.data}})});
+  var ids=Object.keys(byId); if(!confirm(ids.length+' question backend me jode jaayenge. Theek hai?'))return;
+  this.disabled=true; var ok=0,bad=0;
+  for(var i=0;i<ids.length;i+=5){ await Promise.all(ids.slice(i,i+5).map(function(id){
+    return api('POST','/api/collections/'+COLL+'/documents',{docId:id,data:clean(byId[id].data),merge:true}).then(function(){ok++},function(e){bad++;log('❌ '+id+': '+e.message)})})); if(i%50===0)log('… '+ok+' ho gaye')}
+  log('✅ Poora: '+ok+' jude, '+bad+' fail. Ab app kholo — 2 baar refresh karo; Question Bank me aa jaayenge.');
+  this.disabled=false};
+function ready(){var u=user(); if(u&&!u.isAnonymous&&u.email){$('who').textContent='✅ Login: '+u.email+' · Backend: '+BACK;$('loginBox').style.display='none';$('scan').disabled=false;$('fbscan').disabled=false;if(!window.__scanned){window.__scanned=1;$('scan').click()}return true}
+  $('who').textContent='❌ Admin login nahi hai.';$('loginBox').style.display='block';return false}
+function boot(){
+  var a=window.vishnuFirebase&&window.vishnuFirebase.authReady; if(!a){$('who').textContent='❌ Firebase load nahi hua';return}
+  a.then(function(){ready()})}
+$('login').onclick=async function(){
+  var em=$('em').value.trim().toLowerCase(),pw=$('pw').value; if(!em||!pw){$('who').textContent='Email aur password dono likho';return}
+  this.disabled=true;$('who').textContent='Login ho raha hai…';
+  try{await window.vishnuFirebase.auth.signInWithEmailAndPassword(em,pw); ready()}
+  catch(e){$('who').textContent='❌ Login fail: '+(e.code||e.message)}
+  this.disabled=false};
+boot();
+})();
+</script></body></html>

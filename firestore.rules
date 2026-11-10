@@ -1,0 +1,1321 @@
+rules_version = '2';
+
+// ══════════════════════════════════════════════════════════════════
+// The Vishnu Sharma — FIRESTORE SECURITY RULES
+// ══════════════════════════════════════════════════════════════════
+// IMPORTANT — README pehle padhein: FIREBASE_SECURITY_SETUP.md
+//
+// Ye rules maan kar chalti hain ki:
+//   1) Firebase Console > Authentication mein "Anonymous" provider ON hai
+//      (har visitor — student ho ya admin — silently sign-in ho jata hai,
+//       taaki request.auth kabhi null na ho).
+//   2) Firebase Console > Authentication mein "Email/Password" provider ON hai
+//      (real admin login ke liye).
+//   3) Neeche ADMIN_EMAILS list mein apna asli admin email daal diya hai.
+//      Jab tak yahan email nahi daalenge, KOI BHI admin panel se
+//      likh/delete nahi kar payega — is file ko deploy karne ke baad
+//      ye pehla kaam hai jo karna hai.
+//   4) Neeche OWNER_EMAIL mein apna (product owner ka) email daal diya
+//      hai — sirf yehi ek email "Owner Panel" khol sakta hai jahan se
+//      har institute ka admin add/disable/remove aur uska password
+//      reset kiya ja sakta hai. Details: OWNER_PANEL_SETUP.md
+// ══════════════════════════════════════════════════════════════════
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function validRegistrationConsent(mobile) {
+      return request.resource.data.keys().hasOnly([
+        'name', 'mobile', 'hasPin', 'instituteId', 'classId', 'createdAt',
+        'termsAccepted', 'guardianConsent', 'consentVersion', 'consentAt'
+      ]) && request.resource.data.mobile == mobile &&
+        request.resource.data.termsAccepted == true &&
+        request.resource.data.guardianConsent == true &&
+        request.resource.data.consentVersion is string &&
+        request.resource.data.consentAt == request.time;
+    }
+
+    // ── Owner (product/company owner — sabse upar ka role) ────────
+    // Ye admin se ALAG hai: owner kisi ek institute ka data nahi
+    // chalata, balki OWNER PANEL se ye control karta hai ki kaun-kaun
+    // se institutes hain aur unka admin kaun hai (naya admin add
+    // karna, kisi admin ko disable/remove karna, uska password reset
+    // bhejna). Sirf EK hardcoded email — kisi ko is se access nahi
+    // milta jab tak yahan email daal ke publish na karein.
+    // v220: Demo institute — Owner sirf isDemo==true data par likh/hata sakta hai
+    function isDemoInst(instituteId) {
+      return get(/databases/$(database)/documents/institutes/$(instituteId)).data.get('isDemo', false) == true;
+    }
+    function isOwner() {
+      return request.auth != null &&
+        (
+          request.auth.token.get('snapRole', '') == 'owner' ||
+          request.auth.token.email == "thevishnusharmaapp@gmail.com"
+        );
+    }
+
+    // ── Admin allow-list ─────────────────────────────────────────
+    // Do tareeke se koi admin banta hai:
+    //   (a) LEGACY: neeche seedha email likh diya (purana single-admin
+    //       tareeka — backward compatibility ke liye rakha hai).
+    //   (b) OWNER PANEL se banaya gaya admin: Owner Panel jab kisi
+    //       institute ke liye naya admin banata hai, to woh email
+    //       `admins/{email}` collection mein ek doc { active: true }
+    //       ke saath likh deta hai. Wahi admin par yahan check hota
+    //       hai — aur "active" false karte hi (Owner "Disable" button
+    //       dabaye) us admin ka access turant band ho jaata hai, bina
+    //       Firebase Auth account delete kiye.
+    //
+    // ⚠️ FIX (v24_12): pehle LEGACY email ko bina kisi condition ke
+    // hardcoded "true" mil jaata tha — matlab Owner Panel se ise
+    // "Disable" karne ka (admins/{email}.active = false likhne ka)
+    // koi asar hi nahi hota tha, kyunki neeche wala hardcoded check
+    // active field dekhta hi nahi tha. Ab legacy email ko bhi access
+    // milta hai SIRF tab tak jab tak uske admins/{email} doc mein
+    // explicitly active:false na likha ho — Owner "Disable" dabaye to
+    // ye legacy admin bhi turant, sach mein, block ho jaata hai.
+    function adminDocActive() {
+      return exists(/databases/$(database)/documents/admins/$(request.auth.token.email))
+        ? get(/databases/$(database)/documents/admins/$(request.auth.token.email)).data.active
+        : null;
+    }
+
+    // ⚠️ FIX (v24_16): pehle isAdmin() sirf admin ke APNE doc ka `active`
+    // field dekhta tha — Owner Panel ke Institute-level "Deactivate"
+    // button (jo `institutes/{id}.active = false` likhta hai) ka is par
+    // koi asar hi nahi padta tha. Matlab ek poora institute deactivate
+    // karne ke baad bhi uska admin poora access rakhta reh sakta tha —
+    // aur isi wajah se koi real-time force-logout bhi trigger nahi hota
+    // tha (wo sirf admin-doc ke `active:false`/permission-denied par
+    // depend karta hai, script.js dekhein). Ab isAdminEmailAllowed() —
+    // sirf email/admin-doc wala purana check — ko isAdmin() se ALAG kiya
+    // gaya hai (taaki adminInstituteId() ise call kar sake bina circular
+    // function-call error ke), aur isAdmin() khud ab institute active
+    // bhi check karta hai.
+    function isAdminEmailAllowed() {
+      return request.auth != null &&
+        request.auth.token.email != null &&
+        (
+          (request.auth.token.get('snapRole', '') == 'admin' && adminDocActive() == true)
+          ||
+          (
+            request.auth.token.email in [
+              "thevishnusharmaapp@gmail.com"
+            ]
+            && adminDocActive() != false
+          )
+          ||
+          adminDocActive() == true
+        );
+    }
+
+    // ⚠️ FIX (v26 — disable vs. institute-deactivate ka sahi message):
+    // Pehle admin apna khud ka "admins/{email}" doc SIRF isAdmin() (jo
+    // active + institute dono check karta hai) hone par hi padh sakta
+    // tha — matlab jaise hi Owner ne "Disable" dabaya YA institute
+    // deactivate kiya, doc ka read hi "permission-denied" ho jaata tha,
+    // aur client (script.js) dono cases ko ALAG bata hi nahi paata tha
+    // (dono taraf se sirf ek generic "permission-denied" milta tha).
+    // Fix: apna khud ka doc padhna sirf isi baat par depend kare ki
+    // email admin allow-list mein hai ya nahi (chahe abhi active ho ya
+    // na ho) — active/institute-status ka asli WRITE-level gate
+    // (isAdmin()) bilkul waisa hi sakht rehta hai, sirf "apna record
+    // dekh sakna" thoda khula hai taaki client sahi wajah dikha sake.
+    function isKnownAdminEmail() {
+      return request.auth != null &&
+        request.auth.token.email != null &&
+        (
+          request.auth.token.get('snapRole', '') == 'admin'
+          ||
+          request.auth.token.email in [
+            "thevishnusharmaapp@gmail.com"
+          ]
+          || exists(/databases/$(database)/documents/admins/$(request.auth.token.email))
+        );
+    }
+
+    // ── Multi-tenant: is admin ka apna institute kaunsa hai ────────
+    // Owner Panel se bane admin ke `admins/{email}` doc mein instituteId
+    // already hota hai. Legacy admin ke liye app khud (script.js,
+    // resolveCurrentAdminInstitute()) pehle login par ek instituteId
+    // bana kar isi doc mein likh deta hai — isliye ye function har
+    // admin ke liye kaam karta hai, chahe wo Owner Panel se bana ho ya
+    // purana/legacy ho.
+    function adminInstituteId() {
+      return isAdminEmailAllowed() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.token.email))
+        ? get(/databases/$(database)/documents/admins/$(request.auth.token.email)).data.instituteId
+        : null;
+    }
+
+    // Admin ka apna institute record active hai ya nahi.
+    //   - Koi instituteId hi nahi (legacy, migrate hone se pehle) →
+    //     true maan lo (backward compat, jaisa baaki purana code karta
+    //     hai — isse koi turant lock-out nahi hota).
+    //   - instituteId hai par institute doc hi maujood nahi (orphan,
+    //     "🗑️ Remove" se hata diya gaya) → true maan lo — ye jaan-boojh
+    //     kar hai, kyunki Owner Panel ka apna documentation kehta hai
+    //     "institute hatane se admin ka access khud disable nahi hota".
+    //   - Institute doc hai aur `active` explicitly false hai (Owner ne
+    //     Deactivate dabaya) → sirf tabhi false.
+    function adminInstituteActive() {
+      return adminInstituteId() == null ||
+        !exists(/databases/$(database)/documents/institutes/$(adminInstituteId()))
+        ? true
+        : get(/databases/$(database)/documents/institutes/$(adminInstituteId())).data.active != false;
+    }
+
+    function isAdmin() {
+      return isAdminEmailAllowed() && adminInstituteActive();
+    }
+
+    // ── FIX (v133 — cross-institute admin isolation) ────────────────
+    // Pehle isAdmin() sirf itna check karta tha ki "koi active admin
+    // hai" — ye kabhi nahi dekhta tha ki TARGET student usी admin ke
+    // apne institute ka hai ya kisi doosre ka. Matlab Institute A ka
+    // admin, Institute B ke kisi bhi student ka password reset/delete
+    // kar sakta tha. Ab har jagah jahan admin kisi SPECIFIC student
+    // (uske mobile se) par action leta hai, ye function bhi check
+    // hota hai.
+    //
+    // Backward-compat (upar wale patterns jaisa): agar target student
+    // ka `students/{mobile}` doc hi exist nahi karta (abhi register
+    // nahi hua — studentSecrets create is se pehle hota hai) YA uska
+    // koi instituteId set nahi hai (bahut purana, multi-institute
+    // feature se pehle ka student) — to allow kar diya jaata hai,
+    // taaki koi turant lock-out na ho.
+    function studentBelongsToAdmin(mobile) {
+      return !exists(/databases/$(database)/documents/students/$(mobile)) ||
+        get(/databases/$(database)/documents/students/$(mobile)).data.instituteId == null ||
+        get(/databases/$(database)/documents/students/$(mobile)).data.instituteId == adminInstituteId();
+    }
+
+    // ── FIX (v134 — join-code enforcement moved server-side) ────────
+    // PROBLEM: "Institute Join Code" (v132) sirf CLIENT-SIDE JS mein
+    // gate tha — script.js apna ek-baar-cache kiya hua institutes list
+    // check karta tha (`_instReg.requiresJoinCode`), aur sirf TABHI
+    // `instituteJoinCodeChecks` mein guess likhta tha. Agar wo client-
+    // side check kisi bhi wajah se (stale cache, timing) skip ho jaaye,
+    // to `students/{mobile}` CREATE rule ko iske baare mein pata hi
+    // nahi chalta tha — matlab bina koi code check huye hi account ban
+    // jaata tha. Ab ye verification `students/{mobile}` ke CREATE rule
+    // mein khud, server-side, unconditionally hoti hai — client ka
+    // cache kuch bhi ho, koi farq nahi padta.
+    // ── v176: Plan expiry + Student limit — SERVER-SIDE (registration par) ─────────
+    // Owner Panel se institute par ye optional fields lagte hain:
+    //   active (false = band), planExpiresAt (epoch ms; 0/nahi = bina expiry), studentLimit (0/nahi = bina limit),
+    //   studentCount (counter). Naya registration tabhi banta hai jab institute active ho, plan expire na hua ho
+    //   (3 din grace), aur limit poori na ho. Limit wale institute me counter +1 usi batch me hona ZAROORI hai
+    //   (client registration ko batch me bhejta hai: student doc + institute counter) — rule getAfter() se verify karta hai.
+    // v196 FIX: pehle har field ke liye alag get()/getAfter() call hota tha (~13+ document-access calls),
+    // aur Firestore Rules ki limit (10 per operation) paar ho jaati thi => "permission-denied" jab institute
+    // par studentLimit + Join Code dono ON ho. Ab har document sirf EK baar padha jaata hai (helper args se).
+    function instOpenData(d, a, mobile) {
+      return d.get('active', true) != false &&
+        (d.get('planExpiresAt', 0) == 0 || request.time.toMillis() < d.get('planExpiresAt', 0) + 259200000) &&
+        (
+          d.get('studentLimit', 0) == 0 ||
+          (
+            d.get('studentCount', 0) < d.get('studentLimit', 0) &&
+            a.get('studentCount', 0) == d.get('studentCount', 0) + 1 &&
+            a.get('lastRegMobile', '') == mobile
+          )
+        );
+    }
+
+    function instRegistrationOpen(instituteId, mobile) {
+      return instituteId == null ||
+        !exists(/databases/$(database)/documents/institutes/$(instituteId)) ||
+        instOpenData(
+          get(/databases/$(database)/documents/institutes/$(instituteId)).data,
+          getAfter(/databases/$(database)/documents/institutes/$(instituteId)).data,
+          mobile
+        );
+    }
+
+    function instituteRequiresJoinCode(instituteId) {
+      return instituteId != null &&
+        exists(/databases/$(database)/documents/institutes/$(instituteId)) &&
+        get(/databases/$(database)/documents/institutes/$(instituteId)).data.get('requiresJoinCode', false) == true;
+    }
+
+    function joinCheckOk(c, instituteId) {
+      return c.instituteId == instituteId &&
+        request.time < c.checkedAt + duration.value(30, 'm');
+    }
+
+    // Registration ke turant pehle (30 min ke andar) `instituteJoinCodeChecks/{mobile}`
+    // mein SAHI code verify ho chuka ho, usi institute ke liye — tabhi true.
+    function joinCodeVerifiedForRegistration(mobile, instituteId) {
+      return exists(/databases/$(database)/documents/instituteJoinCodeChecks/$(mobile)) &&
+        joinCheckOk(get(/databases/$(database)/documents/instituteJoinCodeChecks/$(mobile)).data, instituteId);
+    }
+
+    // ── Class Eligibility (v25) — Multi-Institute Shared Question Bank ──
+    // Har Institute ke `institutes/{id}.allowedClasses` mein un Classes
+    // ki list hoti hai jinke liye wo eligible hai (jaise ["class_10"]).
+    // Ye Master Question Bank/Exam data ko Institute-wise DIVIDE nahi
+    // karti — do institutes jo dono "class_10" ke liye eligible hain,
+    // unhe class_10 ka poora data barabar milega. Ye sirf itna control
+    // karti hai ki kaun-si Class ka data kis Institute ko dikhega.
+    //
+    // Backward-compat (bilkul upar wale instituteId pattern jaisa):
+    //   - `allowedClasses` field hi nahi hai (purana institute, is
+    //     feature se pehle bana) → null → sab Classes allowed maani
+    //     jaati hain, koi turant lock-out nahi hota.
+    //   - Doc mein `classId` hi nahi hai (purana exam, is feature se
+    //     pehle bana) → check hi skip ho jaata hai (backward compat).
+    function adminAllowedClasses() {
+      return adminInstituteId() != null &&
+        exists(/databases/$(database)/documents/institutes/$(adminInstituteId())) &&
+        ('allowedClasses' in get(/databases/$(database)/documents/institutes/$(adminInstituteId())).data)
+        ? get(/databases/$(database)/documents/institutes/$(adminInstituteId())).data.allowedClasses
+        : null;
+    }
+
+    function classAllowedForAdmin(classId) {
+      return classId == null ||
+        adminAllowedClasses() == null ||
+        (classId in adminAllowedClasses());
+    }
+
+    // v288 STRICT TENANT: parent doc (test / exam) kisi doosre institute ka ho to admin ko uski sub-collection par bhi access nahi.
+    // (Sirf purane doc jinme instituteId field hi nahi hai, wahi backward-compat se khule rehte hain.)
+    function sameInstOf(p) {
+      return !('instituteId' in get(p).data) || get(p).data.instituteId == adminInstituteId();
+    }
+    function sameInstData(d) {
+      return !('instituteId' in d) || d.instituteId == adminInstituteId();
+    }
+
+    // Koi bhi signed-in visitor — chahe anonymous ho ya admin.
+    // (App load hote hi anonymous sign-in ho jata hai, isliye ye
+    //  practically "app se aaya hua request" ke barabar hai, random
+    //  script/bot ke barabar nahi.)
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // v168 — STRICT BATCH ACCESS (student identity server-side verify)
+    // Pehle students anonymous-auth the, isliye rules "ye student kaun hai / is batch ka member hai?" verify nahi kar paate the.
+    // Ab: student login par studentSessions/{authUid} bante hain — create tabhi allow jab client ka bheja proof (sha256 password)
+    //     studentSecrets/{mobile}.hash se rules me match ho (wahi tareeka jo login proof ka hai). Is session se rules jaan lete hain
+    //     ki ye auth-uid kis mobile ka hai. Phir batch content tabhi readable jab members/{mobile} doc ho.
+    // Ye institute ke batchSettings/security.strict == true hone par hi lagu hota hai (default OFF => purana behaviour, koi login nahi tootta).
+    // ══════════════════════════════════════════════════════════════
+    function sessMobile() {
+      // Phase 4: Worker-verified login (custom token) me mobile token ke andar hota hai (forge nahi ho sakta).
+      return request.auth == null ? null :
+        (request.auth.token.get('mobile', null) != null ? request.auth.token.mobile :
+          (exists(/databases/$(database)/documents/studentSessions/$(request.auth.uid))
+            ? get(/databases/$(database)/documents/studentSessions/$(request.auth.uid)).data.mobile
+            : null));
+    }
+    // Phase 4: config/privacy.secretsLockdown = true => koi client (admin bhi) studentSecrets nahi padh/likh sakta; sab Worker se.
+    function secretsLockdown() {
+      return exists(/databases/$(database)/documents/config/privacy) &&
+        get(/databases/$(database)/documents/config/privacy).data.get('secretsLockdown', false) == true;
+    }
+    function instStrict(instituteId) {
+      return exists(/databases/$(database)/documents/institutes/$(instituteId)/batchSettings/security) &&
+        get(/databases/$(database)/documents/institutes/$(instituteId)/batchSettings/security).data.get('strict', false) == true;
+    }
+    function isBatchMember(instituteId, batchId) {
+      return sessMobile() != null &&
+        exists(/databases/$(database)/documents/institutes/$(instituteId)/batches/$(batchId)/members/$(sessMobile()));
+    }
+    function isInstStudent(instituteId) {
+      return sessMobile() != null &&
+        exists(/databases/$(database)/documents/students/$(sessMobile())) &&
+        get(/databases/$(database)/documents/students/$(sessMobile())).data.instituteId == instituteId;
+    }
+
+    // ── Public/shared content: question bank & tests ─────────────
+    // Student app ko ye padhna zaroori hai taaki test/questions load ho
+    // sakein. Likhna/delete karna sirf admin kar sakta hai.
+    //
+    // ⚠️ OWNERSHIP-BASED DELETE PROTECTION (added — "dushmani" fix):
+    // Pehle YE HAR active admin poore shared questionBank mein KISI BHI
+    // question ko delete kar sakta tha — chahe wo unhone khud upload
+    // kiya ho ya kisi doosre admin/institute ne. Ab:
+    //   - Naya question banate waqt uska `createdBy` field khud
+    //     request bhejne wale admin ke email se match karna ZAROORI
+    //     hai (client spoof nahi kar sakta — server-side check).
+    //   - Update karte waqt `createdBy` ko badla nahi ja sakta (sirf
+    //     Owner badal sakta hai) — taaki koi edit karke ownership
+    //     "chura" na sake.
+    //   - Delete sirf 2 log kar sakte hain: (1) Owner (hamesha), ya
+    //     (2) wahi admin jiska email `createdBy` mein hai. Purane
+    //     (is fix se pehle bane / seeded) questions jinme `createdBy`
+    //     field hai hi nahi, unke liye backward-compat rakha gaya hai
+    //     — koi bhi active admin unhe delete kar sakta hai (jaisa
+    //     pehle tha), taaki purana data lock na ho jaaye.
+    // Client-side (script.js / qgen-app.js) ko naya question banate
+    // waqt `createdBy: <apna email>` field bhejna zaroori hai, warna
+    // create hi reject ho jayega.
+    match /questionBank/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin() && (
+        isOwner() ||
+        !('createdBy' in request.resource.data) ||
+        request.resource.data.createdBy == request.auth.token.email
+      );
+      allow update: if isAdmin() && (
+        !('createdBy' in resource.data) ||
+        request.resource.data.createdBy == resource.data.createdBy ||
+        isOwner()
+      );
+      allow delete: if isOwner() || (isAdmin() && (
+        !('createdBy' in resource.data) ||
+        resource.data.createdBy == request.auth.token.email
+      ));
+    }
+
+    match /tests/{docId} {
+      // v220: Owner ka Demo seed/reset — sirf isDemo==true tests (+ unke qchunks)
+      allow create, update: if isOwner() && request.resource.data.get('isDemo', false) == true;
+      allow list, delete: if isOwner() && resource.data.get('isDemo', false) == true;
+      match /qchunks/{cid} {
+        allow read, write: if isOwner() && get(/databases/$(database)/documents/tests/$(docId)).data.get('isDemo', false) == true;
+      }
+      // Read khula rehta hai (isSignedIn()) — students ko sabhi tests
+      // dikhne zaroori hain taaki wo attempt kar sakein. Institute-wise
+      // isolation sirf ADMIN ke apne management view (Tests list, Edit,
+      // Delete) mein hai — write side par.
+      allow read: if isSignedIn();
+
+      // Naya test — sirf apne institute ke instituteId ke saath ban
+      // sakta hai (ya instituteId field hi na ho, purane app-version
+      // compatibility ke liye).
+      allow create: if isAdmin() && (
+        !('instituteId' in request.resource.data) ||
+        request.resource.data.instituteId == adminInstituteId()
+      );
+
+      // Edit/Delete — sirf wahi admin kar sakta hai jiska instituteId us
+      // test ke instituteId se match kare. Purane (migrate hone se pehle)
+      // instituteId-less docs par abhi bhi access hai — taaki koi turant
+      // lock-out na ho jaaye, migration hote hi ye apne aap tight ho
+      // jaata hai.
+      allow update, delete: if isAdmin() && (
+        !('instituteId' in resource.data) ||
+        resource.data.instituteId == adminInstituteId()
+      );
+
+      // ── Nested subcollection fix ──────────────────────────────────
+      // Test ke questions "tests/{id}/qchunks/{chunkId}" subcollection
+      // mein save hote hain (1MB doc-limit se bachne ke liye). Firestore
+      // rules mein har collection/subcollection ka apna alag match
+      // chahiye — upar wala "tests/{docId}" rule sirf test ke main doc
+      // par lagu hota hai, is nested subcollection par nahi. Isi wajah
+      // se pehle "Save Test Online" hamesha "Missing or insufficient
+      // permissions" ke saath fail ho raha tha aur test 0 questions par
+      // atka reh jaata tha.
+      match /qchunks/{chunkId} {
+        allow read: if isSignedIn();
+        allow write: if isAdmin() && (
+          !exists(/databases/$(database)/documents/tests/$(docId)) ||
+          sameInstOf(/databases/$(database)/documents/tests/$(docId))
+        );
+      }
+    }
+
+    // ── Admin-only working data (trash bin, drafts, chunks, keys) ──
+    // Inhe students ko kabhi dekhne/chhedne ki zaroorat nahi.
+    match /deletedQuestions/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Permanent record of question IDs that admin ne kabhi delete kiya —
+    // isse seed functions unhe dobara Firebase mein wapas nahi likhte,
+    // chahe Recycle Bin se "Delete Forever" bhi kyun na ho gaya ho.
+    match /seedExclusions/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /deletedTests/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /pdfDrafts/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /draftQuestions/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /qchunks/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // omrTemplates: admin ne khud "🎯 Naya Sheet Sikhayein" se train ki
+    // hui custom OMR sheet layouts — sirf admin panel scan/train karta
+    // hai, students ka isse koi lena-dena nahi, isliye admin-only.
+    match /omrTemplates/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // examManagerExams: OMR hub ke "🗂️ Exam Manager" section ke offline/
+    // paper exams (naam, answer key, scan-count, reports) — sirf admin
+    // banata/manage karta hai, students ka isse koi lena-dena nahi.
+    match /examManagerExams/{docId} {
+      // Institute-wise isolation: apna institute ke exams hi read/write
+      // ho sakte hain. Purane (migrate hone se pehle) instituteId-less
+      // docs par abhi bhi access hai, taaki koi turant lock-out na ho —
+      // pehli login par app khud unhe migrate kar deta hai (script.js,
+      // resolveCurrentAdminInstitute()).
+      allow read: if isAdmin() && (
+        !('instituteId' in resource.data) ||
+        resource.data.instituteId == adminInstituteId()
+      );
+      // Class Eligibility (v25): agar exam par classId lagi hai, to wo
+      // classId admin ke institute ki allowedClasses list mein honi
+      // chahiye — warna backend hi request reject kar deta hai (frontend
+      // par dropdown chhupana kaafi nahi hai, jaisa master-prompt rule
+      // 14 mein bataya gaya hai).
+      allow create: if isAdmin() && (
+        !('instituteId' in request.resource.data) ||
+        request.resource.data.instituteId == adminInstituteId()
+      ) && classAllowedForAdmin(
+        'classId' in request.resource.data ? request.resource.data.classId : null
+      );
+      allow update: if isAdmin() && (
+        !('instituteId' in resource.data) ||
+        resource.data.instituteId == adminInstituteId()
+      ) && (
+        !('instituteId' in request.resource.data) ||
+        request.resource.data.instituteId == adminInstituteId()
+      ) && classAllowedForAdmin(
+        'classId' in request.resource.data ? request.resource.data.classId : null
+      );
+      allow delete: if isAdmin() && (
+        !('instituteId' in resource.data) ||
+        resource.data.instituteId == adminInstituteId()
+      );
+
+      // scanPhotos subcollection: sharp (900px) scanned OMR photos, one
+      // doc per result — kept OUT of the parent exam doc so each photo
+      // gets its own independent 1MB Firestore budget instead of sharing
+      // the parent doc's 1MB across every result. Same nested-rule
+      // requirement as tests/{docId}/qchunks above — a parent match does
+      // NOT cover a subcollection.
+      match /scanPhotos/{resultId} {
+        allow read, write: if isAdmin() && sameInstOf(/databases/$(database)/documents/examManagerExams/$(docId));
+      }
+
+      // scanResults subcollection: one small doc per scanned OMR result
+      // (roll, marks, answers, thumb, etc.) — kept OUT of the parent exam
+      // doc's `results` array on purpose. Every scan used to append to
+      // that single array field via arrayUnion(), so the write got bigger
+      // and slower to process the longer a scanning session ran (session
+      // -duration slowdown, separate from the per-frame camera hang fixed
+      // above). One doc per result here means every scan's write stays
+      // the same small size no matter how long the session runs. Same
+      // nested-rule requirement as scanPhotos above — a parent match does
+      // NOT cover a subcollection.
+      match /scanResults/{resultId} {
+        allow read, write: if isAdmin() && sameInstOf(/databases/$(database)/documents/examManagerExams/$(docId));
+      }
+
+      // v230 roster subcollection: roster/main = { list:[{roll,name,mobile,set,classId}], nextRoll }
+      // Sirf admin — scan ke waqt roll no -> student match ke liye. Students ise nahi padhte
+      // (unhe sirf apna studentAdmitCards doc dikhta hai, neeche).
+      match /roster/{rid} {
+        allow read, write: if isAdmin() && sameInstOf(/databases/$(database)/documents/examManagerExams/$(docId));
+      }
+    }
+
+    // v231: Registration — test banne se pehle students register + roll shuffle + admit card.
+    // examManagerExams jaisa institute-wise isolation. Students ise nahi padhte
+    // (unhe sirf apna studentAdmitCards doc dikhta hai).
+    match /examRegistrations/{regId} {
+      allow read: if isAdmin() && (
+        !('instituteId' in resource.data) ||
+        resource.data.instituteId == adminInstituteId()
+      );
+      allow create: if isAdmin() && (
+        !('instituteId' in request.resource.data) ||
+        request.resource.data.instituteId == adminInstituteId()
+      );
+      allow update: if isAdmin() && (
+        !('instituteId' in resource.data) ||
+        resource.data.instituteId == adminInstituteId()
+      ) && (
+        !('instituteId' in request.resource.data) ||
+        request.resource.data.instituteId == adminInstituteId()
+      );
+      allow delete: if isAdmin() && (
+        !('instituteId' in resource.data) ||
+        resource.data.instituteId == adminInstituteId()
+      );
+
+      // roster/main = { list:[{name,mobile,classId,cls,group,roll?}], retired:[...] } — sirf admin
+      match /roster/{rid} {
+        allow read, write: if isAdmin() && sameInstOf(/databases/$(database)/documents/examRegistrations/$(regId));
+      }
+
+      // v232: students ki photo (240x300 jpeg data-URL) — roster doc ke 1MB budget se alag, sirf admin
+      match /photos/{pid} {
+        allow read, write: if isAdmin() && sameInstOf(/databases/$(database)/documents/examRegistrations/$(regId));
+      }
+    }
+
+    // v230: Admit Card — publish par har student ka ek doc (id = {examId}_{mobile}).
+    // studentScanReports jaisa trust model: padhna signed-in, likhna/mitana sirf admin
+    // aur sirf apne institute ke student ke liye.
+    match /studentAdmitCards/{docId} {
+      allow get, list: if isSignedIn() && (resource == null || canAccessStudentMobile(resource.data.get('mobile', '')));
+      allow create, update: if isAdmin() &&
+        'mobile' in request.resource.data &&
+        studentBelongsToAdmin(request.resource.data.mobile);
+      allow delete: if isAdmin() &&
+        (!('mobile' in resource.data) || studentBelongsToAdmin(resource.data.mobile));
+    }
+
+    // app_settings holds sensitive things like the Groq AI API key —
+    // admin-only, full stop.
+    match /app_settings/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Legacy admin-credentials doc (old hash-based system). Kept locked
+    // to admin only; safe to ignore/delete once migration is complete.
+    match /appSettings/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ── Student accounts & records ────────────────────────────────
+    // "students/{mobile}" ab sirf PUBLIC-ish profile info rakhta hai:
+    // naam, mobile, aur ek "hasPin" flag. Password hash / PIN hash
+    // yahan KABHI nahi jaate — wo neeche "studentSecrets" mein locked
+    // rehte hain. Isliye is doc ka simple isSignedIn() access theek hai.
+    // DELETE sirf admin kar sakta hai — isse accidental/malicious mass
+    // data-loss nahi ho sakta.
+    match /students/{mobile} {
+      allow get: if isSignedIn();
+      // v220: Owner ka Demo seed/reset — sirf isDemo==true docs
+      allow create, update: if isOwner() && request.resource.data.get('isDemo', false) == true;
+      allow list, delete: if isOwner() && resource.data.get('isDemo', false) == true;
+
+      // ⚠️ FIX (v134): pehle create sirf isSignedIn() tha — Join Code
+      // wale institute ke liye bhi, kyunki ye rule us feature se poori
+      // tarah anjaan tha. Ab: agar target institute ka
+      // requiresJoinCode true hai, to yahan ek verified
+      // instituteJoinCodeChecks/{mobile} doc (sahi code ke saath,
+      // 30 min ke andar) exist karna ZAROORI hai — warna create khud
+      // reject ho jaata hai, chahe client kuch bhi bheje.
+      allow create: if isSignedIn() && (isAdmin() || validRegistrationConsent(mobile)) && (
+        !instituteRequiresJoinCode(
+          ('instituteId' in request.resource.data) ? request.resource.data.instituteId : null
+        ) ||
+        joinCodeVerifiedForRegistration(mobile, request.resource.data.instituteId)
+      ) && instRegistrationOpen(
+        ('instituteId' in request.resource.data) ? request.resource.data.instituteId : null, mobile
+      );
+
+      // ⚠️ FIX (v133): pehle "update" poori tarah khula tha
+      // (isSignedIn()) — koi bhi signed-in (anonymous) visitor kisi
+      // bhi doosre student ka naam/institute/class seedha badal sakta
+      // tha, sirf uska mobile number jaan kar. Ab: bina-proof
+      // self-service update sirf in FIXED, non-identity fields tak
+      // simit hai (jo app ke sabhi current student-side flows —
+      // DP photo, Security PIN set, legacy-secret migration cleanup,
+      // daily streak — use karte hain). naam/instituteId/classId/
+      // mobile in mein NAHI hain, isliye koi bhi current student-flow
+      // yahan nahi tootta.
+      // Admin apne hi institute ke student ke liye ye sab (naam/
+      // institute/class/proof-fields samet) poori tarah badal sakta
+      // hai — jaise "Proof Update" form se.
+      allow update: if (
+        isAdmin() && studentBelongsToAdmin(mobile)
+      ) || (
+        isSignedIn() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'photoDataUrl', 'hasPin', 'hash', 'pinHash',
+          'streakCount', 'lastActiveDate'
+        ])
+      );
+
+      // ⚠️ FIX (v133): list ab admin ke apne institute (ya
+      // institute-less legacy students) tak simit hai — pehle koi
+      // bhi active admin PORE platform ke saare students (naam,
+      // mobile, class, sab institutes) ek saath list kar sakta tha.
+      allow list: if isAdmin() && (
+        resource.data.instituteId == null ||
+        resource.data.instituteId == adminInstituteId()
+      );
+
+      allow delete: if isAdmin() && studentBelongsToAdmin(mobile);
+    }
+
+    // ── Student secrets (password hash + Security PIN hash) ────────
+    // ══════════════════════════════════════════════════════════════
+    // SECURITY FIX: pehle hash/pinHash "students/{mobile}" doc mein
+    // hote the, jise koi bhi signed-in (anonymous bhi) client seedha
+    // `.get()` kar sakta tha — matlab jis kisi ko bhi student ka mobile
+    // number pata ho, wo uska password/PIN hash padh kar offline crack
+    // kar sakta tha, YA seedha `.set({hash: ...})` bulakar bina kuch
+    // proof diye hi password overwrite kar sakta tha. Yahi wo bug tha
+    // jiski wajah se "kisi ka bhi password koi bhi reset kar sakta tha
+    // agar uska number pata ho".
+    //
+    // FIX: is collection ko admin ke alawa kisi ke liye bhi `read`
+    // allowed nahi — student kabhi apna hash/pinHash seedha nahi
+    // padhta. Login aur "password bhool gaye" ab ek chhoti si WRITE
+    // attempt karte hain (sha256(entered password/PIN) ke saath), aur
+    // Firestore Rules khud, server-side, use stored hash se compare
+    // karti hain — sahi na ho to write reject (permission-denied) ho
+    // jaata hai. Isse secret kabhi client tak pahunchta hi nahi.
+    // ══════════════════════════════════════════════════════════════
+    match /studentSecrets/{mobile} {
+      // ⚠️ FIX (v133): admin ab sirf apne HI institute ke student ka
+      // password-hash/PIN-hash padh/reset/delete kar sakta hai — pehle
+      // koi bhi active admin, kisi bhi doosre institute ke student ka
+      // password yahan se reset karke uske account mein "ghus" sakta
+      // tha.
+      allow read: if !secretsLockdown() && isAdmin() && studentBelongsToAdmin(mobile);
+
+      // Registration (aur legacy-account migration) — pehli baar create.
+      allow create: if !secretsLockdown() && isSignedIn();
+
+      // FIX: registration pehle studentSecrets likhta hai, phir students doc. Agar beech me
+      // koi step fail ho gaya to "orphan" secret reh jaata tha, aur retry par .set() UPDATE
+      // ban kar permission-denied deta tha ("Registration fail hua"). Ab jab tak us mobile ka
+      // students/{mobile} doc exist hi nahi karta (account bana hi nahi), secret dobara likha ja sakta hai.
+      allow update: if !secretsLockdown() && isSignedIn() &&
+        !exists(/databases/$(database)/documents/students/$(mobile)) &&
+        request.resource.data.keys().hasOnly(['hash', 'pinHash', 'updatedAt']);
+
+      allow update: if !secretsLockdown() && ((isAdmin() && studentBelongsToAdmin(mobile)) ||
+        (
+          // (a) LOGIN proof: client bhejta hai lastLoginProof = sha256(entered
+          // password); tabhi accept hoga jab ye stored "hash" se match kare.
+          isSignedIn() &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLoginProof', 'lastLoginAt']) &&
+          request.resource.data.lastLoginProof == resource.data.hash
+        ) ||
+        (
+          // (b) Pehli baar Security PIN set karna — sirf tabhi jab abhi
+          // tak koi pinHash set na ho (isliye koi baad mein bina purana
+          // PIN jaane ise overwrite nahi kar sakta).
+          isSignedIn() &&
+          !('pinHash' in resource.data) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pinHash'])
+        ) ||
+        (
+          // (c) PASSWORD RESET via PIN: client bhejta hai naya "hash" +
+          // pinProof = sha256(entered PIN); tabhi accept hoga jab pinProof
+          // stored "pinHash" se match kare.
+          isSignedIn() &&
+          'pinHash' in resource.data &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hash', 'pinProof']) &&
+          request.resource.data.pinProof == resource.data.pinHash
+        ));
+
+      allow delete: if isAdmin() && studentBelongsToAdmin(mobile);
+    }
+
+    // ── PHASE 3: result privacy (switchable, default OFF = old behaviour) ──
+    // Owner Firebase Console me config/privacy = { recordsLockdown: true } karta hai tabhi nayi privacy lagu hoti hai.
+    // Rollback: us field ko false/delete kar do — rules dobara deploy karne ki zaroorat nahi.
+    function recordsLockdown() {
+      return exists(/databases/$(database)/documents/config/privacy) &&
+        get(/databases/$(database)/documents/config/privacy).data.get('recordsLockdown', false) == true;
+    }
+    function canReadRecord(d) {
+      return !recordsLockdown() || isOwner() || isAdmin() ||
+        (sessMobile() != null && (d.mobile == sessMobile() || (d.instituteId != null && isInstStudent(d.instituteId))));
+    }
+    // ── v283: "URL/ID badalkar doosre ka data" (IDOR) band karna ─────────────────────────────
+    // studentMistakes/{mobile}, studentScanReports (OMR photo samet), studentAdmitCards ka doc-id/field = student ka MOBILE.
+    // Pehle koi bhi signed-in visitor sirf mobile number badalkar kisi ka bhi data padh/likh sakta tha.
+    // Switch: config/privacy.studentDataLockdown = true  (default OFF => purana behaviour, kuch nahi tootta; rollback = false).
+    // ON hone par: student sirf APNA (sessMobile() == mobile) padh/likh sake; admin/owner pehle jaise.
+    function studentDataLockdown() {
+      return exists(/databases/$(database)/documents/config/privacy) &&
+        get(/databases/$(database)/documents/config/privacy).data.get('studentDataLockdown', false) == true;
+    }
+    function canAccessStudentMobile(m) {
+      return !studentDataLockdown() || isOwner() || isAdmin() || (sessMobile() != null && sessMobile() == m);
+    }
+    match /config/privacy {
+      allow read: if isSignedIn();
+      allow write: if isOwner();
+    }
+    match /studentRecords/{docId} {
+      // v220: Owner ka Demo seed/reset — sirf isDemo==true
+      allow create, update: if isOwner() && request.resource.data.get('isDemo', false) == true;
+      allow list, delete: if isOwner() && resource.data.get('isDemo', false) == true;
+      // v178: pehle koi bhi signed-in kisi bhi result ko BADAL sakta tha. Student sirf naya result BANATA hai (add);
+      //       update/delete sirf admin. Phase 3: padhna lockdown ON hone par sirf (apna result) ya (apne institute ka) ya admin/owner.
+      //       Client queries ko where(instituteId==...) / where(mobile==...) dena zaroori hai (records-lockdown.js ye khud karta hai).
+      allow get: if isSignedIn() && canReadRecord(resource.data);
+      allow list: if isSignedIn() && canReadRecord(resource.data);
+      allow create: if isSignedIn();
+      allow update: if isAdmin() && sameInstData(resource.data);
+      allow delete: if isAdmin() && sameInstData(resource.data);
+    }
+
+    // ── Scanned paper/OMR exam reports linked to a student ─────────
+    // Written by admin (Exam Manager → Report Detail → 🔗 Link to
+    // Student) when a scanned result's roll number is matched to a
+    // real student account. Student's "My Result" screen reads these
+    // by mobile — same read/write trust model as studentRecords above,
+    // but writes stay admin-only since linking is an admin action.
+    match /studentScanReports/{docId} {
+      allow get, list: if isSignedIn() && (resource == null || canAccessStudentMobile(resource.data.get('mobile', '')));
+
+      // ⚠️ FIX (v133): create/update/delete ab admin ke apne institute
+      // ke student tak simit hai (doc ke `mobile` field se check hota
+      // hai) — pehle koi bhi active admin kisi bhi doosre institute ke
+      // student ka scanned OMR result unse link/unlink/delete kar
+      // sakta tha.
+      allow create: if isAdmin() &&
+        'mobile' in request.resource.data &&
+        studentBelongsToAdmin(request.resource.data.mobile);
+      allow update: if isAdmin() &&
+        'mobile' in request.resource.data &&
+        studentBelongsToAdmin(request.resource.data.mobile);
+      allow delete: if isAdmin() &&
+        (!('mobile' in resource.data) || studentBelongsToAdmin(resource.data.mobile));
+    }
+
+    // ── My Mistakes (auto-collected wrong answers, per student) ────
+    // Doc id = student's mobile number. Same trust model as
+    // "students/{mobile}" above — any signed-in client can read/write
+    // its own or (in principle) another student's mistake list, but
+    // there's nothing sensitive here (just question text + answers
+    // already visible in the question bank). Delete stays admin-only.
+    match /studentMistakes/{mobile} {
+      // v283: studentDataLockdown ON => sirf apna mobile (ya admin/owner); OFF => purana behaviour.
+      allow get, create, update: if isSignedIn() && canAccessStudentMobile(mobile);
+      allow list: if isAdmin();
+      // ⚠️ FIX (v133): admin ke apne institute ke student tak simit.
+      allow delete: if isAdmin() && studentBelongsToAdmin(mobile);
+    }
+
+    // ── OWNER PANEL: institutes & their admins ─────────────────────
+    // Sirf owner in dono collections ko padh/likh sakta hai — koi
+    // admin (chahe apna hi record ho) inhe seedha nahi chhed sakta.
+    // Admin ki apni access `isAdmin()` ke andar wale `exists()`/`get()`
+    // check se hi tay hoti hai, is doc ko read kiye bina.
+    match /institutes/{instituteId} {
+      allow read, write: if isOwner();
+
+      // v25: Student Registration ke Institute+Class dropdown ke liye
+      // koi bhi signed-in (anonymous student bhi) institutes ki basic
+      // list (naam + allowedClasses) padh sake — isme koi sensitive
+      // data nahi hai (admin emails yahan kabhi nahi aate).
+      allow read: if isSignedIn();
+
+      // ── Legacy-admin self-migration ──────────────────────────────
+      // Purana admin (Owner Panel se nahi, seedha ADMIN_EMAILS list se
+      // aaya hua) ke paas koi instituteId nahi hoti. App khud (script.js,
+      // resolveCurrentAdminInstitute()) pehli login par uske liye ek
+      // institute record banata hai — taaki wo Owner Panel mein bhi
+      // dikhe aur uska purana data isolate ho sake. Sirf CREATE allowed
+      // hai (apna record ek baar banane ke liye), update/delete nahi —
+      // aur ID hamesha "legacy_" se shuru hona zaroori hai (Owner Panel
+      // ke ".add()" se bane real institute IDs kabhi is prefix se
+      // shuru nahi hote), taaki koi admin kisi real/doosre institute ko
+      // kabhi chhed na sake.
+      allow read: if isAdmin();
+      allow create: if isAdmin() && instituteId.matches('^legacy_.*');
+
+      // ── ADMIN apne institute ke fields (v223: ek hi rule me merge) ───
+      // Pehle har field ka alag `allow update` tha, aur har ek me isAdmin() +
+      // adminInstituteId() (exists/get) dobara chalta tha — Firestore ki 1000
+      // expressions ki seema paar ho jaati thi aur beech ke (Drive status wale)
+      // sahi update bhi mana ho jaate the. Ab bhaari jaanch SIRF EK baar chalti hai.
+      // Har field ki shart pehle jaisi hi hai; sabse pehle sasti field-set jaanch
+      // hoti hai, taaki student/doosre updates isAdmin() tak pahunche hi nahi.
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['logoDataUrl', 'youtubeChannelUrl', 'driveConnected', 'driveEmail', 'requiresJoinCode', 'storageUsedBytes', 'storageFiles']) &&
+        isAdmin() && instituteId == adminInstituteId() && (
+          // (a) v111: ID Card ka corner-logo — sirf `logoDataUrl`
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['logoDataUrl']) ||
+
+          // (a1) v217: YouTube channel link — sirf `youtubeChannelUrl`, sirf https youtube.com (ya khaali = hatao)
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['youtubeChannelUrl']) &&
+            request.resource.data.youtubeChannelUrl is string &&
+            (request.resource.data.youtubeChannelUrl == '' ||
+              (request.resource.data.youtubeChannelUrl.size() <= 200 &&
+               request.resource.data.youtubeChannelUrl.matches('^https://(www[.]|m[.])?youtube[.]com/.*')))) ||
+
+          // (a1b) v219: Drive STATUS — sirf driveConnected + driveEmail (token kabhi nahi)
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['driveConnected', 'driveEmail']) &&
+            request.resource.data.driveConnected is bool &&
+            request.resource.data.driveEmail is string &&
+            request.resource.data.driveEmail.size() <= 100 &&
+            (request.resource.data.driveConnected == true || request.resource.data.driveEmail == '') &&
+            (request.resource.data.driveEmail == '' || request.resource.data.driveEmail.matches('^[^@ ]+@[^@ ]+[.][^@ ]+$'))) ||
+
+          // (a2) v132: Join Code ka ON/OFF flag — sirf `requiresJoinCode` (asli code yahan kabhi nahi)
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['requiresJoinCode']) ||
+
+          // (a3) v174: storage-usage counter — sirf storageUsedBytes / storageFiles (soft limit, client-side counter)
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['storageUsedBytes', 'storageFiles'])
+        );
+
+      // (a4) v176: student registration counter — SIRF naya student banne ke saath (same batch me).
+      //      Counter +1 hi ho sakta hai, aur `lastRegMobile` wala student pehle exist nahi karna chahiye
+      //      par batch ke baad us institute ke naam se exist karna chahiye. Isliye counter bina student banaye
+      //      badhaya/ghataya nahi ja sakta. (Admin counter nahi chhed sakta; ghatne par Owner "Recount" karta hai.)
+      allow update: if isSignedIn() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['studentCount', 'lastRegMobile']) &&
+        request.resource.data.lastRegMobile is string &&
+        request.resource.data.get('studentCount', 0) == resource.data.get('studentCount', 0) + 1 &&
+        !exists(/databases/$(database)/documents/students/$(request.resource.data.lastRegMobile)) &&
+        existsAfter(/databases/$(database)/documents/students/$(request.resource.data.lastRegMobile)) &&
+        getAfter(/databases/$(database)/documents/students/$(request.resource.data.lastRegMobile)).data.instituteId == instituteId;
+
+      // (b) Har student ka ID Number ek institute-wide serial number
+      //     (studentSerialCounter) se banta hai — student ka apna client
+      //     hi (pehli baar registration/ID Card khulte waqt) ise ek
+      //     Firestore TRANSACTION mein +1 badhata hai. Isliye koi bhi
+      //     signed-in client (sirf apna institute nahi, koi bhi — kyunki
+      //     student ka apna instituteId yahan verify karne ka koi safe
+      //     tareeka nahi hai bina ek aur read ke) ise chhoo sakta hai,
+      //     PAR sirf ISI ek field ko, aur sirf pichle value se THEEK +1
+      //     karke — na kam, na zyada, na koi bhi random value. Isse
+      //     zyada se zyada koi doosre institute ka counter bewajah +1
+      //     kar sakta hai (koi sensitive data expose/corrupt nahi hota).
+      allow update: if isSignedIn() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['studentSerialCounter']) &&
+        request.resource.data.studentSerialCounter ==
+          (('studentSerialCounter' in resource.data) ? resource.data.studentSerialCounter : 0) + 1;
+      // ── v157: BATCH MANAGEMENT SYSTEM ─────────────────────────────
+      // institutes/{id}/batches/{batchId}  (+ items, members, auditLogs)
+      // WRITE: sirf us institute ka admin (instituteId == adminInstituteId()),
+      //        aur doc ke andar instituteId bhi wahi hona zaroori.
+      // READ : admin (apna institute) ya signed-in user SIRF published doc.
+      //        Draft/unpublished content students ko server-side se nahi milta.
+      // ⚠️ Students anonymous-auth hain, isliye "student X batch Y ka member hai"
+      //    rules me verify nahi ho sakta (app ka purana design) — batch/item IDs
+      //    random hain aur sirf published content readable hai.
+      // v220: Demo institute ka poora batch-tree (batch, items, members, ...) — Owner, sirf jab institute isDemo
+      match /batches/{batchId}/{rest=**} {
+        allow read, write: if isOwner() && isDemoInst(instituteId);
+      }
+      match /batches/{batchId} {
+        allow read, write: if isOwner() && isDemoInst(instituteId);
+      }
+      match /batches/{batchId} {
+        allow read: if isSignedIn() && (
+          (isAdmin() && instituteId == adminInstituteId()) ||
+          (resource.data.published == true &&
+            (!instStrict(instituteId) || isBatchMember(instituteId, batchId) || isInstStudent(instituteId))));
+        allow create: if isAdmin() && instituteId == adminInstituteId() &&
+          request.resource.data.instituteId == instituteId &&
+          request.resource.data.name is string && request.resource.data.name.size() <= 120;
+        allow update: if isAdmin() && instituteId == adminInstituteId() &&
+          request.resource.data.instituteId == instituteId;
+        allow delete: if isAdmin() && instituteId == adminInstituteId();
+
+        match /items/{itemId} {
+          allow read: if isSignedIn() && (
+            (isAdmin() && instituteId == adminInstituteId()) ||
+            (resource.data.published == true &&
+              (!instStrict(instituteId) || isBatchMember(instituteId, batchId))));
+          allow create, update: if isAdmin() && instituteId == adminInstituteId() &&
+            request.resource.data.instituteId == instituteId &&
+            request.resource.data.batchId == batchId &&
+            request.resource.data.title is string && request.resource.data.title.size() <= 200 &&
+            (!('url' in request.resource.data) || request.resource.data.url == '' ||
+              request.resource.data.url.matches('^https://.*')) &&
+            (!('liveUrl' in request.resource.data) || request.resource.data.liveUrl.matches('^https://.*')) &&
+            // v217: YouTube video ID — sirf 11 akshar (A-Z a-z 0-9 _ -)
+            (!('ytId' in request.resource.data) || (request.resource.data.ytId is string && request.resource.data.ytId.matches('^[A-Za-z0-9_-]{11}$')));
+          // liveUrl (doosri app ka live link) bhi sirf https
+          // (admin ne Go Live par daala; End Class par hat jaata hai)
+
+          allow delete: if isAdmin() && instituteId == adminInstituteId();
+          // v216: SnapLive ka chat/hands (live class) hata diya — ab live sirf YouTube link se.
+        }
+
+        // v218 Phase 2: catalog — published items ki chhoti list (koi link nahi). Admin likhe; student wahi padhe jo items padh sakta hai.
+        match /catalog/{cid} {
+          allow read: if isSignedIn() && (
+            (isAdmin() && instituteId == adminInstituteId()) ||
+            !instStrict(instituteId) || isBatchMember(instituteId, batchId));
+          allow create, update: if isAdmin() && instituteId == adminInstituteId() &&
+            request.resource.data.keys().hasOnly(['e', 'h', 'n', 'tot', 'updatedAt']) &&
+            request.resource.data.e is list && request.resource.data.e.size() <= 400;
+          allow delete: if isAdmin() && instituteId == adminInstituteId();
+        }
+        // Uploaded files (Storage band ho to Firestore chunks, max ~4MB)
+        match /files/{fid} {
+          allow read: if isSignedIn() && (
+            !instStrict(instituteId) || isBatchMember(instituteId, batchId) || (isAdmin() && instituteId == adminInstituteId()));
+          allow write: if isAdmin() && instituteId == adminInstituteId();
+          match /parts/{pid} {
+            allow read: if isSignedIn() && (
+              !instStrict(instituteId) || isBatchMember(instituteId, batchId) || (isAdmin() && instituteId == adminInstituteId()));
+            allow write: if isAdmin() && instituteId == adminInstituteId() &&
+              (request.method == 'delete' || request.resource.data.data.size() <= 700000);
+          }
+        }
+        // Student enrollment request: student sirf apni (doc id = mobile) pending request bana sakta hai;
+        // approve/reject/delete sirf admin.
+        match /requests/{mobile} {
+          allow get: if isSignedIn() && (!instStrict(instituteId) || sessMobile() == mobile || (isAdmin() && instituteId == adminInstituteId()));
+          allow list: if isAdmin() && instituteId == adminInstituteId();
+          allow create: if isSignedIn() && (!instStrict(instituteId) || (sessMobile() == mobile && isInstStudent(instituteId))) &&
+            request.resource.data.keys().hasOnly(['mobile', 'name', 'status', 'createdAt', 'amount', 'utr', 'shot']) &&
+            request.resource.data.mobile == mobile && request.resource.data.status == 'pending' &&
+            request.resource.data.name is string && request.resource.data.name.size() <= 80 &&
+            request.resource.data.createdAt == request.time &&
+            get(/databases/$(database)/documents/institutes/$(instituteId)/batches/$(batchId)).data.published == true &&
+            get(/databases/$(database)/documents/institutes/$(instituteId)/batches/$(batchId)).data.get('enrollment', 'request') != 'closed' &&
+            // Paid batch: amount batch ki fee ke barabar + UTR zaroori (free batch me payment fields nahi chahiye)
+            (get(/databases/$(database)/documents/institutes/$(instituteId)/batches/$(batchId)).data.get('fee', 0) == 0 ||
+              (request.resource.data.amount == get(/databases/$(database)/documents/institutes/$(instituteId)/batches/$(batchId)).data.fee &&
+               request.resource.data.utr is string && request.resource.data.utr.size() >= 6 && request.resource.data.utr.size() <= 30 &&
+               (!('shot' in request.resource.data) || request.resource.data.shot.size() <= 400000)));
+          allow update, delete: if isAdmin() && instituteId == adminInstituteId();
+        }
+        match /members/{mobile} {
+          allow get: if isSignedIn() && (!instStrict(instituteId) || sessMobile() == mobile || (isAdmin() && instituteId == adminInstituteId()));
+          allow list: if isAdmin() && instituteId == adminInstituteId();
+          allow create, update: if isAdmin() && instituteId == adminInstituteId() && studentBelongsToAdmin(mobile);
+          allow delete: if isAdmin() && instituteId == adminInstituteId();
+        }
+
+        // ── v168: Subjects -> Chapters (parent-child server-side validated) ──
+        match /subjects/{sid} {
+          allow read: if isSignedIn() && (
+            (isAdmin() && instituteId == adminInstituteId()) ||
+            (resource.data.status == 'active' && (!instStrict(instituteId) || isBatchMember(instituteId, batchId))));
+          allow create, update: if isAdmin() && instituteId == adminInstituteId() &&
+            request.resource.data.instituteId == instituteId && request.resource.data.batchId == batchId &&
+            request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 120 &&
+            request.resource.data.status in ['active', 'inactive'] &&
+            exists(/databases/$(database)/documents/institutes/$(instituteId)/batches/$(batchId));
+          allow delete: if isAdmin() && instituteId == adminInstituteId();
+
+          match /chapters/{cid} {
+            allow read: if isSignedIn() && (
+              (isAdmin() && instituteId == adminInstituteId()) ||
+              (resource.data.status == 'active' && (!instStrict(instituteId) || isBatchMember(instituteId, batchId))));
+            allow create, update: if isAdmin() && instituteId == adminInstituteId() &&
+              request.resource.data.instituteId == instituteId && request.resource.data.batchId == batchId &&
+              request.resource.data.subjectId == sid &&
+              request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 160 &&
+              request.resource.data.status in ['active', 'inactive'] &&
+              exists(/databases/$(database)/documents/institutes/$(instituteId)/batches/$(batchId)/subjects/$(sid));
+            allow delete: if isAdmin() && instituteId == adminInstituteId();
+          }
+        }
+
+        // ── v168: Doubts — PRIVATE: sirf strict mode me (asli student identity chahiye). Student sirf apne doubts; admin/teacher sab. ──
+        match /doubts/{did} {
+          allow read: if isSignedIn() && (
+            (isAdmin() && instituteId == adminInstituteId()) ||
+            (instStrict(instituteId) && isBatchMember(instituteId, batchId) && sessMobile() == resource.data.mobile));
+          allow create: if isSignedIn() && instStrict(instituteId) && isBatchMember(instituteId, batchId) &&
+            request.resource.data.keys().hasOnly(['instituteId', 'batchId', 'subjectId', 'subject', 'chapterId', 'chapter', 'mobile', 'name', 'text', 'img', 'status', 'createdAt']) &&
+            request.resource.data.instituteId == instituteId && request.resource.data.batchId == batchId &&
+            request.resource.data.mobile == sessMobile() && request.resource.data.status == 'open' &&
+            request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 2000 &&
+            (!('img' in request.resource.data) || request.resource.data.img.size() <= 350000) &&
+            request.resource.data.createdAt == request.time;
+          // admin/teacher: answer + status; student: sirf apna doubt "resolved" mark kar sakta hai
+          allow update: if isSignedIn() && (
+            (isAdmin() && instituteId == adminInstituteId()) ||
+            (instStrict(instituteId) && sessMobile() == resource.data.mobile &&
+              request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
+              request.resource.data.status == 'resolved'));
+          allow delete: if isAdmin() && instituteId == adminInstituteId();
+        }
+
+        // ── v168: Assignments + Submissions ──
+        match /assignments/{aid} {
+          allow read: if isSignedIn() && (
+            (isAdmin() && instituteId == adminInstituteId()) ||
+            (resource.data.published == true && (!instStrict(instituteId) || isBatchMember(instituteId, batchId))));
+          allow create, update: if isAdmin() && instituteId == adminInstituteId() &&
+            request.resource.data.instituteId == instituteId && request.resource.data.batchId == batchId &&
+            request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 200 &&
+            (!('url' in request.resource.data) || request.resource.data.url == '' || request.resource.data.url.matches('^https://.*'));
+          allow delete: if isAdmin() && instituteId == adminInstituteId();
+
+          match /submissions/{mobile} {
+            allow read: if isSignedIn() && (
+              (isAdmin() && instituteId == adminInstituteId()) ||
+              (instStrict(instituteId) && sessMobile() == mobile && isBatchMember(instituteId, batchId)));
+            // student: apni submission, evaluate hone se pehle tak badal sakta hai
+            allow create, update: if isSignedIn() && instStrict(instituteId) && sessMobile() == mobile && isBatchMember(instituteId, batchId) &&
+              request.resource.data.keys().hasOnly(['mobile', 'name', 'text', 'url', 'submittedAt', 'status']) &&
+              request.resource.data.mobile == mobile && request.resource.data.status == 'submitted' &&
+              request.resource.data.text is string && request.resource.data.text.size() <= 5000 &&
+              (!('url' in request.resource.data) || request.resource.data.url == '' || request.resource.data.url.matches('^https://.*')) &&
+              request.resource.data.submittedAt == request.time &&
+              (resource == null || resource.data.status != 'evaluated');
+            // admin/teacher: marks + feedback
+            allow update: if isAdmin() && instituteId == adminInstituteId();
+            allow delete: if isAdmin() && instituteId == adminInstituteId();
+          }
+        }
+
+        // ── v168: Progress (student apna "dekh liya" record) ──
+        match /progress/{mobile} {
+          allow read, write: if isSignedIn() && (
+            (isAdmin() && instituteId == adminInstituteId()) ||
+            (!instStrict(instituteId) && request.auth != null) ||
+            (instStrict(instituteId) && sessMobile() == mobile && isBatchMember(instituteId, batchId)));
+        }
+
+        // ── v168: Attendance — student apni haziri likhta hai; v field = rules khud batati hain ki identity verified thi ya nahi ──
+        match /attendance/{aid} {
+          allow read: if isAdmin() && instituteId == adminInstituteId();
+          allow create, update: if isSignedIn() &&
+            request.resource.data.keys().hasOnly(['mobile', 'name', 'itemId', 'joinedAt', 'v']) &&
+            request.resource.data.v == (sessMobile() == request.resource.data.mobile) &&
+            aid == request.resource.data.itemId + '_' + request.resource.data.mobile &&
+            (!instStrict(instituteId) || (sessMobile() == request.resource.data.mobile && isBatchMember(instituteId, batchId)));
+          allow delete: if isAdmin() && instituteId == adminInstituteId();
+        }
+
+        // ── v168: Batch ke saath jode gaye existing tests (reference) ──
+        match /testLinks/{lid} {
+          allow read: if isSignedIn() && (
+            (isAdmin() && instituteId == adminInstituteId()) ||
+            (!instStrict(instituteId) || isBatchMember(instituteId, batchId)));
+          allow create, update: if isAdmin() && instituteId == adminInstituteId() &&
+            request.resource.data.instituteId == instituteId && request.resource.data.batchId == batchId;
+          allow delete: if isAdmin() && instituteId == adminInstituteId();
+        }
+      }
+
+      // ── v168: Teachers (profile + assignments) — sirf us institute ka admin ──
+      match /teachers/{tid} {
+        allow read, write: if isAdmin() && instituteId == adminInstituteId() &&
+          (request.method == 'delete' || (request.resource.data.instituteId == instituteId &&
+            request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100));
+      }
+      match /auditLogs/{logId} {
+        allow read: if isAdmin() && instituteId == adminInstituteId();
+        allow create: if isAdmin() && instituteId == adminInstituteId();
+      }
+
+      // ── v157b: Payments (UPI QR, manual verify) ──────────────────
+      // batchSettings/payment: QR image + UPI ID — students ko dikhana hai (read signedIn), likhta sirf admin.
+      match /batchSettings/{docId} {
+        allow read: if isSignedIn() && (docId == 'security' || !instStrict(instituteId) || isInstStudent(instituteId) || (isAdmin() && instituteId == adminInstituteId()));
+        allow write: if isAdmin() && instituteId == adminInstituteId() &&
+          (!('qr' in request.resource.data) || request.resource.data.qr.size() <= 400000);
+      }
+      // payments: admin approve karte waqt record banta hai — sirf admin padh/likh sakta hai.
+      match /payments/{pid} {
+        allow read, create: if isAdmin() && instituteId == adminInstituteId();
+        allow update, delete: if false;
+      }
+
+      // ── v155: Notifications (admin -> students) ───────────────────
+      // institutes/{id}/notifications/{nid}: students read karte hain
+      // (signed-in), sirf us institute ka admin likh/delete kar sakta hai.
+      // Update allowed nahi — isliye "Naya test" auto-notification
+      // (doc id t_<testId>) ek test ke liye sirf ek baar bani rehti hai.
+      // v170 read-diet: institutes/{id}/ver/main — chhota "version" doc. Admin badlaav par number badalta hai, app sirf ye 1 doc padhkar
+      // faisla karta hai ki cache chalega ya data dobara padhna hai (reads bahut kam).
+      match /ver/{vid} {
+        allow read: if isSignedIn() && (!instStrict(instituteId) || isInstStudent(instituteId) || (isAdmin() && instituteId == adminInstituteId()));
+        allow create, update: if isAdmin() && instituteId == adminInstituteId();
+        allow delete: if false;
+      }
+
+      match /notifications/{nid} {
+        allow read: if isSignedIn() && (!instStrict(instituteId) || isInstStudent(instituteId) || (isAdmin() && instituteId == adminInstituteId()));
+        allow create: if isAdmin() && instituteId == adminInstituteId() &&
+          request.resource.data.keys().hasOnly(['type', 'testId', 'batchId', 'title', 'body', 'createdAt', 'createdBy']) &&
+          request.resource.data.title is string && request.resource.data.title.size() <= 100 &&
+          request.resource.data.body is string && request.resource.data.body.size() <= 500 &&
+          request.resource.data.createdAt == request.time;
+        allow delete: if isAdmin() && instituteId == adminInstituteId();
+      }
+    }
+
+    // ── Institute Join Code protection (v132) ──────────────────────
+    // ══════════════════════════════════════════════════════════════
+    // PROBLEM: Registration form mein student sirf ek dropdown se
+    // apna institute chun leta tha — koi bhi student, kisi bhi
+    // institute ka naam dekh kar, seedha usme "ghus" sakta tha, bina
+    // us institute se koi permission liye.
+    //
+    // FIX (bilkul studentSecrets/password wale pattern jaisa): asli
+    // code kabhi client ko `read` nahi hota — sirf isAdmin() (apne hi
+    // institute ke liye) ise dekh/badal sakta hai. Student jab
+    // register karta hai, wo apna guess ek ALAG throwaway collection
+    // (`instituteJoinCodeChecks`) mein CREATE karne ki koshish karta
+    // hai; Firestore Rules khud (server-side, `get()` se) us guess ko
+    // stored code se compare karti hain — sirf tabhi create allow
+    // hota hai jab match ho. Client ko kabhi asli code dikhta hi
+    // nahi, sirf pata chalta hai ki uska attempt "allow" hua ya
+    // "permission-denied" mila.
+    // ══════════════════════════════════════════════════════════════
+    // ── v168: studentSessions/{authUid} — is anonymous device-uid ko ek verified student-mobile se bandhta hai ──
+    // create/update tabhi jab client ka bheja `proof` (sha256 password) studentSecrets/{mobile}.hash se match kare (rules me check).
+    match /studentSessions/{uid} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid &&
+        request.resource.data.keys().hasOnly(['mobile', 'proof', 'at']) &&
+        request.resource.data.mobile is string && request.resource.data.proof is string &&
+        exists(/databases/$(database)/documents/studentSecrets/$(request.resource.data.mobile)) &&
+        request.resource.data.proof == get(/databases/$(database)/documents/studentSecrets/$(request.resource.data.mobile)).data.hash &&
+        request.resource.data.at == request.time;
+    }
+
+    match /instituteJoinCodes/{instituteId} {
+      allow read, write: if isOwner();
+      // Admin apne hi institute ka code set/badal/dekh sake (students
+      // ko dene ke liye) — kisi doosre institute ka nahi.
+      allow read, create, update: if isAdmin() && instituteId == adminInstituteId();
+    }
+
+    // ⚠️ FIX (v134): doc ID ab {checkId} (random) nahi, {mobile} hai —
+    // taaki students/{mobile} ka CREATE rule (upar) ise mobile se
+    // seedha, deterministically dhoondh sake aur verify kar sake ki
+    // ISI mobile ke liye, ISI institute ke liye, sahi code guess ho
+    // chuka hai. (create+update dono allow hain kyunki agar pehla
+    // registration attempt beech mein fail ho jaaye, to retry par
+    // doc pehle se exist karega — dono baar SAME code-match check
+    // lagta hai, isliye ek purana/galat doc dobara likhe bina naye
+    // sahi guess ke wapas "verified" nahi ban sakta.)
+    match /instituteJoinCodeChecks/{mobile} {
+      allow read, delete: if isOwner();
+      // Koi bhi signed-in client (anonymous student bhi) apna code
+      // "guess" yahan submit kar sakta hai — par create/update sirf
+      // tabhi safal hota hai jab woh guess us institute ke stored
+      // code se exactly match kare. Agar institute ne abhi tak koi
+      // code set hi nahi kiya (instituteJoinCodes doc exist nahi
+      // karta), to backward-compatibility ke liye check khud-ba-khud
+      // pass ho jaata hai — matlab jab tak admin khud apna code set na
+      // kare, uske institute ka registration pehle jaisa hi (bina code
+      // ke) chalta rehta hai.
+      allow create, update: if isSignedIn() &&
+        'instituteId' in request.resource.data &&
+        'codeAttempt' in request.resource.data &&
+        (
+          !exists(/databases/$(database)/documents/instituteJoinCodes/$(request.resource.data.instituteId)) ||
+          request.resource.data.codeAttempt ==
+            get(/databases/$(database)/documents/instituteJoinCodes/$(request.resource.data.instituteId)).data.code
+        );
+    }
+
+    // Doc ID = admin ka email address (isAdmin() function isi se
+    // seedha lookup karta hai — /admins/{unka-email}).
+    // ── Live presence (Owner dashboard: abhi kitne student/admin online) ──
+    // Har signed-in user sirf role + lastSeen (server time) + instituteId likh sakta hai. Sirf Owner padh sakta hai.
+    match /presence/{pid} {
+      allow read: if isOwner();
+      allow create, update: if isSignedIn() &&
+        pid.matches('^[sa]_[A-Za-z0-9]{3,40}$') &&
+        request.resource.data.keys().hasOnly(['role', 'lastSeen', 'instituteId']) &&
+        request.resource.data.role in ['student', 'admin'] &&
+        request.resource.data.lastSeen == request.time;
+      allow delete: if isOwner();
+    }
+
+    match /admins/{email} {
+      allow read, write: if isOwner();
+
+      // Admin apna khud ka record padh sake (apna instituteId maalum
+      // karne ke liye). Legacy admin (jiska record abhi tak hai hi
+      // nahi) ke liye khud bana/update bhi kar sakta hai — sirf apne
+      // hi email wale doc par, sirf "legacy_" institute ke saath, aur
+      // ek baar instituteId set hone ke baad khud se badal nahi sakta
+      // (privilege-escalation se bachne ke liye).
+      allow read: if isKnownAdminEmail() && request.auth.token.email == email;
+      allow create: if isAdmin() && request.auth.token.email == email &&
+        request.resource.data.instituteId.matches('^legacy_.*');
+      allow update: if isAdmin() && request.auth.token.email == email &&
+        resource.data.instituteId == request.resource.data.instituteId;
+    }
+
+    // ── OWNER PANEL: institute-removal OTP/confirm-link gate (v26) ──
+    // "Remove" ab seedha delete nahi karta — pehle ek pending-removal
+    // token yahan likha jaata hai, phir Owner ke registered email par
+    // ek confirm-link bheja jaata hai (Firebase Auth ka apna, free,
+    // signed/unforgeable email-link mechanism — bina kisi paid backend
+    // ke). Sirf jab wahi link wapas click karke verify ho, tabhi asli
+    // institute delete hota hai — isse ek galti se tap/refresh se koi
+    // institute turant hamesha ke liye nahi mit sakta.
+    match /ownerPendingRemovals/{token} {
+      allow read, write: if isOwner();
+    }
+
+    // ── v214: Question Reports (student → admin) ───────────────────
+    // Student test dauran galat question report karta hai (reason + message). Doc id = testId_qIndex_mobile,
+    // isliye ek student ek question ko ek hi baar report kar sakta hai (dobara create = update = student ke liye band).
+    // Admin sirf apne institute ke (ya purane instituteId-less) reports padh / resolve / delete kar sakta hai.
+    match /questionReports/{rid} {
+      allow create: if isSignedIn() &&
+        request.resource.data.keys().hasOnly(['testId', 'testTitle', 'instituteId', 'qIndex', 'qNumber', 'qText', 'reason', 'message', 'name', 'mobile', 'status', 'createdAt']) &&
+        request.resource.data.testId is string && request.resource.data.testId.size() > 0 && request.resource.data.testId.size() <= 120 &&
+        request.resource.data.instituteId is string && request.resource.data.instituteId.size() <= 120 &&
+        request.resource.data.testTitle is string && request.resource.data.testTitle.size() <= 200 &&
+        request.resource.data.qIndex is int && request.resource.data.qNumber is int &&
+        request.resource.data.qText is string && request.resource.data.qText.size() <= 400 &&
+        request.resource.data.reason is string && request.resource.data.reason.size() > 0 && request.resource.data.reason.size() <= 150 &&
+        request.resource.data.message is string && request.resource.data.message.size() >= 5 && request.resource.data.message.size() <= 1000 &&
+        request.resource.data.name is string && request.resource.data.name.size() <= 100 &&
+        request.resource.data.mobile is string && request.resource.data.mobile.size() >= 6 && request.resource.data.mobile.size() <= 15 &&
+        request.resource.data.status == 'open' &&
+        request.resource.data.createdAt == request.time;
+      allow read: if isAdmin() && resource.data.instituteId in [adminInstituteId(), ''];
+      allow update: if isAdmin() && resource.data.instituteId in [adminInstituteId(), ''] &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'resolvedAt']) &&
+        request.resource.data.status in ['open', 'resolved'];
+      allow delete: if isAdmin() && resource.data.instituteId in [adminInstituteId(), ''];
+    }
+
+    // ── Website enquiries (download.html registration form) ───────
+    // Koi bhi website se enquiry bhej sakta hai (sirf tay fields).
+    // Padhna / badalna / delete sirf Owner.
+    match /enquiries/{id} {
+      allow create: if request.resource.data.keys().hasOnly([
+          'ownerName','name','mobile','whatsapp','email','institute','city','district','state','pin',
+          'students','teachers','classes','medium','tagline','color','link','message','contactTime',
+          'status','source','createdAt','contacted'])
+        && request.resource.data.status == 'new'
+        && request.resource.data.mobile is string
+        && request.resource.data.mobile.matches('^[6-9][0-9]{9}$')
+        && request.resource.data.institute is string
+        && request.resource.data.institute.size() > 1
+        && request.resource.data.institute.size() <= 600;
+      allow read, update, delete: if isOwner();
+    }
+
+    // ── Website reviews (Owner app se approve / hide / pin / reply) ─
+    // Naya review hamesha pending hota hai. Site par sirf approved dikhte hain.
+    match /reviews/{id} {
+      allow create: if request.resource.data.keys().hasOnly([
+          'name','role','inst','institute','city','rating','text','date',
+          'status','show','pin','reply','source','createdAt'])
+        && request.resource.data.status == 'pending'
+        && request.resource.data.get('show', false) == false
+        && request.resource.data.get('pin', false) == false
+        && !('reply' in request.resource.data)
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.rating is number
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 400;
+      allow read: if resource.data.status == 'approved'
+        || isOwner();
+      allow update, delete: if isOwner();
+    }
+
+    // ── Default deny ──────────────────────────────────────────────
+    // Koi bhi collection jo upar explicitly list nahi hui, uska
+    // access poori tarah band. Ye "test mode" jaisi open-access
+    // galti se dobara hone se rokta hai.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

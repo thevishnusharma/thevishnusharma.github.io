@@ -1,0 +1,2363 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https: wss: blob: data:; frame-src 'self' https: blob: data:; worker-src 'self' blob: https://cdnjs.cloudflare.com; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<script src="safe-html.js"></script>
+<script src="perf-lite.js"></script>
+<script src="inline/index-inline-01.js"></script>
+<!-- v144: Android APK (Capacitor WebView) detect — website par kuch nahi badalta, sirf app me install button/popup chhupte hain
+     aur Back button app ke andar peeche jata hai. -->
+<script src="inline/index-inline-02.js"></script>
+<script src="app-bridge.js"></script>
+<script src="error-reporter.js?v=1"></script>
+<link rel="stylesheet" href="inline/index-inline-01.css">
+
+  <meta charset="UTF-8" />
+  <meta name="google-site-verification" content="HtcxjavFdH_XaiWe2j2akgwavPfXS9z3yjA63h-n2U8" />
+
+  <!-- ══════════════════════════════════════════════════════════════
+       AUTO HARD-REFRESH
+       ----------------------------------------------------------------
+       Jab bhi koi ye site pehli baar (naya tab/session) kholta hai,
+       ye script:
+         1) Sabhi purane Service Worker cache clear karta hai
+         2) Service Worker ko update ke liye kehta hai
+         3) Page ko ek fresh cache-busting URL (?_hr=timestamp) ke
+            saath reload karta hai — jisse browser purana disk-cache
+            HTML/JS/CSS use na kare aur hamesha latest version load ho.
+       sessionStorage flag ki wajah se ye sirf EK BAAR chalta hai
+       (naya tab/session per) — infinite reload loop nahi banega.
+       ══════════════════════════════════════════════════════════════ -->
+  <script src="inline/index-inline-03.js"></script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#dfe9ff" />
+  <!-- PERF FIX: splash-screen.jpg hi is page ka LCP (Largest Contentful
+       Paint) element hai, lekin <body> mein kaafi neeche (~165 lines)
+       likha hai. Preload karne se browser HTML parse hote hi (turant)
+       iski download shuru kar deta hai, us line tak pahunchne ka wait
+       kiye bina — LCP timing improve karta hai. -->
+  <link rel="preload" as="image" href="splash-screen.jpg" fetchpriority="high">
+  <link rel="stylesheet" href="inline/index-inline-02.css">
+  <script src="inline/index-inline-04.js"></script>
+  <title>The Vishnu Sharma — Smart Tests • Better Preparation • Better Results</title>
+  <meta name="description" content="Smart Tests • Better Preparation • Better Results by The Vishnu Sharma. Bilingual (Hindi/English) MCQ tests with result sheet, solution review and chapter-wise analysis." />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="The Vishnu Sharma — Smart Tests • Better Preparation • Better Results" />
+  <meta property="og:description" content="Practice tests, track your rank, and prepare smarter with The Vishnu Sharma." />
+  <meta property="og:image" content="https://thevishnusharma.github.io/icon-512.png" />
+  <meta property="og:url" content="https://thevishnusharma.github.io/" />
+  <link rel="canonical" href="https://thevishnusharma.github.io/" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="The Vishnu Sharma — Smart Tests • Better Preparation • Better Results" />
+  <meta name="twitter:description" content="Practice tests, track your rank, and prepare smarter with The Vishnu Sharma." />
+  <meta name="twitter:image" content="https://thevishnusharma.github.io/icon-512.png" />
+
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" href="icon-192.png" type="image/png" />
+
+  <!-- iOS: bina in tags ke "Add to Home Screen" sirf ek plain bookmark-
+       shortcut banata hai (Safari address-bar ke saath khulta hai).
+       Ye tags hone par woh proper full-screen standalone app ki tarah
+       khulta hai, apna alag icon/status-bar ke saath. -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="The Vishnu Sharma" />
+  <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
+  <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
+  <!-- iOS "Add to Home Screen" launch screen — bina iske iPhone/iPad
+       khud apna default (icon + white bg) launch screen banata hai.
+       Ye tag humari The Vishnu Sharma splash image ko hi seedha uss jagah use
+       karwata hai, taaki koi alag "icon wala" screen na dikhe. -->
+  <link rel="apple-touch-startup-image" href="splash-screen.jpg" />
+
+  <!-- Android/Chromium: purana tag hai lekin kuch launchers ab bhi
+       isko dekhte hain — manifest.webmanifest ke saath extra safety -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://securetoken.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- PERF FIX v127: styles.css (39 KiB) bhi ab non-render-blocking
+       hai — bilkul same print-media trick. Splash screen (neeche)
+       kam se kam ~900ms ke liye poori screen ko full-bleed image se
+       dhaanke rakhta hai, isliye is chhoti si window mein agar
+       styles.css thoda der se bhi aaye, user ko koi unstyled flash
+       kabhi dikhta hi nahi — splash hatne tak CSS already load ho
+       chuki hoti hai. Safety-net ke taur par ek chhota inline
+       ".hidden" rule bhi diya hai (neeche <style> mein) taaki agar
+       kisi bahut hi slow connection par CSS abhi tak na aayi ho, tab
+       bhi modals/hidden panels galti se visible na ho jaayein. -->
+  <link rel="stylesheet" href="inline/index-inline-03.css">
+  <!-- PERF FIX v126: Google Fonts + theme-picker.css pehle render-
+       blocking the (font stylesheet ek external round-trip + parse,
+       theme-picker.css ek extra 12 KiB, dono first-paint se pehle
+       zaroori ho gaye the). Same print-media trick jo creative-
+       dashboard/exam-manager/id-card CSS ke liye already use ho raha
+       hai — ab yeh bhi non-blocking hain, first paint fonts/theme ka
+       wait nahi karta (already-loaded system font se turant dikhta
+       hai, font/theme aane par seamlessly switch ho jaata hai). -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Cinzel:wght@700&display=swap" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="styles.css?v=10" media="print" onload="this.media='all';window.__stylesReady=1" onerror="this.media='all';window.__stylesReady=1">
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Cinzel:wght@700&display=swap">
+    <link rel="stylesheet" href="styles.css?v=10">
+  </noscript>
+  <!-- PERF FIX: yeh 3 CSS files sirf Admin/Owner-side panels
+       (Creative Dashboard cards, Exam Manager, ID Card generator) ke
+       liye hain — jo student ke normal login/test-taking screen par
+       kabhi dikhte hi nahi (hidden panels, sirf admin login ke baad
+       navigate karne par visible hote hain). Pehle yeh teeno bhi
+       render-blocking the (~41 KiB extra CSS parse initial paint se
+       pehle). Print-media trick se non-render-blocking bana diya —
+       jab tak admin us panel par jaaye, tab tak yeh already load ho
+       chuki hoti hain. -->
+  <link rel="stylesheet" href="creative-dashboard.css?v=2" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="exam-manager.css?v=5" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="id-card.css?v=2" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="app-ui.css?v=10" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="batch-system.css?v=1">
+  <noscript>
+    <link rel="stylesheet" href="creative-dashboard.css?v=2">
+    <link rel="stylesheet" href="exam-manager.css?v=5">
+    <link rel="stylesheet" href="id-card.css?v=2">
+  </noscript>
+  
+  <!-- PERF FIX v2: 8 heavy CDN libraries (chart/OCR/excel/pdf/word-
+       export/confetti/katex, ~1MB+ combined) pehle yahan "defer" ke
+       saath register thi. Ab yahan koi CDN <script> tag register nahi
+       hoti — inko TRUE on-demand load kiya jaata hai, matlab jab tak
+       student/admin actual feature (Scan-Sheet OCR / Export Excel-PDF-
+       Word / Chart / Math question / results confetti) use na kare,
+       tab tak yeh download hi nahi hoti. Loader utility
+       (window.__ensureLib) </body> se pehle define hai; har library ke
+       real use-point par call kiya gaya hai (upgrade.js,
+       exam-manager.js, omr.js, student-features.js, aur math-render
+       code). Normal PageSpeed audit (jisme koi button click nahi
+       hota) mein yeh 8 libraries bilkul load hi nahi hoti — TBT par
+       zero asar. -->
+  <!-- KaTeX CSS: print-media trick se non-render-blocking bana diya. -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css"></noscript>
+  <link rel="stylesheet" href="liquid-glass.css?v=1">
+  <link rel="stylesheet" href="smooth-ui.css?v=1">
+</head>
+<body>
+
+<!-- ═══════════════════════ SPLASH SCREEN ═══════════════════════
+     App open hote hi ye full-screen splash image sabse pehle dikhti
+     hai, phir kuch second baad khud fade-out ho ke home screen dikha
+     deti hai. Isse hata na jaaye — sirf image (splash-screen.jpg) ya
+     duration change karni ho to neeche ka JS timing (2200ms) badlein. -->
+<div id="app-splash-screen" style="position:fixed;inset:0;z-index:99999;background:#060513;display:flex;align-items:center;justify-content:center;transition:opacity .5s ease;">
+  <img src="splash-screen.jpg" alt="The Vishnu Sharma" fetchpriority="high" style="width:100%;height:100%;object-fit:cover;" />
+</div>
+<script src="inline/index-inline-05.js"></script>
+
+<!-- ═══════════════════════ HOME SCREEN ═══════════════════════ -->
+<div id="home-screen">
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="logo-area">
+      <img src="snaptestpro-logo.png" alt="The Vishnu Sharma" class="logo-img" />
+      <div>
+        <h1 class="site-title">The Vishnu Sharma</h1>
+        <div class="site-sub">Smart Tests • Better Preparation • Better Results</div>
+      </div>
+    </div>
+    <nav class="main-tabs" aria-label="Main navigation">
+      <button id="student-tab" class="tab active">📝 Student</button>
+      <button id="admin-tab" class="tab">⚙️ Admin</button>
+      <button id="install-app-btn" class="tab" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;">⬇️ Student/Admin App Install</button>
+      <!-- Owner install button yahan se hata diya gaya hai (public header
+           mein Student/Admin ko ye button dikhna nahi chahiye tha). Owner
+           app ab bhi bilkul pehle jaisa kaam karta hai — bas iska link ab
+           public nav mein advertise nahi hota. Owner seedha owner-app.html
+           URL (ya Admin Panel → Settings → "Owner Panel Kholein") se hi
+           access kare. -->
+    </nav>
+  </header>
+
+  <!-- Universal "Install App" popup — har device/browser ke liye, har visit par dikhta hai jab tak app installed na ho -->
+  <div id="app-install-modal" class="hidden" style="position:fixed;inset:0;background:rgba(15,15,30,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:#fff;border-radius:16px;max-width:380px;width:100%;padding:22px 20px;box-shadow:0 12px 40px rgba(0,0,0,.3);text-align:center;">
+      <div style="font-size:2.4rem;line-height:1;margin-bottom:8px;">📲</div>
+      <h3 role="heading" aria-level="2" style="margin:0 0 8px;color:#1e1b4b;font-size:1.1rem;">The Vishnu Sharma App Install Karein</h3>
+      <p id="app-install-modal-text" style="margin:0 0 16px;color:#374151;font-size:.9rem;line-height:1.5;"></p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button id="app-install-modal-action-btn" type="button" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:10px;padding:10px 20px;font-weight:600;cursor:pointer;font-size:.9rem;">⬇️ Install Karein</button>
+        <button type="button" onclick="dismissAppInstallModal()" style="background:#f3f4f6;color:#374151;border:none;border-radius:10px;padding:10px 20px;cursor:pointer;font-size:.9rem;">Baad Mein</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="main-wrap">
+
+    <!-- ── STUDENT AUTH (Register / Login / Forgot Password) ── -->
+    <div id="student-auth-screen" class="hidden">
+      <div class="card hero-card">
+        <h2 class="section-title">🎓 Student Account</h2>
+
+        <div class="mode-btns">
+          <button id="student-login-mode-btn" type="button" class="mode-btn active">🔑 Login</button>
+          <button id="student-register-mode-btn" type="button" class="mode-btn">📝 Register</button>
+        </div>
+
+        <!-- LOGIN -->
+        <form id="student-login-form" autocomplete="off">
+          <div class="field-row">
+            <label for="login-mobile">WhatsApp / Mobile Number</label>
+            <input id="login-mobile" type="tel" placeholder="jaise: 9876543210" required />
+          </div>
+          <div class="field-row">
+            <label for="login-password">Password</label>
+            <input id="login-password" type="password" placeholder="Password" required />
+          </div>
+          <button type="submit" class="btn-primary">Login</button>
+          <button type="button" id="student-forgot-link" style="background:none;border:none;color:#2563eb;text-decoration:underline;cursor:pointer;margin-top:10px;font-size:.85rem;display:block;">Password bhool gaye?</button>
+        </form>
+
+        <!-- REGISTER -->
+        <form id="student-register-form" class="hidden" autocomplete="off">
+          <div class="field-row">
+            <label for="register-name">Name</label>
+            <input id="register-name" type="text" placeholder="Apna naam likhein" required />
+          </div>
+          <div class="field-row">
+            <label for="register-mobile">WhatsApp / Mobile Number</label>
+            <input id="register-mobile" type="tel" placeholder="jaise: 9876543210" required />
+          </div>
+          <div class="field-row">
+            <label for="register-password">Password</label>
+            <input id="register-password" type="password" placeholder="Kam se kam 4 characters" required />
+          </div>
+          <div class="field-row">
+            <label for="register-password-confirm">Confirm Password</label>
+            <input id="register-password-confirm" type="password" placeholder="Password dobara likhein" required />
+          </div>
+          <div class="field-row">
+            <label for="register-pin">Security PIN (4 digit)</label>
+            <input id="register-pin" type="password" inputmode="numeric" maxlength="4" placeholder="jaise: 4517 — password bhool jaane par ye chahiye hoga" required />
+          </div>
+          <div class="field-row">
+            <label for="register-institute">Institute</label>
+            <select id="register-institute" onchange="onRegisterInstituteChange()">
+              <option value="">— Select Karein —</option>
+            </select>
+          </div>
+          <div class="field-row hidden" id="register-institute-code-row">
+            <label for="register-institute-code">Institute Join Code</label>
+            <input id="register-institute-code" type="text" placeholder="Apne institute se lein" maxlength="20" style="text-transform:uppercase;" />
+          </div>
+          <div class="field-row">
+            <label for="register-class">Class</label>
+            <select id="register-class">
+              <option value="">— Pehle Institute select karein —</option>
+            </select>
+          </div>
+          <div class="field-row" style="display:flex;gap:10px;align-items:flex-start">
+            <input id="register-legal-consent" type="checkbox" required style="margin-top:4px;min-width:18px">
+            <label for="register-legal-consent" style="font-weight:400">Main <a href="/terms.html" target="_blank" rel="noopener">Terms</a> aur <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> padhkar unse sehmat hoon.</label>
+          </div>
+          <div class="field-row" style="display:flex;gap:10px;align-items:flex-start">
+            <input id="register-guardian-consent" type="checkbox" required style="margin-top:4px;min-width:18px">
+            <label for="register-guardian-consent" style="font-weight:400">Main 18+ hoon, ya mere parent/guardian ne mere account aur data use ki permission di hai.</label>
+          </div>
+          <button type="submit" class="btn-primary">Register</button>
+        </form>
+        <p class="muted-text" style="margin-top:14px;text-align:center">Account/data deletion ke liye <a href="/delete-account.html">yahan dekhein</a> · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a></p>
+
+        <!-- FORGOT PASSWORD -->
+        <form id="student-forgot-form" class="hidden" autocomplete="off">
+          <div class="field-row">
+            <label for="forgot-mobile">WhatsApp / Mobile Number</label>
+            <input id="forgot-mobile" type="tel" placeholder="jaise: 9876543210" required />
+          </div>
+          <div class="field-row">
+            <label for="forgot-pin">Security PIN (4 digit)</label>
+            <input id="forgot-pin" type="password" inputmode="numeric" maxlength="4" placeholder="Registration ke waqt daala hua PIN" required />
+          </div>
+          <div class="field-row">
+            <label for="forgot-new-password">Naya Password</label>
+            <input id="forgot-new-password" type="password" placeholder="Kam se kam 4 characters" required />
+          </div>
+          <div class="field-row">
+            <label for="forgot-new-password-confirm">Naya Password (dobara)</label>
+            <input id="forgot-new-password-confirm" type="password" placeholder="Password dobara likhein" required />
+          </div>
+          <button type="submit" class="btn-primary">Reset Password</button>
+          <button type="button" id="student-forgot-back-link" style="background:none;border:none;color:#2563eb;text-decoration:underline;cursor:pointer;margin-top:10px;font-size:.85rem;display:block;">← Login par wapas jaayein</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── STUDENT FORM ── -->
+    <form id="student-form" class="hidden" autocomplete="off">
+      <!-- ── CREATIVE STUDENT DASHBOARD HOME ── -->
+      <button type="button" id="student-back-btn" class="hidden" onclick="backToStudentDashboard()" style="display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #c7d2fe;color:#4338ca;font-weight:700;border-radius:999px;padding:9px 18px;margin-bottom:14px;cursor:pointer;font-size:.85rem;">← Dashboard par wapas</button>
+
+      <div class="cd-wrap" id="student-dashboard-home">
+        <div class="cd-hero">
+          <div class="cd-hero-text">
+            <h2>Hi <span id="cd-student-name">Student</span> 👋</h2>
+            <p>Mock tests dein aur apni taiyari badhayein. 🏆</p>
+          </div>
+      <div class="cd-hero-emoji" aria-hidden="true">🎯</div>
+        </div>
+
+        <!-- Sirf admin ko dikhta hai (jab wo isi browser mein admin bhi login hai) —
+             taaki student view check karne ke baad ek click mein wapas Admin panel
+             mein ja sake. Normal students ko ye link kabhi nahi dikhta. -->
+        <button type="button" id="back-to-admin-link" class="hidden" onclick="showMode('admin')"
+          style="display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #fbbf24;color:#92400e;font-weight:700;border-radius:999px;padding:7px 16px;margin:-6px 0 14px;cursor:pointer;font-size:.8rem;width:fit-content;">
+          ⚙️ Admin Panel par wapas
+        </button>
+
+        <div id="cd-podium-wrap"></div>
+
+        <!-- v130: agar student ka koi test (Practice/Weak Practice/Re-attempt
+             ya normal Start Test) beech mein chhoot gaya ho, yahan "Resume"
+             banner dikhta hai — renderResumeBanner() (script.js) isko bharta
+             hai. Practice-type tests test list mein show nahi hote isliye
+             unke liye yeh banner hi sirf jagah hai jahan resume option milta hai. -->
+        <div id="resume-exam-banner"></div>
+
+        <div class="cd-section-title">Practice</div>
+        <div class="cd-grid">
+          <button type="button" class="cd-card cd-blue" onclick="goStudentSection('student-form-fields-anchor')">
+            <div class="cd-card-top"><div class="cd-icon-circle">🚀</div><span class="cd-badge">Start</span></div>
+            <div class="cd-card-title">Start Test</div>
+            <div class="cd-card-sub">Naya test attempt karein</div>
+            <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+          </button>
+
+          <button type="button" class="cd-card cd-green" onclick="goStudentSection('practice-mode-card')">
+            <div class="cd-card-top"><div class="cd-icon-circle">🎯</div><span class="cd-badge">No Timer</span></div>
+            <div class="cd-card-title">Practice Mode</div>
+            <div class="cd-card-sub">Bina pressure ke practice karein</div>
+            <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+          </button>
+
+          <button type="button" class="cd-card cd-purple" onclick="goStudentSection('student-results-card')">
+            <div class="cd-card-top"><div class="cd-icon-circle">📊</div><span class="cd-badge">Rank</span></div>
+            <div class="cd-card-title">Result Sheet</div>
+            <div class="cd-card-sub">Sabhi students ka result</div>
+            <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+          </button>
+
+          <button type="button" class="cd-card cd-indigo" onclick="goStudentSection('my-result-detail-card')">
+            <div class="cd-card-top"><div class="cd-icon-circle">🧾</div><span class="cd-badge">Sahi/Galat</span></div>
+            <div class="cd-card-title">Mera Result</div>
+            <div class="cd-card-sub">Apna detailed result dekhein</div>
+            <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+          </button>
+
+          <button type="button" class="cd-card cd-teal" onclick="goStudentSection('my-progress-card')">
+            <div class="cd-card-top"><div class="cd-icon-circle">📈</div><span class="cd-badge">Trend</span></div>
+            <div class="cd-card-title">My Progress</div>
+            <div class="cd-card-sub">Score trend dekhein</div>
+            <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+          </button>
+
+          <button type="button" class="cd-card cd-orange" onclick="goStudentSection('my-mistakes-card')">
+            <div class="cd-card-top"><div class="cd-icon-circle">❌</div><span class="cd-badge">Revise</span></div>
+            <div class="cd-card-title">My Mistakes</div>
+            <div class="cd-card-sub">Galat sawaal dobara practice karein</div>
+            <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+          </button>
+
+          <button type="button" class="cd-card cd-gold" onclick="goStudentSection('student-settings-card')">
+            <div class="cd-card-top"><div class="cd-icon-circle">⚙️</div><span class="cd-badge">Account</span></div>
+            <div class="cd-card-title">Settings</div>
+            <div class="cd-card-sub">Profile aur logout</div>
+            <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+          </button>
+
+          <button type="button" class="cd-card cd-pink" onclick="goStudentSection('student-solids-lab-card')">
+            <div class="cd-card-top"><div class="cd-icon-circle">📐</div><span class="cd-badge">3D</span></div>
+            <div class="cd-card-title">Solids Lab</div>
+            <div class="cd-card-sub">Surface Area/Volume ghumaa kar seekhein</div>
+            <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+          </button>
+
+        </div>
+
+        <div class="cd-promo">
+          <div class="cd-promo-text">
+            <h3>Daily Practice</h3>
+            <p>Curated daily practice se apna score boost karein.</p>
+            <button type="button" class="cd-promo-btn" onclick="goStudentSection('practice-mode-card')">Explore →</button>
+          </div>
+          <div class="cd-promo-icon">📅</div>
+        </div>
+      </div>
+
+      <div class="card hero-card hidden" id="student-form-fields-anchor">
+        <h2 class="section-title">🎯 Start Your Test</h2>
+
+        <div class="field-row" style="display:none">
+          <label for="student-name">Name</label>
+          <input id="student-name" type="text" placeholder="Apna naam likhein" required />
+        </div>
+        <div class="field-row" style="display:none">
+          <label for="student-mobile">WhatsApp Number <span style="color:#ef4444">*</span></label>
+          <input id="student-mobile" type="tel" placeholder="jaise: 9876543210" required />
+        </div>
+
+        <!-- Legacy dropdown — hidden, ab bhi kuch internal JS isse reference karta
+             hai, isliye DOM mein rakha hai taaki kuch tootne na paaye. Student ko
+             ab isme se select nahi karna padta — neeche card list se seedha
+             test start hota hai. -->
+        <div id="saved-test-fields" class="hidden">
+          <div class="field-row">
+            <label for="test-select">Select Test</label>
+            <select id="test-select"></select>
+          </div>
+        </div>
+        <button id="student-submit" type="submit" class="hidden">Start Test →</button>
+
+        <!-- Category filter chips (jaise "All", "Percentage (6)") -->
+        <div id="test-category-tabs" class="test-tabs-row"></div>
+
+        <!-- Card-style test list -->
+        <div id="test-cards-list" class="test-cards-list"></div>
+      </div>
+
+      <!-- ── 3D Solids Lab (v125) — Surface Area/Volume ke solids
+           interactively banaiye, ghumaiye, cut karke andar dekhein.
+           React+Three.js widget hai, __ensureLib se lazy load hota
+           hai (goStudentSection wiring script.js mein). ── -->
+      <div class="card hidden" id="student-solids-lab-card">
+        <h3 class="section-title">📐 3D Solids Lab</h3>
+        <p class="muted-text">Cylinder, cone, sphere, cuboid jaise solids banayein, ghumayein aur kaat kar andar dekhein — Volume/Surface Area formula turant dikhega.</p>
+        <div id="solids-lab-mount-student" class="solids-lab-root"></div>
+      </div>
+
+      <div class="card hidden" id="student-settings-card">
+        <h3 class="section-title">⚙️ Settings</h3>
+
+        <!-- ── Student ID Card (v111) ────────────────────────────────
+             Ek asli institute ID card jaisa dikhta hai — Naam, ID
+             Number (Institute-code+Serial No), Class, Academic Session
+             (live-calculated), Issue Date, aur "Owner of Institute"
+             signature — dono corner-logo Admin ke uploaded institute
+             logo se aate hain (id-card.js → renderStudentIdCard).
+             Beech ki photo student khud upload/badal sakta hai — turant
+             online (Firestore) save ho jaati hai, aur Admin ke Students
+             Directory ke "🪪 Profile" mein bhi wahi photo turant dikhne
+             lagti hai (dono ek hi field — students/{mobile}.photoDataUrl
+             — use karte hain). Default mein ye photo khaali (blank)
+             rehti hai jab tak student khud na lagaye. -->
+        <div class="idcard-outer" id="student-idcard-outer">
+          <div class="idcard">
+            <div class="idcard-header">
+              <div class="idcard-header-left">
+                <div class="idcard-logo-circle">
+                  <img id="idcard-inst-logo-left-img" src="" alt="" style="display:none;" />
+                  <span id="idcard-inst-logo-left-fallback" class="idcard-logo-fallback">🏫</span>
+                </div>
+                <div class="idcard-header-text">
+                  <div class="idcard-inst-name" id="idcard-inst-name">Loading...</div>
+                  <div class="idcard-subtitle">Student ID Card</div>
+                </div>
+              </div>
+              <div class="idcard-logo-badge">
+                <img id="idcard-inst-logo-right-img" src="" alt="" style="display:none;" />
+                <span id="idcard-inst-logo-right-fallback" class="idcard-logo-fallback">🏫</span>
+              </div>
+            </div>
+
+            <div class="idcard-body">
+              <div class="idcard-photo-col">
+                <label for="student-dp-photo-input" class="idcard-photo-frame" title="Photo lagayein/badlein">
+                  <img id="student-dp-preview" src="" alt="Student Photo" style="display:none;" />
+                  <div id="student-dp-placeholder" class="idcard-photo-placeholder">
+                    <span class="idcard-photo-icon">📷</span>
+                    <span class="idcard-photo-text">Photo Lagayein</span>
+                  </div>
+                </label>
+                <input type="file" id="student-dp-photo-input" accept="image/*" style="display:none;" onchange="handleStudentDpPhotoChange(event)" />
+                <p id="student-dp-photo-status" class="idcard-photo-status"></p>
+              </div>
+              <div class="idcard-fields">
+                <div class="idcard-field"><span class="idcard-label">Name:</span> <span class="idcard-value" id="student-dp-name">-</span></div>
+                <div class="idcard-field"><span class="idcard-label">ID Number:</span> <span class="idcard-value" id="idcard-id-number">-</span></div>
+                <div class="idcard-field"><span class="idcard-label">Class:</span> <span class="idcard-value" id="idcard-class">-</span></div>
+                <div class="idcard-field"><span class="idcard-label">Academic Session:</span> <span class="idcard-value" id="idcard-session">-</span></div>
+              </div>
+            </div>
+
+            <div class="idcard-footer">
+              <div class="idcard-issue">
+                <div class="idcard-footer-label">Issue Date</div>
+                <div class="idcard-footer-value" id="idcard-issue-date">-</div>
+              </div>
+              <div class="idcard-signature">
+                <div class="idcard-sign-script" id="idcard-sign-name">-</div>
+                <div class="idcard-sign-label">Owner of Institute</div>
+              </div>
+            </div>
+          </div>
+          <!-- Mobile number ab card par nahi dikhta (ID card design mein
+               jagah/zaroorat nahi thi), lekin internal JS (populateStudentFormFromSession)
+               ise abhi bhi set karta hai — isliye field hidden rakha hai, hataya nahi. -->
+          <div id="student-dp-mobile" style="display:none;">-</div>
+        </div>
+
+        <div id="student-welcome-bar" style="display:flex;align-items:center;justify-content:space-between;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px 14px;margin-bottom:14px;">
+          <span>👋 <strong id="student-welcome-name"></strong> <span id="student-streak-badge" style="display:none;background:#fff7ed;border:1px solid #fdba74;color:#c2410c;border-radius:999px;padding:2px 10px;font-size:.78rem;font-weight:700;margin-left:6px;"></span></span>
+        </div>
+
+        <button type="button" id="student-logout-btn" class="btn-secondary" style="color:#dc2626;border-color:#fecaca;">🚪 Logout</button>
+
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid #e2e8f0;">
+          <h4 style="margin:0 0 6px;font-size:.92rem;">🔔 Notifications</h4>
+          <p class="muted-text" style="margin-top:0;">Naya test aate hi notification milega. Nahi chahiye to yahan se band karein.</p>
+          <button type="button" id="push-notify-toggle-btn" class="btn-secondary" onclick="window.SavyaPush && window.SavyaPush.toggle()">🔔 Notifications On Karein</button>
+          <p id="push-notify-status" class="muted-text" style="margin-top:8px;font-size:.8rem;"></p>
+        </div>
+      </div>
+
+      <div class="card hidden" id="student-results-card">
+        <h3 class="section-title">📊 Result Sheet</h3>
+        <p class="muted-text">Apne test ka rank aur marks dekhein — sabhi students ka result ek hi sheet mein.</p>
+        <div class="field-row">
+          <label for="result-test-select">Select Test</label>
+          <select id="result-test-select">
+            <option value="">— Test chunein —</option>
+          </select>
+        </div>
+        <div id="student-result-sheet" class="board-result-sheet-wrap"></div>
+      </div>
+
+      <div class="card hidden" id="my-result-detail-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <h3 class="section-title" style="margin-bottom:0;">🧾 Mera Result — Sahi/Galat Dekhein</h3>
+          <button type="button" id="my-result-refresh-btn" class="btn-secondary" style="font-size:.78rem;padding:5px 12px;">🔄 Refresh</button>
+        </div>
+        <p class="muted-text">Aapke diye har test (online, OMR ya offline) mein kaun sa sawaal sahi hua aur kaun sa galat — yahan apne aap dikhega.</p>
+        <div id="my-result-list" style="margin-top:12px;"></div>
+
+        <div id="my-paper-exam-section" class="hidden" style="margin-top:18px;">
+          <h4 style="margin-bottom:8px;">📝 Paper/OMR Exam Reports</h4>
+          <div id="my-paper-exam-list"></div>
+        </div>
+      </div>
+
+      <!-- Student: view a linked scanned OMR report (photo + marks) -->
+      <div id="my-paper-exam-detail-overlay" class="test-analysis-overlay hidden" onclick="if(event.target===this) closeMyPaperExamDetail()">
+        <div class="test-analysis-sheet" style="max-width:480px;">
+          <button type="button" class="test-analysis-close" onclick="closeMyPaperExamDetail()">✕</button>
+          <div id="my-paper-exam-detail-body"></div>
+        </div>
+      </div>
+
+      <!-- ── PRACTICE MODE (unlimited, no timer pressure, doesn't count towards ranking) ── -->
+      <div class="card hidden" id="practice-mode-card">
+        <h3 class="section-title">🎯 Practice Mode</h3>
+        <p class="muted-text">Bina time-pressure ke practice karein — turant sahi/galat pata chalega. Rank/marks count nahi hote.</p>
+        <div class="field-row">
+          <label for="practice-subject-filter">Subject</label>
+          <select id="practice-subject-filter"></select>
+        </div>
+        <div class="field-row">
+          <label for="practice-question-count">Chapters (ek ya zyada chunein — kuch na chunein to sabhi chapters shamil honge)</label>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+          <button type="button" id="practice-select-all-chapters" class="btn-secondary" style="font-size:.78rem;padding:5px 12px;">☑️ Sabhi Select Karein</button>
+          <button type="button" id="practice-clear-all-chapters" class="btn-secondary" style="font-size:.78rem;padding:5px 12px;">◻️ Sab Hatayein</button>
+        </div>
+        <div id="practice-chapter-list" class="chapter-grid"></div>
+        <div class="field-row">
+          <label for="practice-question-count">Questions Count</label>
+          <input id="practice-question-count" type="number" min="1" value="10" />
+        </div>
+        <button type="button" id="practice-start-btn" class="btn-primary">▶️ Practice Shuru Karein</button>
+      </div>
+
+      <!-- ── MY PROGRESS (score trend across all tests) ── -->
+      <div class="card hidden" id="my-progress-card">
+        <h3 class="section-title">📈 My Progress</h3>
+        <p class="muted-text">Aapke saare tests ka score trend — dekhein kitna improve ho raha hai.</p>
+        <div id="my-progress-empty" class="muted-text">Abhi tak koi test attempt nahi hua.</div>
+        <canvas id="my-progress-chart" height="140" style="display:none;"></canvas>
+      </div>
+
+      <!-- ── MY MISTAKES (auto-collected wrong answers, revise anytime) ── -->
+      <div class="card hidden" id="my-mistakes-card">
+        <h3 class="section-title">❌ My Mistakes</h3>
+        <p class="muted-text">Test mein galat hue questions yahan apne aap save hote hain — revise karke "Maine sikh liya" dabayein.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+          <button type="button" id="refresh-mistakes-btn" class="btn-secondary">🔄 Refresh</button>
+          <button type="button" id="practice-mistakes-btn" class="btn-primary" style="background:linear-gradient(135deg,#f59e0b,#d97706);">🔁 Inhe Practice Karein</button>
+        </div>
+        <div id="my-mistakes-list"></div>
+      </div>
+
+    </form>
+
+    <!-- ── TEST ANALYSIS OVERLAY (per-test chapter-wise report, "Start Test"
+         card list ke "📊 Analysis" button se khulta hai) ── -->
+    <div id="test-analysis-overlay" class="test-analysis-overlay hidden" onclick="if(event.target===this) closeTestAnalysisOverlay()">
+      <div class="test-analysis-sheet">
+        <button type="button" class="test-analysis-close" onclick="closeTestAnalysisOverlay()">✕</button>
+        <h3 id="test-analysis-title" class="test-analysis-title"></h3>
+        <div id="test-analysis-meta" class="test-analysis-meta"></div>
+        <div id="test-analysis-summary" class="test-analysis-summary"></div>
+        <div id="test-analysis-chapters"></div>
+        <button type="button" id="test-analysis-solution-btn" class="btn-primary hidden" style="width:100%;margin-top:14px;">📖 Solution Dekhein</button>
+      </div>
+    </div>
+
+    <!-- ── EXAM MANAGER OVERLAYS (OMR hub → 🗂️ Exam Manager) ── -->
+
+    <!-- Naya Exam Banayein -->
+    <div id="examgr-add-overlay" class="test-analysis-overlay examgr-overlay-full hidden" onclick="if(event.target===this) examgrCloseAdd()">
+      <div class="test-analysis-sheet">
+        <button type="button" class="test-analysis-close" onclick="examgrCloseAdd()">✕</button>
+        <div class="test-analysis-title">🗂️ Naya Exam Banayein</div>
+        <p class="muted-text">Offline/paper exam ka record banega.</p>
+        <div class="field-row">
+          <label for="examgr-add-name">Exam Name</label>
+          <input type="text" id="examgr-add-name" placeholder="jaise: Half Yearly Test">
+        </div>
+        <div class="field-row">
+          <label for="examgr-add-class">Class Name</label>
+          <input type="text" id="examgr-add-class" placeholder="jaise: Class 10">
+        </div>
+        <div class="field-row" id="examgr-add-classid-row">
+          <label for="examgr-add-classid">Class (eligibility ke liye)</label>
+          <select id="examgr-add-classid"></select>
+        </div>
+        <div class="two-col">
+          <div class="field-row">
+            <label for="examgr-add-date">Date</label>
+            <input type="date" id="examgr-add-date">
+          </div>
+          <div class="field-row">
+            <label for="examgr-add-questions">Kitne Questions</label>
+            <input type="number" id="examgr-add-questions" min="1" max="100" value="100">
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="field-row">
+            <label for="examgr-add-sets">Kitne Sets (A–E)</label>
+            <input type="number" id="examgr-add-sets" min="1" max="5" value="1">
+          </div>
+          <div class="field-row">
+            <label for="examgr-add-students">Expected Students</label>
+            <input type="number" id="examgr-add-students" min="0" max="2000" value="10">
+          </div>
+        </div>
+        <div class="field-row">
+          <label for="examgr-add-roll-digits">Roll No Digits (sheet par kitne digit bubble columns)</label>
+          <select id="examgr-add-roll-digits"><option value="1">1 digit</option><option value="2" selected>2 digits</option><option value="3">3 digits</option><option value="4">4 digits</option><option value="5">5 digits</option></select>
+        </div>
+        <div class="field-row" id="examgr-add-reg-row" style="display:none">
+           <label for="examgr-add-reg">📝 Registration se jodein (pehle se register students + roll)</label>
+           <select id="examgr-add-reg"></select>
+         </div>
+         <p class="muted-text" style="font-size:.78rem;margin-top:-6px;">Note: OMR sheet 100 questions / 5 columns ki hai, isliye questions 100 tak rakhein. Ek se zyada set ho to har set ki answer key Answer Key screen mein alag bharein.</p>
+        <button type="button" class="btn-primary" id="examgr-add-save-btn" style="width:100%;">💾 Exam Banayein</button>
+      </div>
+    </div>
+
+    <!-- Exam Details -->
+    <div id="examgr-details-overlay" class="test-analysis-overlay examgr-overlay-full hidden" onclick="if(event.target===this) examgrCloseDetails()">
+      <div class="test-analysis-sheet">
+        <button type="button" class="test-analysis-close" onclick="examgrCloseDetails()">✕</button>
+        <div class="examgr-details-head">
+          <div class="examgr-date-badge examgr-date-badge-lg"><span id="examgr-d-month">Jan</span><strong id="examgr-d-day">1</strong></div>
+          <div style="min-width:0;">
+            <div class="test-analysis-title" id="examgr-d-name" style="margin-bottom:2px;padding-right:0;">Exam</div>
+            <div class="test-analysis-meta" id="examgr-d-class" style="margin-bottom:0;">Class</div>
+          </div>
+        </div>
+        <div class="examgr-progress-wrap">
+          <div class="examgr-progress-label" id="examgr-d-scanned-text">0/0 sheets scanned</div>
+          <div class="examgr-progress-track"><div class="examgr-progress-fill" id="examgr-d-progress"></div></div>
+        </div>
+        <div class="examgr-stats-row">
+          <span>📝 <strong id="examgr-d-questions">0</strong> Questions</span>
+          <span>📚 <strong id="examgr-d-sets">1</strong> Sets</span>
+        </div>
+        <p class="examgr-notice" id="examgr-d-notice" hidden></p>
+
+        <div class="examgr-section-label">Exam Management</div>
+        <div class="examgr-actions-grid">
+          <button type="button" class="examgr-action-btn" data-action="answer-key"><span>✅</span>Answer Key</button>
+          <button type="button" class="examgr-action-btn" data-action="scan-sheet"><span>📷</span>Scan Sheet</button>
+          <button type="button" class="examgr-action-btn" data-action="exam-settings"><span>⚙️</span>Settings</button>
+          <button type="button" class="examgr-action-btn" data-action="omr-sheet"><span>🗒️</span>OMR/Bubble Sheet</button>
+          <button type="button" class="examgr-action-btn" data-action="web-features"><span>🔗</span>Web Link</button>
+          <button type="button" class="examgr-action-btn" data-action="roster"><span>🎫</span>Admit Card &amp; Roster</button>
+        </div>
+
+        <div class="examgr-section-label">Reports</div>
+        <div class="examgr-actions-grid">
+          <button type="button" class="examgr-action-btn" data-action="view-reports"><span>📊</span>View Reports</button>
+          <button type="button" class="examgr-action-btn" data-action="download-excel"><span>⬇️</span>Download Excel</button>
+          <button type="button" class="examgr-action-btn" data-action="analysis"><span>📈</span>Analysis</button>
+          <button type="button" class="examgr-action-btn" data-action="publish"><span>🚀</span>Publish</button>
+          <button type="button" class="examgr-action-btn" data-action="absentees"><span>🙈</span>Absentees</button>
+        </div>
+
+        <button type="button" class="btn-danger" id="examgr-delete-btn" style="width:100%;margin-top:16px;">🗑️ Ye Exam Delete Karein</button>
+      </div>
+    </div>
+
+    <!-- Exam Settings -->
+    <div id="examgr-settings-overlay" class="test-analysis-overlay examgr-overlay-full hidden" onclick="if(event.target===this) examgrCloseSettings()">
+      <div class="test-analysis-sheet examgr-settings-sheet">
+        <button type="button" class="test-analysis-close" onclick="examgrCloseSettings()" aria-label="Settings band karein">✕</button>
+        <div class="test-analysis-title">⚙️ Exam Settings</div>
+        <p class="muted-text">Is exam ki OMR sheet aur scan ka tareeka yahan set karein.</p>
+        <p id="examgr-settings-notice" class="examgr-settings-notice" hidden></p>
+
+        <div class="examgr-settings-grid">
+          <div class="field-row">
+            <label for="examgr-settings-questions">Questions</label>
+            <input type="number" id="examgr-settings-questions" min="1" max="100" inputmode="numeric">
+          </div>
+          <div class="field-row">
+            <label for="examgr-settings-sets">Exam mein sets</label>
+            <input type="number" id="examgr-settings-sets" min="1" max="5" inputmode="numeric">
+          </div>
+          <div class="field-row">
+            <label for="examgr-settings-attempt">Attempt Limit (pehle itne bhare hue sawaal hi check hon)</label>
+            <input type="number" id="examgr-settings-attempt" min="1" max="100" inputmode="numeric" placeholder="Khali = sab sawaal check hon">
+          </div>
+        </div>
+
+        <section class="examgr-settings-section" aria-labelledby="examgr-settings-sheet-title">
+          <h4 id="examgr-settings-sheet-title">🗒️ OMR Sheet</h4>
+          <label class="examgr-settings-toggle" for="examgr-settings-include-roll">
+            <span class="examgr-settings-toggle-copy"><strong>Roll No ke bubbles dikhayein</strong><small>Band karne par nayi OMR sheet par Roll No ka hissa nahi aayega.</small></span>
+            <input type="checkbox" id="examgr-settings-include-roll">
+            <span class="examgr-settings-switch" aria-hidden="true"></span>
+          </label>
+          <div class="field-row" id="examgr-settings-roll-digits-row">
+            <label for="examgr-settings-roll-digits">Roll No mein kitne digit?</label>
+            <select id="examgr-settings-roll-digits"><option value="1">1 digit</option><option value="2">2 digits</option><option value="3">3 digits</option><option value="4">4 digits</option><option value="5">5 digits</option></select>
+          </div>
+        </section>
+
+        <section class="examgr-settings-section" aria-labelledby="examgr-settings-scan-title">
+          <h4 id="examgr-settings-scan-title">📷 Scan ke options</h4>
+          <label class="examgr-settings-toggle" for="examgr-settings-ignore-set">
+            <span class="examgr-settings-toggle-copy"><strong>Set ko scan mein ignore karein</strong><small>Set bubbles sheet se hatenge; checking Set A ki answer key se hogi.</small></span>
+            <input type="checkbox" id="examgr-settings-ignore-set">
+            <span class="examgr-settings-switch" aria-hidden="true"></span>
+          </label>
+          <label class="examgr-settings-toggle" for="examgr-settings-ignore-roll">
+            <span class="examgr-settings-toggle-copy"><strong>Roll No ko scan mein ignore karein</strong><small>Scanner Roll No nahi padhega; result bina Roll No ke save hoga.</small></span>
+            <input type="checkbox" id="examgr-settings-ignore-roll">
+            <span class="examgr-settings-switch" aria-hidden="true"></span>
+          </label>
+        </section>
+
+        <div class="examgr-settings-footer">
+          <button type="button" class="btn-secondary" onclick="examgrCloseSettings()">Cancel</button>
+          <button type="button" class="btn-primary" id="examgr-settings-save-btn">💾 Settings Save Karein</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Answer Key -->
+    <div id="examgr-akey-overlay" class="test-analysis-overlay examgr-overlay-full hidden" onclick="if(event.target===this) examgrCloseAnswerKey()">
+      <div class="test-analysis-sheet examgr-akey-sheet">
+        <button type="button" class="test-analysis-close" onclick="examgrCloseAnswerKey()">✕</button>
+        <div class="test-analysis-title">✅ Answer Key</div>
+        <p class="muted-text" id="examgr-akey-sub">Har question ke liye sahi option par click karein.</p>
+        <div class="examgr-akey-tabs" id="examgr-akey-tabs" hidden></div>
+        <div class="examgr-akey-note" id="examgr-akey-note" hidden></div>
+        <div class="examgr-akey-list" id="examgr-akey-list"></div>
+        <div class="examgr-akey-footer">
+          <button type="button" class="btn-secondary" id="examgr-akey-refill-btn" hidden>📄 Paper se dobara bharo</button>
+          <button type="button" class="btn-secondary" id="examgr-akey-reset-btn">Reset</button>
+          <button type="button" class="btn-primary" id="examgr-akey-save-btn">💾 Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- OMR / Bubble Sheet preview -->
+    <div id="examgr-sheet-overlay" class="test-analysis-overlay examgr-overlay-full hidden" onclick="if(event.target===this) examgrCloseOmrSheet()">
+      <div class="test-analysis-sheet examgr-sheet-modal">
+        <button type="button" class="test-analysis-close" onclick="examgrCloseOmrSheet()">✕</button>
+        <div class="test-analysis-title">🗒️ OMR / Bubble Sheet</div>
+        <p class="muted-text">100 question, 5 column — print karke seedha use karein. Corner ke 4 kaale square poore dikhne chahiye.</p>
+        <div class="examgr-sheet-preview-wrap"><div class="examgr-sheet-preview" id="examgr-sheet-preview"></div></div>
+        <button type="button" class="btn-primary" id="examgr-sheet-jpg-btn" style="width:100%;margin-top:14px;">🖼️ JPG Download Karein</button>
+        <div class="muted-text" style="margin:14px 0 4px;font-weight:700;">✅ Bhari hui Reference OMR (sahi answers bhare hue)</div>
+        <div style="display:flex;gap:8px;"><button type="button" class="btn-primary" id="examgr-ref-pdf-btn" style="flex:1;">🖨️ PDF (Print)</button><button type="button" class="btn-secondary" id="examgr-ref-jpg-btn" style="flex:1;">🖼️ JPG</button></div>
+      </div>
+    </div>
+
+    <!-- Scan Sheet (live auto-capture + AI-style pixel grading against Answer Key) -->
+    <div id="examgr-scan-overlay" class="test-analysis-overlay examgr-overlay-full hidden" onclick="if(event.target===this) examgrCloseScanner()">
+      <div class="test-analysis-sheet examgr-scan-modal">
+        <button type="button" class="test-analysis-close" onclick="examgrCloseScanner()">✕</button>
+        <div class="test-analysis-title">📷 Scan Sheet</div>
+        <p class="muted-text" id="examgr-scan-desc">Sheet ko blue box mein rakhein — 4 corner ke kaale square align hote hi photo apne aap ho jaayegi aur Answer Key se check hogi.</p>
+
+        <div class="examgr-scan-graded-head" id="examgr-scan-graded-head" hidden>
+          <span>Roll No <strong id="examgr-scan-g-roll">0</strong></span>
+          <span>Set <strong id="examgr-scan-g-set">None</strong></span>
+          <span>Marks <strong id="examgr-scan-g-marks">0.0</strong></span>
+        </div>
+        <!-- v22: shows the background OCR guess of the handwritten name
+             box while it's running ("⏳ Naam padha ja raha hai...") and
+             then the recognized text once done — purely informational
+             here; the actual suggested student match happens in the
+             Link-to-Student step (examgr-link-student-overlay) below. -->
+        <div class="examgr-scan-name-guess muted-text" id="examgr-scan-name-guess" hidden></div>
+
+        <!-- Quality warning: shown after capture when the picked frame is
+             still blurry and/or too dark, so a bad scan gets caught here
+             instead of silently producing wrong marks later. -->
+        <div class="examgr-scan-quality-warn" id="examgr-scan-quality-warn" hidden>
+          <span id="examgr-scan-quality-warn-text"></span>
+          <button type="button" class="btn-secondary" id="examgr-scan-quality-retake-btn">🔄 Retake</button>
+        </div>
+
+        <div class="examgr-scan-stage" id="examgr-scan-stage">
+          <video class="examgr-scan-video" id="examgr-scan-video" autoplay muted playsinline></video>
+          <img class="examgr-scan-capture" id="examgr-scan-capture" alt="Captured OMR scan" hidden>
+          <button type="button" class="examgr-scan-torch-btn" id="examgr-scan-torch-btn" aria-label="Flash On/Off" hidden>🔦 Flash</button>
+          <div class="examgr-scan-overlay-ui" id="examgr-scan-overlay-ui">
+            <div class="examgr-scan-guide">Har kaale square ko blue corner box ke andar align karein</div>
+            <div class="examgr-scan-corner tl" data-marker="top-left"><span class="examgr-scan-dot"></span></div>
+            <div class="examgr-scan-corner tr" data-marker="top-right"><span class="examgr-scan-dot"></span></div>
+            <div class="examgr-scan-corner bl" data-marker="bottom-left"><span class="examgr-scan-dot"></span></div>
+            <div class="examgr-scan-corner br" data-marker="bottom-right"><span class="examgr-scan-dot"></span></div>
+            <div class="examgr-scan-status" id="examgr-scan-status"><span class="examgr-scan-status-dot"></span><span id="examgr-scan-status-text">Kaale OMR squares dhoonde ja rahe hain...</span></div>
+          </div>
+          <div class="examgr-scan-saved-toast" id="examgr-scan-saved-toast" hidden>✅ Saved</div>
+          <div class="examgr-scan-permission" id="examgr-scan-permission" hidden>
+            <div class="examgr-scan-permission-panel">
+              <strong>📷 Camera access chahiye</strong>
+              <p id="examgr-scan-permission-msg">Camera ki permission allow karein, phir dobara try karein.</p>
+              <button type="button" class="btn-primary" id="examgr-scan-enable-btn">Camera Enable Karein</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="examgr-scan-review-footer" id="examgr-scan-review-footer" hidden>
+          <button type="button" class="btn-secondary" id="examgr-scan-cancel-btn">Cancel</button>
+          <button type="button" class="btn-secondary" id="examgr-scan-edit-btn">Edit</button>
+          <button type="button" class="btn-primary" id="examgr-scan-save-btn">Save</button>
+        </div>
+        <div class="examgr-scan-footer" id="examgr-scan-footer">
+          <span id="examgr-scan-marker-count">0 / 4 markers</span>
+          <button type="button" class="btn-secondary" id="examgr-scan-done-btn">Done</button>
+        </div>
+        <canvas id="examgr-scan-analysis-canvas" hidden></canvas>
+        <canvas id="examgr-scan-capture-canvas" hidden></canvas>
+      </div>
+    </div>
+
+    <!-- Scan Sheet: Edit detected reading (Roll No / Set / individual answers) -->
+    <div id="examgr-scan-edit-overlay" class="test-analysis-overlay examgr-overlay-full hidden" onclick="if(event.target===this) examgrCloseEdit()">
+      <div class="test-analysis-sheet examgr-akey-sheet">
+        <button type="button" class="test-analysis-close" onclick="examgrCloseEdit()">✕</button>
+        <div class="test-analysis-title">✏️ Reading Theek Karein</div>
+        <p class="muted-text">Camera se galat padha ho to yahan sahi karein.</p>
+        <div class="examgr-edit-rollset" id="examgr-edit-rollset"></div>
+        <div class="examgr-akey-list" id="examgr-edit-qlist"></div>
+        <div class="examgr-akey-footer">
+          <button type="button" class="btn-primary" id="examgr-edit-apply-btn" style="width:100%;">✅ Apply Karein</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reports: per-student scanned results -->
+    <div id="examgr-reports-overlay" class="test-analysis-overlay examgr-overlay-full hidden" onclick="if(event.target===this) examgrCloseReports()">
+      <div class="test-analysis-sheet">
+        <button type="button" class="test-analysis-close" onclick="examgrCloseReports()">✕</button>
+        <div class="test-analysis-title" id="examgr-reports-title">📊 Reports</div>
+        <div class="examgr-reports-summary">
+          <div class="examgr-reports-summary-card"><span id="examgr-reports-label-1">Σ Marks</span><strong id="examgr-reports-maxmarks">0</strong></div>
+          <div class="examgr-reports-summary-card"><span id="examgr-reports-label-2">Reports</span><strong id="examgr-reports-count">0</strong></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;"><button type="button" class="btn-primary" id="examgr-rs-img-btn" style="flex:1;">🖼️ Result Sheet (Image)</button><button type="button" class="btn-secondary" id="examgr-rs-share-btn" style="flex:1;">📤 Group me Bhejein</button></div>
+        <div class="examgr-reports-list" id="examgr-reports-list"></div>
+      </div>
+    </div>
+
+    <!-- Reports: tap a thumbnail to view the full scanned photo -->
+    <div id="examgr-report-photo-overlay" class="test-analysis-overlay hidden" onclick="examgrCloseReportPhoto()">
+      <img id="examgr-report-photo-img" alt="Scanned sheet" style="max-width:92vw;max-height:88vh;border-radius:10px;">
+    </div>
+
+    <!-- Reports: single-student detail (tap a report row) -->
+    <div id="examgr-report-detail-overlay" class="test-analysis-overlay examgr-overlay-full hidden">
+      <div class="test-analysis-sheet examgr-rd-sheet">
+        <div class="examgr-rd-head">
+          <button type="button" class="examgr-rd-icon-btn" id="examgr-rd-back-btn" aria-label="Back">←</button>
+          <div class="examgr-rd-title" id="examgr-rd-title">Roll No : —</div>
+          <button type="button" class="examgr-rd-icon-btn" id="examgr-rd-delete-btn" aria-label="Delete">🗑️</button>
+          <button type="button" class="examgr-rd-icon-btn" id="examgr-rd-link-btn" aria-label="Link to Student">🔗</button>
+          <button type="button" class="examgr-rd-icon-btn" id="examgr-rd-edit-btn" aria-label="Edit">✏️</button>
+          <button type="button" class="examgr-rd-icon-btn" id="examgr-rd-card-btn" aria-label="Report Card Image">🪪</button>
+          <button type="button" class="examgr-rd-icon-btn" id="examgr-rd-share-btn" aria-label="Share">📤</button>
+        </div>
+        <div class="examgr-rd-body" id="examgr-rd-body"></div>
+        <div class="examgr-rd-footer">
+          <button type="button" class="examgr-rd-nav-btn" id="examgr-rd-prev-btn" aria-label="Previous">‹</button>
+          <span id="examgr-rd-page-text">Report 1/1</span>
+          <button type="button" class="examgr-rd-nav-btn" id="examgr-rd-next-btn" aria-label="Next">›</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reports: link a scanned result to a student's login so it shows in their "My Result" -->
+    <div id="examgr-link-student-overlay" class="test-analysis-overlay hidden" onclick="if(event.target===this) examgrCloseLinkStudent()">
+      <div class="test-analysis-sheet" style="max-width:420px;">
+        <button type="button" class="test-analysis-close" onclick="examgrCloseLinkStudent()">✕</button>
+        <div class="test-analysis-title">🔗 Student Se Link Karein</div>
+        <p class="muted-text">Is result ko student ke mobile number se link karein — student ise apne "My Result" mein (photo ke saath) dekh paayega. Neeche naam se student chunein, number apne aap bhar jaayega.</p>
+        <div class="field-row">
+          <label for="examgr-link-name-input">Registered Student Dhoondein (Naam se)</label>
+          <input id="examgr-link-name-input" type="text" placeholder="Student ka naam type karein..." autocomplete="off" />
+        </div>
+        <div class="field-row">
+          <label for="examgr-link-mobile-input">Student ka Mobile Number</label>
+          <input id="examgr-link-mobile-input" type="tel" placeholder="jaise: 9876543210" maxlength="10" />
+        </div>
+        <div id="examgr-link-status" class="muted-text" style="min-height:20px;"></div>
+        <button type="button" class="btn-primary" id="examgr-link-confirm-btn" style="width:100%;margin-top:8px;">🔗 Link Karein</button>
+        <button type="button" class="btn-secondary" id="examgr-link-skip-btn" style="width:100%;margin-top:8px;">⏭️ Skip Karein (Baad Mein Link Karenge)</button>
+        <button type="button" class="btn-secondary" id="examgr-link-unlink-btn" style="width:100%;margin-top:8px;">🔓 Unlink Karein</button>
+      </div>
+    </div>
+
+    <!-- Reports: edit a saved student's Roll No / Set / answers -->
+    <div id="examgr-report-edit-overlay" class="test-analysis-overlay examgr-overlay-full hidden" onclick="if(event.target===this) examgrCloseReportEdit()">
+      <div class="test-analysis-sheet examgr-akey-sheet">
+        <button type="button" class="test-analysis-close" onclick="examgrCloseReportEdit()">✕</button>
+        <div class="test-analysis-title">✏️ Result Edit Karein</div>
+        <p class="muted-text">Roll No, Exam Set ya kisi bhi question ka jawab yahan se sahi karein.</p>
+        <div class="examgr-edit-rollset" id="examgr-rd-edit-rollset"></div>
+        <div class="examgr-akey-list" id="examgr-rd-edit-qlist"></div>
+        <div class="examgr-akey-footer">
+          <button type="button" class="btn-primary" id="examgr-rd-edit-save-btn" style="width:100%;">💾 Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ADMIN LOGIN ── -->
+    <form id="admin-login-form" class="hidden card" autocomplete="off">
+      <h2 class="section-title">🔐 Admin Login</h2>
+      <div class="field-row">
+        <label for="admin-id">Admin ID</label>
+        <input id="admin-id" type="text" placeholder="Admin Email (ya legacy Admin ID)" />
+      </div>
+      <div class="field-row">
+        <label for="admin-password">Password</label>
+        <input id="admin-password" type="password" placeholder="Password" />
+      </div>
+      <button type="submit" class="btn-primary">Login</button>
+      <button type="button" id="forgot-password-link" style="background:none;border:none;color:#2563eb;text-decoration:underline;cursor:pointer;margin-top:10px;font-size:.85rem;display:block;">🔑 Password bhool gaye?</button>
+
+      <!-- Owner ke liye — Owner ke paas Admin ka login/password nahi
+           hota (wo bilkul alag role hai, apne khud ke email/password se
+           login karta hai), isliye use Admin Panel ke andar login karke
+           Settings tak pahunchna possible hi nahi. Ye link isi Admin
+           LOGIN screen (jo bina kisi login ke, sirf "⚙️ Admin" tab
+           dabate hi khul jaata hai) par isliye rakha hai — taaki Owner
+           bina kisi Admin credential ke seedha apna panel tak pahunch
+           sake. Student/Admin isko normally kabhi use nahi karenge, aur
+           ye chhota/subtle hai (koi bada button nahi), isliye header
+           mein pehle jaisa clutter/confusion bhi nahi hota. -->
+
+    </form>
+
+    <!-- ── ADMIN PANEL ── -->
+    <div id="admin-panel" class="hidden">
+      <button type="button" id="admin-back-btn" class="hidden" onclick="backToAdminDashboard()" style="display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #c7d2fe;color:#4338ca;font-weight:700;border-radius:999px;padding:9px 18px;margin-bottom:14px;cursor:pointer;font-size:.85rem;">← Dashboard par wapas</button>
+
+      <!-- ── CREATIVE ADMIN DASHBOARD HOME ── -->
+      <div class="cd-wrap" id="admin-dashboard-home">
+        <div class="cd-hero">
+          <div class="cd-hero-text">
+            <h2>Welcome 👋</h2>
+            <p>Tests, students aur results — sab yahin se manage karein. 🛡️</p>
+          </div>
+          <div class="cd-hero-emoji" aria-hidden="true">🛡️</div>
+        </div>
+
+        <div class="cd-section-title">Tests &amp; Papers</div>
+        <div class="cd-grid">
+          <button type="button" class="cd-card cd-blue" onclick="goAdmin('tests')">
+            <div class="cd-card-top"><div class="cd-icon-circle">📋</div><span class="cd-badge">Create</span></div>
+            <div class="cd-card-title">Tests</div>
+            <div class="cd-card-sub">Naya test banayein ya edit karein</div>
+            <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+          </button>
+
+          <button type="button" class="cd-card cd-pink" onclick="goAdmin('generator')">
+            <div class="cd-card-top"><div class="cd-icon-circle">📄</div><span class="cd-badge">New</span></div>
+            <div class="cd-card-title">Paper Generator</div>
+            <div class="cd-card-sub">Question paper turant banayein</div>
+            <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+          </button>
+
+          <button type="button" class="cd-card cd-purple" onclick="goAdmin('bank')">
+            <div class="cd-card-top"><div class="cd-icon-circle">🏦</div><span class="cd-badge">Bank</span></div>
+            <div class="cd-card-title">Question Bank</div>
+            <div class="cd-card-sub">Saare questions ek jagah</div>
+            <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+          </button>
+
+          <button type="button" class="cd-card cd-teal" onclick="goAdmin('bulk-upload')">
+            <div class="cd-card-top"><div class="cd-icon-circle">📦</div><span class="cd-badge">Fast</span></div>
+            <div class="cd-card-title">Bulk Upload</div>
+            <div class="cd-card-sub">Ek saath kai questions daalein</div>
+            <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+          </button>
+        </div>
+
+        <div class="cd-section-title">Students &amp; Results</div>
+        <div class="cd-grid" id="admin-grid-students">
+          <button type="button" class="cd-card cd-indigo" onclick="goAdmin('records')">
+            <div class="cd-card-top"><div class="cd-icon-circle">📁</div><span class="cd-badge">Students</span></div>
+            <div class="cd-card-title">Records</div>
+            <div class="cd-card-sub">Students directory &amp; results</div>
+            <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+          </button>
+
+          <button type="button" class="cd-card cd-gold" onclick="goAdmin('leaderboard')">
+            <div class="cd-card-top"><div class="cd-icon-circle">🏆</div><span class="cd-badge">Rank</span></div>
+            <div class="cd-card-title">Top Performers</div>
+            <div class="cd-card-sub">Kiske marks kis test se bane, poora dekhein</div>
+            <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+          </button>
+
+          <button type="button" class="cd-card cd-orange" onclick="goAdmin('grade')">
+            <div class="cd-card-top"><div class="cd-icon-circle">📝</div><span class="cd-badge">Manual</span></div>
+            <div class="cd-card-title">Grade Subjective</div>
+            <div class="cd-card-sub">Subjective answers grade karein</div>
+            <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+          </button>
+
+          <button type="button" class="cd-card cd-green" onclick="goAdmin('omr')">
+            <div class="cd-card-top"><div class="cd-icon-circle">🔲</div><span class="cd-badge">Scan</span></div>
+            <div class="cd-card-title">OMR</div>
+            <div class="cd-card-sub">OMR sheets scan &amp; check karein</div>
+            <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+          </button>
+        </div>
+
+        <div class="cd-section-title">Tools</div>
+        <div class="cd-grid">
+          <button type="button" class="cd-card cd-green" onclick="showMode('student')">
+            <div class="cd-card-top"><div class="cd-icon-circle">🎓</div><span class="cd-badge">Preview</span></div>
+            <div class="cd-card-title">Student View</div>
+            <div class="cd-card-sub">Student dashboard mein jaakar check karein</div>
+            <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+          </button>
+
+          <button type="button" class="cd-card cd-blue" onclick="goAdmin('solidslab')">
+            <div class="cd-card-top"><div class="cd-icon-circle">📐</div><span class="cd-badge">3D</span></div>
+            <div class="cd-card-title">Solids Lab</div>
+            <div class="cd-card-sub">Class mein dikhane ke liye 3D solids</div>
+            <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+          </button>
+
+          <button type="button" class="cd-card cd-red" onclick="goAdmin('trash')">
+            <div class="cd-card-top"><div class="cd-icon-circle">🗑️</div><span class="cd-badge">Bin</span></div>
+            <div class="cd-card-title">Recycle Bin</div>
+            <div class="cd-card-sub">Delete kiye gaye items recover karein</div>
+            <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+          </button>
+        </div>
+
+        <div class="cd-section-title">Account</div>
+        <div class="cd-grid">
+          <button type="button" class="cd-card cd-gold" onclick="goAdmin('settings')">
+            <div class="cd-card-top"><div class="cd-icon-circle">⚙️</div><span class="cd-badge">Account</span></div>
+            <div class="cd-card-title">Settings</div>
+            <div class="cd-card-sub">Profile, institute, password &amp; logout</div>
+            <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+          </button>
+        </div>
+      </div>
+
+      <div class="admin-tabs">
+        <button id="tests-tab" class="tab active" style="background: linear-gradient(135deg,#2563eb,#1d4ed8); color: white;">📋 Tests</button>
+        <button id="bank-tab" class="tab" style="background: linear-gradient(135deg,#4f46e5,#4338ca); color: white;">🏦 Question Bank</button>
+        <button id="bulk-upload-tab" class="tab" style="background: linear-gradient(135deg,#0284c7,#075985); color: white;">📦 Bulk Upload</button>
+        <button id="records-tab" class="tab" style="background: linear-gradient(135deg,#64748b,#334155); color: white;">📁 Records</button>
+        <button id="generator-tab" class="tab" style="background: linear-gradient(135deg,#8b5cf6,#6d28d9); color: white;">📄 Paper Generator</button>
+        <button id="omr-tab" class="tab" style="background: linear-gradient(135deg,#059669,#047857); color: white;">🔲 OMR</button>
+        <button id="grade-tab" class="tab" style="background: linear-gradient(135deg,#f59e0b,#b45309); color: white;">📝 Grade Subjective</button>
+        <button id="leaderboard-tab" class="tab" onclick="showAdminTab('leaderboard')" style="background: linear-gradient(135deg,#eab308,#a16207); color: white;">🏆 Top Performers</button>
+        <button id="trash-tab" class="tab" onclick="showAdminTab('trash')" style="background: linear-gradient(135deg,#ef4444,#dc2626); color: white;">🗑️ Recycle Bin</button>
+      </div>
+
+      <!-- Tests -->
+      <div id="tests-area" class="hidden">
+
+        <!-- Tests Hub — Create Test aur All Tests, do alag function cards
+             (bilkul Admin dashboard ke Manage cards jaisa), taaki dono ek
+             saath crowd na karein aur ek waqt mein sirf ek hi dikhe. -->
+        <div id="tests-hub" class="cd-wrap" style="padding:0;">
+          <div class="cd-section-title" style="margin-top:0;">Tests</div>
+          <div class="cd-grid">
+            <button type="button" class="cd-card cd-blue" onclick="showTestsSubTab('create')">
+              <div class="cd-card-top"><div class="cd-icon-circle">➕</div><span class="cd-badge">New</span></div>
+              <div class="cd-card-title">Create Test</div>
+              <div class="cd-card-sub">Naya test banayein ya edit karein</div>
+              <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+            </button>
+            <button type="button" class="cd-card cd-purple" onclick="showTestsSubTab('list')">
+              <div class="cd-card-top"><div class="cd-icon-circle">📋</div><span class="cd-badge" id="tests-hub-count"></span></div>
+              <div class="cd-card-title">All Tests</div>
+              <div class="cd-card-sub">Sabhi tests dekhein, edit/delete karein</div>
+              <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Create Test -->
+        <div id="test-create-box" class="hidden">
+          <button type="button" class="btn-secondary" onclick="backToTestsHub()" style="margin-bottom:12px;">⬅ Tests par wapas</button>
+        <!-- v141: Saved Drafts (Paper Generator + Test drafts) — yahin se Edit / Publish (Online Test) -->
+        <div id="create-drafts-card" class="card" style="margin-bottom:14px;">
+          <h3 class="section-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+            <span>📝 Saved Drafts <span id="create-drafts-count" style="font-size:.8rem;color:#6b7280;font-weight:600;"></span></span>
+          </h3>
+          <small style="color:#6b7280;font-size:.78rem;display:block;margin-bottom:8px;">Paper Generator ya "Save as Draft" se bane tests yahan dikhte hain. <b>Edit</b> se neeche form me khulega, <b>Online Test Banao</b> se students ke liye publish ho jaayega.</small>
+          <div id="create-drafts-list" class="list-box"><p class="muted-text">Koi draft nahi hai.</p></div>
+          <div id="create-drafts-legacy" style="margin-top:10px;"></div>
+        </div>
+        <form id="test-form" class="card">
+          <h3 class="section-title">Create / Edit Test</h3>
+          <div class="field-row"><label for="test-title">Test Title</label><input id="test-title" type="text" required /></div>
+          <div class="field-row">
+            <label for="test-category">Category (optional)</label>
+            <input id="test-category" type="text" placeholder="jaise: Percentage, Ratio and Proportion" />
+            <small style="color:#6b7280;font-size:.78rem;">Student ke "Start Test" screen par isi naam ka filter tab banta hai (jaise "Percentage (6)"). Khaali chhodne par test "General" mein dikhega.</small>
+          </div>
+          <div class="field-row"><label for="test-minutes">Duration (min)</label><input id="test-minutes" type="number" value="30" /></div>
+          <div class="field-row"><label for="test-marks">Marks / Question</label><input id="test-marks" type="number" value="2" step="0.25" /></div>
+          <div class="field-row">
+            <label for="test-attempt-limit">MCQ Attempt Limit (optional)</label>
+            <input id="test-attempt-limit" type="number" min="1" placeholder="e.g. 90 (blank = sab MCQs attempt karo)" />
+            <small style="color:#6b7280;font-size:.78rem;">Kitne MCQ attempt kar sakte hain (jaise 90). Limit ke baad ke MCQ answers count nahi honge; subjective par limit nahi lagti. Khaali chhodein to sabhi MCQ attempt ho sakte hain.</small>
+          </div>
+          <div class="field-row">
+            <label for="test-subjective-marks">Subjective Marks (optional)</label>
+            <input id="test-subjective-marks" type="number" min="0" step="0.5" placeholder="e.g. 60 (agar is test paper mein Word wale subjective questions bhi hain)" />
+            <small style="color:#6b7280;font-size:.78rem;">Sirf aapke record ke liye — subjective questions system mein add nahi hote, sirf unka total marks yahan note hota hai. Student ko exam/result mein nahi dikhta, sirf admin ki Test List mein dikhta hai.</small>
+          </div>
+          <div class="hidden">
+            <div class="field-row">
+              <label for="test-negative-enabled">Negative Marking</label>
+
+              <select id="test-negative-enabled"><option value="no">No</option><option value="yes">Yes</option></select>
+            </div>
+            <div id="negative-marks-field" class="field-row hidden">
+              <label for="test-negative">Negative Marks</label>
+              <input id="test-negative" type="number" value="0.5" step="0.25" />
+            </div>
+          </div>
+          <div>
+            <div class="field-row">
+              <label for="test-syllabus">Test Schedule (optional)</label>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input id="test-start-time" type="datetime-local" style="flex:1;" title="Test kab se available hoga" />
+                <input id="test-end-time" type="datetime-local" style="flex:1;" title="Test kab band hoga" />
+              </div>
+              <small style="color:#6b7280;font-size:.78rem;">Khaali chhodein = hamesha available. Start time se pehle test lock rahega (students ko Upcoming dikhega, syllabus ke saath notification jaayega).</small>
+            </div>
+            <div class="field-row">
+              <label for="test-syllabus">Syllabus (optional)</label>
+              <textarea id="test-syllabus" rows="3" maxlength="600" placeholder="Is test me kya aayega — jaise: Surface Areas &amp; Volumes (Ch 12), Q 1–20"></textarea>
+              <small style="color:#6b7280;font-size:.78rem;">Students ko test card me aur notification me dikhega.</small>
+            </div>
+          </div>
+
+          <div class="field-row" id="send-to-generator-row" style="margin-top:6px;">
+            <button type="button" id="send-to-generator-btn" class="btn-secondary" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;border:none;font-weight:700;">📄 Questions Paper Generator mein Add Karein →</button>
+            <small style="color:#6b7280;font-size:.78rem;display:block;margin-top:6px;">Upar ki details (Title, Category, Duration, Marks, Limits) bhar kar yahan click karein. Paper Generator khulega — wahan paper banakar "✅ Save &amp; Admin ko Bhejein" dabayein, test questions ke saath yahan aa jaayega.</small>
+          </div>
+          <div class="hidden">
+            <hr />
+            <h4>Test Sections (Section-wise Paper)</h4>
+            <p class="muted-text">Ek hi test mein Section A, B, C alag-alag bana sakte hain.</p>
+            <div id="test-sections-list" class="sections-list"></div>
+            <button type="button" id="add-test-section" class="btn-secondary" style="margin-bottom:12px;">➕ Add Section</button>
+            <div class="field-row">
+              <label for="active-section-select">Active Section (questions yahan add honge)</label>
+              <select id="active-section-select"></select>
+            </div>
+          </div>
+          <hr />
+          <h4>Add Questions</h4>
+          <!-- From bank -->
+          <div class="field-row">
+            <label for="test-bank-class-filter">1️⃣ Class Filter</label>
+            <select id="test-bank-class-filter"></select>
+          </div>
+          <div class="field-row">
+            <label for="test-bank-subject-filter">2️⃣ Subject Filter</label>
+            <select id="test-bank-subject-filter"></select>
+          </div>
+          <div id="test-bank-chapter-row" class="field-row" style="align-items:center;display:none;">
+            <label for="test-bank-chapter-filter">3️⃣ Chapter Filter</label>
+            <div style="display:flex;gap:8px;align-items:center;flex:1;">
+              <select id="test-bank-chapter-filter" style="flex:1;"></select>
+              <button type="button" id="delete-chapter-btn" onclick="deleteSelectedChapter()" style="display:none;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:.8rem;cursor:pointer;font-weight:700;white-space:nowrap;">🗑️ Delete Chapter</button>
+            </div>
+          </div>
+          <div id="test-bank-list" class="list-box"></div>
+          <hr />
+          <div class="hidden">
+            <h4>Manual Question (HI)</h4>
+            <div class="field-row"><label for="question-subject">Subject</label>
+              <select id="question-subject">
+                <option>Mathematics</option><option>Reasoning</option><option>English</option>
+                <option>General Awareness</option><option>History</option><option>Geography</option>
+              </select>
+            </div>
+            <div class="field-row"><label for="question-type">Question Type</label>
+              <select id="question-type" onchange="onQuestionTypeChange()">
+                <option value="mcq">Objective (MCQ)</option>
+                <option value="subjective">Subjective (Likhkar jawab)</option>
+              </select>
+            </div>
+            <div class="field-row"><label for="question-text-hi">Question (HI)</label><textarea id="question-text-hi" rows="2"></textarea></div>
+            <div id="question-mcq-fields">
+              <div class="two-col">
+                <div class="field-row"><label for="option-0-hi">Option A (HI)</label><input id="option-0-hi" type="text" /></div>
+                <div class="field-row"><label for="option-1-hi">Option B (HI)</label><input id="option-1-hi" type="text" /></div>
+                <div class="field-row"><label for="option-2-hi">Option C (HI)</label><input id="option-2-hi" type="text" /></div>
+                <div class="field-row"><label for="option-3-hi">Option D (HI)</label><input id="option-3-hi" type="text" /></div>
+              </div>
+              <div class="field-row"><label for="answer-index">Correct Answer</label>
+                <select id="answer-index"><option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option></select>
+              </div>
+            </div>
+            <div id="question-subjective-fields" class="field-row hidden">
+              <label for="question-marks">Max Marks (is question ke liye)</label>
+              <input id="question-marks" type="number" min="0" step="0.5" placeholder="Khaali = test ke default marks/question" />
+              <small style="color:#6b7280;font-size:.78rem;">Student text mein jawab likhega; teacher baad mein check karke marks denge.</small>
+            </div>
+            <div class="field-row"><label for="explanation-text-hi">Explanation (HI)</label><textarea id="explanation-text-hi" rows="2"></textarea></div>
+            <button type="button" id="add-question" class="btn-secondary">Add Question to Test</button>
+          </div>
+          <div id="draft-count" class="badge-info">0 questions added</div>
+          <div id="draft-list" class="list-box"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:4px;">
+            <button type="submit" class="btn-primary">💾 Save Test Online</button>
+            <button type="button" id="save-draft-btn" class="btn-draft">📝 Save as Draft</button>
+          </div>
+          <div id="draft-save-status" style="display:none;margin-top:8px;padding:8px 12px;border-radius:8px;font-size:.85rem;font-weight:600;"></div>
+        </form>
+        </div>
+        <!-- /Create Test -->
+
+        <!-- All Tests -->
+        <div id="test-list-box" class="hidden">
+          <button type="button" class="btn-secondary" onclick="backToTestsHub()" style="margin-bottom:12px;">⬅ Tests par wapas</button>
+          <div class="card">
+            <h3 class="section-title">All Tests</h3>
+            <div id="test-list" class="list-box"></div>
+          </div>
+        </div>
+        <!-- /All Tests -->
+      </div>
+
+      <!-- Bank -->
+      <div id="bank-box" class="hidden">
+        <!-- "Add Question to Bank" (manual naya question add karne wala form) hata diya gaya hai.
+             Neeche wala modal ab SIRF do jagah se khulta hai: (1) Question Bank list mein
+             kisi existing question par "Edit" dabane par, (2) AppScript draft "Edit" dabane par
+             approve karne se pehle. Naya question seedhe manually add karne ka koi button
+             ab nahi hai — uske liye Bulk Upload use karein. -->
+        <div id="bank-edit-modal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+          <form id="bank-form" class="card" style="max-width:640px;width:100%;max-height:90vh;overflow-y:auto;margin:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+              <h3 id="bank-form-title" class="section-title" style="margin:0;">Edit Question</h3>
+              <button type="button" id="bank-modal-close-x" style="background:#f3f4f6;color:#374151;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-weight:700;">✕</button>
+            </div>
+            <div class="field-row"><label for="bank-classid">1️⃣ Class (कक्षा)</label>
+              <select id="bank-classid" onchange="onBankClassIdChange()">
+                <option value="">-- Class chunein --</option>
+              </select>
+              <small style="color:#6b7280;font-size:.78rem;margin-top:2px;display:block;">Pehle Class chunein, tabhi Subject/Chapter list milegi.</small>
+            </div>
+            <div class="field-row"><label for="bank-subject-select">2️⃣ Subject</label>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <select id="bank-subject-select" style="flex:1;min-width:160px;" onchange="onBankSubjectSelectChange()">
+                  <option value="">-- Pehle Class chunein --</option>
+                </select>
+                <input id="bank-subject" type="text" aria-label="Or enter a new subject" placeholder="Ya naya subject likhein..." style="flex:1;min-width:160px;" oninput="updateMathPreview()" onchange="updateMathPreview()" />
+              </div>
+              <small style="color:#6b7280;font-size:.78rem;margin-top:2px;display:block;">Dropdown se chunein <strong>ya</strong> naya subject manually likhein — save hone par automatically add ho jaayega</small>
+            </div>
+            <div class="field-row"><label for="bank-chapter">3️⃣ Chapter</label>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <select id="bank-chapter-select" aria-label="Choose an existing chapter" style="flex:1;min-width:160px;" onchange="onBankChapterSelectChange()">
+                  <option value="">-- Chapter chunein --</option>
+                </select>
+                <input id="bank-chapter" type="text" placeholder="Ya naya chapter likhein..." style="flex:1;min-width:160px;" />
+              </div>
+              <small style="color:#6b7280;font-size:.78rem;margin-top:2px;display:block;">Dropdown se chunein <strong>ya</strong> naya chapter manually likhein — save hone par automatically add ho jaayega</small>
+            </div>
+            <div class="field-row"><label for="bank-question-hi">Question (HI)</label><textarea id="bank-question-hi" rows="2" oninput="updateMathPreview()"></textarea></div>
+
+            <div id="bank-math-mode-box" style="display:flex;flex-wrap:wrap;gap:10px;margin:-4px 0 10px;">
+              <div style="flex:1;min-width:260px;background:#eff6ff;border:1.5px dashed #93c5fd;border-radius:8px;padding:10px 12px;">
+                <div style="font-size:.72rem;font-weight:700;color:#2563eb;margin-bottom:4px;">📐 AUTOMATIC (default)</div>
+                <div id="bank-math-preview" style="display:none;font-size:.95rem;color:#1e3a8a;">
+                  <div id="bank-math-preview-body"></div>
+                </div>
+                <small id="bank-math-auto-hint" style="color:#1e40af;font-size:.78rem;">Normal likhein, jaise "x^2 – 3x + 2" — equation apne aap pehchan li jaayegi.</small>
+              </div>
+              <div style="flex:1;min-width:260px;background:#fff7ed;border:1.5px dashed #fdba74;border-radius:8px;padding:10px 12px;">
+              <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:700;color:#9a3412;cursor:pointer;user-select:none;margin-bottom:4px;" for="bank-manual-latex">
+                  <input type="checkbox" id="bank-manual-latex" onchange="updateMathPreview()" style="width:15px;height:15px;cursor:pointer;accent-color:#ea580c;" />
+                  🔧 MANUAL MODE (LaTeX khud likhna hai)
+                </label>
+                <small style="color:#9a3412;font-size:.78rem;display:block;">Check karo to auto-detect band ho jaayega — sirf equation part ko khud <code>\( ... \)</code> mein likho, aur agar equation ke andar Hindi/English shabd likhne hain to unhe <code>\text{...}</code> mein rakho. Jaise: <code>यदि \(P(x) = x^2-3x-4\) तो \(P(x)\) का शून्यक है</code></small>
+              </div>
+            </div>
+
+            <div class="field-row"><label for="bank-qtype">Question Type</label>
+              <select id="bank-qtype" onchange="onBankQTypeChange()">
+                <option value="mcq">Objective (MCQ)</option>
+                <option value="subjective">Subjective (Likhkar jawab)</option>
+              </select>
+            </div>
+            <div id="bank-mcq-fields">
+              <div class="two-col">
+                <div class="field-row"><label for="bank-option-0-hi">A (HI)</label><input id="bank-option-0-hi" type="text" /></div>
+                <div class="field-row"><label for="bank-option-1-hi">B (HI)</label><input id="bank-option-1-hi" type="text" /></div>
+                <div class="field-row"><label for="bank-option-2-hi">C (HI)</label><input id="bank-option-2-hi" type="text" /></div>
+                <div class="field-row"><label for="bank-option-3-hi">D (HI)</label><input id="bank-option-3-hi" type="text" /></div>
+              </div>
+              <div class="field-row"><label for="bank-answer">Correct Answer</label>
+                <select id="bank-answer"><option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option></select>
+              </div>
+            </div>
+            <div id="bank-subjective-fields" class="field-row hidden">
+              <label for="bank-marks">Max Marks (is question ke liye)</label>
+              <input id="bank-marks" type="number" min="0" step="0.5" placeholder="Khaali = test ke default marks/question" />
+            </div>
+            <div class="field-row"><label for="bank-difficulty">Difficulty Level</label>
+              <select id="bank-difficulty">
+                <option value="">— Select —</option>
+                <option value="easy">🟢 Easy</option>
+                <option value="medium">🟡 Medium</option>
+                <option value="hard">🔴 Hard</option>
+              </select>
+            </div>
+            <div class="field-row"><label for="bank-explanation-hi">Explanation (HI)</label><textarea id="bank-explanation-hi" rows="2"></textarea></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button type="submit" id="save-bank-question" class="btn-primary">💾 Update Question</button>
+              <button type="button" id="cancel-bank-edit" class="btn-secondary">Cancel</button>
+            </div>
+          </form>
+        </div>
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+            <button type="button" onclick="openManagePanel()" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:.8rem;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:5px;">🗂️ Manage / Delete Subject & Chapter</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+            <h3 class="section-title" style="margin:0;">Question Bank</h3>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <span id="bank-question-count" style="background:#dbeafe;color:#1e40af;font-weight:700;font-size:.82rem;padding:3px 10px;border-radius:20px;">0 questions</span>
+              <button type="button" id="bank-migrate-class10-btn" onclick="migrateQuestionBankToClass10();" style="display:none;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:.8rem;cursor:pointer;font-weight:600;" title="Jin questions mein abhi Class set nahi hai unhe Class 10 assign karein (one-time, safe to re-run)">🎓 Class 10 Assign Karein</button>
+              <button type="button" onclick="showDuplicateReport();" style="background:linear-gradient(135deg,#d97706,#b45309);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:.8rem;cursor:pointer;font-weight:600;" title="Duplicate questions dhundho">🔁 Duplicates Check</button>
+              <button type="button" onclick="testFirebaseDelete();" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:.8rem;cursor:pointer;font-weight:600;" title="Firebase delete permission test karo">🔧 Test Delete</button>
+            </div>
+          </div>
+          <div class="field-row">
+            <label for="bank-id-search-input">🆔 Find by ID</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <input type="text" id="bank-id-search-input" placeholder="e.g. bulk-1782918350273-42-700" onkeydown="if(event.key==='Enter'){event.preventDefault();findQuestionById();}" style="flex:1;min-width:200px;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.9rem;box-sizing:border-box;" />
+              <button type="button" onclick="findQuestionById()" style="background:linear-gradient(135deg,#0369a1,#0284c7);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:.85rem;cursor:pointer;font-weight:700;white-space:nowrap;">🔎 Find</button>
+              <button type="button" onclick="clearBankIdFilter()" style="background:#f3f4f6;color:#374151;border:none;border-radius:8px;padding:8px 14px;font-size:.85rem;cursor:pointer;font-weight:600;white-space:nowrap;">✕ Clear</button>
+            </div>
+          </div>
+          <div class="field-row"><label for="bank-class-filter">1️⃣ Filter by Class</label><select id="bank-class-filter"></select></div>
+          <div class="field-row"><label for="bank-subject-filter">2️⃣ Filter by Subject</label><select id="bank-subject-filter"></select></div>
+          <div class="field-row"><label for="bank-chapter-filter">3️⃣ Filter by Chapter</label><select id="bank-chapter-filter"></select></div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:600;cursor:pointer;user-select:none;" for="bank-select-all">
+              <input type="checkbox" id="bank-select-all" onchange="toggleSelectAllBank(this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:#dc2626;">
+              <span>Select All</span>
+            </label>
+            <span id="bank-selected-count" style="font-size:.8rem;color:#6b7280;display:none;"></span>
+            <button type="button" id="bank-delete-selected-btn" onclick="deleteSelectedBankQuestions()" style="display:none;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border:none;border-radius:8px;padding:5px 14px;font-size:.82rem;cursor:pointer;font-weight:700;">🗑️ Delete Selected</button>
+            <button type="button" id="bank-move-selected-btn" onclick="openMoveChapterModal()" style="display:none;background:linear-gradient(135deg,#0369a1,#0284c7);color:#fff;border:none;border-radius:8px;padding:5px 14px;font-size:.82rem;cursor:pointer;font-weight:700;">📦 Move to Chapter</button>
+            <button type="button" id="bank-backend-sync-btn" onclick="syncBankFromBackend()" style="background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;border-radius:8px;padding:5px 14px;font-size:.82rem;cursor:pointer;font-weight:600;">🔄 Backend se sync</button>
+            <button type="button" id="bank-clipper-btn" onclick="window.SnapClip&&SnapClip.open()" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;border-radius:8px;padding:5px 14px;font-size:.82rem;cursor:pointer;font-weight:600;">✂️ Clipper</button>
+            <button type="button" id="bank-clipdrafts-btn" onclick="window.SnapClip&&SnapClip.openDrafts()" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;border-radius:8px;padding:5px 14px;font-size:.82rem;cursor:pointer;font-weight:600;">📥 Clip Drafts</button>
+
+<!-- Move Chapter Modal -->
+<div id="move-chapter-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:28px 24px;width:90%;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+    <h3 style="margin:0 0 6px;font-size:1.1rem;color:#1e293b;">📦 Move Questions to Another Chapter</h3>
+    <p id="move-modal-count" style="font-size:.85rem;color:#6b7280;margin:0 0 16px;"></p>
+    <label for="move-target-subject" style="font-size:.85rem;font-weight:600;color:#374151;display:block;margin-bottom:6px;">Subject</label>
+    <select id="move-target-subject" onchange="populateMoveChapterList()" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.9rem;margin-bottom:12px;"></select>
+    <label style="font-size:.85rem;font-weight:600;color:#374151;display:block;margin-bottom:6px;" for="move-target-chapter">Chapter</label>
+    <select id="move-target-chapter" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.9rem;margin-bottom:6px;"></select>
+    <p style="font-size:.78rem;color:#9ca3af;margin:0 0 16px;">Ya naya chapter naam likhein:</p>
+    <input id="move-target-new-chapter" type="text" aria-label="Or enter a new chapter" placeholder="Naya chapter naam (optional)..." style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.9rem;margin-bottom:18px;box-sizing:border-box;" />
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="closeMoveChapterModal()" style="background:#f3f4f6;color:#374151;border:none;border-radius:8px;padding:8px 18px;font-size:.9rem;cursor:pointer;font-weight:600;">Cancel</button>
+      <button onclick="confirmMoveToChapter()" style="background:linear-gradient(135deg,#0369a1,#0284c7);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:.9rem;cursor:pointer;font-weight:700;">📦 Move</button>
+    </div>
+  </div>
+</div>
+          </div>
+          <div id="bank-list" class="list-box"></div>
+        </div>
+      </div>
+
+      <!-- Bulk Upload -->
+<link rel="stylesheet" href="inline/index-inline-04.css">
+      <div id="bulk-upload-box" class="hidden">
+        <div class="card">
+          <h3 class="section-title">📦 Bulk Question Upload</h3>
+          <p class="muted-text">Bahut saare questions ek saath paste karne ke liye. Format:</p>
+          <div style="font-size:.78rem;color:#64748b;background:#f1f5f9;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-family:monospace;white-space:pre-wrap;">1. भारत की राजधानी क्या है?
+A) दिल्ली
+B) मुंबई
+C) पटना
+D) जयपुर
+Ans: A
+Explanation: दिल्ली भारत की राजधानी है।
+
+2. समाजवाद पर एक निबंध लिखिए।
+Marks: 5
+Model Answer: समाजवाद एक आर्थिक व्यवस्था है जिसमें...</div>
+          <p class="muted-text" style="font-size:.76rem;margin-top:-8px;">💡 Subjective sawaal ke liye options ki jagah <strong>"Marks: 5"</strong> aur <strong>"Model Answer: ..."</strong> line likhein.</p>
+
+          <div class="field-row" style="display:flex;gap:14px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:160px;">
+              <label for="bulk-class-select">Class (कक्षा) <span style="color:#dc2626;">*</span></label>
+              <select id="bulk-class-select" required style="border:1px solid #cbd5e1;" onchange="onBulkClassSelectChange()">
+                <option value="">-- Class chunein --</option>
+              </select>
+              <small style="color:#6b7280;font-size:.78rem;margin-top:2px;display:block;">Zaroori — ye poora batch isi Class ke liye save hoga</small>
+            </div>
+            <div style="flex:1;min-width:200px;">
+              <label for="bulk-subject-select">Subject (विषय)</label>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <select id="bulk-subject-select" style="flex:1;min-width:140px;" onchange="onBulkSubjectSelectChange()">
+                  <option value="">-- Subject chunein --</option>
+                </select>
+                <input type="text" id="bulk-subject" aria-label="Or enter a new subject" value="Mathematics" placeholder="Ya naya subject likhein..." style="flex:1;min-width:140px;" oninput="onBulkSubjectInputChange()" />
+              </div>
+              <small style="color:#6b7280;font-size:.78rem;margin-top:2px;display:block;">Dropdown se chunein <strong>ya</strong> naya subject manually likhein</small>
+            </div>
+            <div style="flex:1;min-width:200px;">
+              <label for="bulk-chapter">Chapter (चैप्टर)</label>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <select id="bulk-chapter-select" aria-label="Choose an existing chapter" style="flex:1;min-width:140px;" onchange="onBulkChapterSelectChange()">
+                  <option value="">-- Chapter chunein --</option>
+                </select>
+                <input type="text" id="bulk-chapter" value="General" placeholder="Ya naya chapter likhein..." style="flex:1;min-width:140px;" />
+              </div>
+              <small style="color:#6b7280;font-size:.78rem;margin-top:2px;display:block;">Dropdown se chunein <strong>ya</strong> naya chapter manually likhein</small>
+            </div>
+            <div style="flex:1;min-width:160px;">
+              <label for="bulk-difficulty">Difficulty</label>
+              <select id="bulk-difficulty">
+                <option value="easy">🟢 Easy</option>
+                <option value="medium" selected>🟡 Medium</option>
+                <option value="hard">🔴 Hard</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="bulk-images-input">📷 Images Attach Karein (optional)</label>
+            <input type="file" id="bulk-images-input" accept="image/*" multiple style="width:100%;padding:6px;border:1px dashed #94a3b8;border-radius:8px;background:#f8fafc;" onchange="handleBulkImagesSelected(this.files)" />
+            <small style="color:#6b7280;font-size:.78rem;margin-top:2px;display:block;">
+              File ka naam question number se match karo (jaise <code>Q1.jpg</code>, <code>2.png</code>) — auto-attach ho jaayega. Preview table me manually bhi attach/change kar sakte ho.
+            </small>
+            <div id="bulk-images-status" style="font-size:.8rem;color:#0f766e;margin-top:4px;display:none;"></div>
+          </div>
+
+          <div class="field-row" style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button type="button" id="bulk-mode-combined-btn" class="btn-primary" style="flex:1;min-width:200px;" onclick="setBulkInputMode('combined')">📝 Ek Text Box (Combined)</button>
+            <button type="button" id="bulk-mode-separate-btn" class="btn-secondary" style="flex:1;min-width:200px;" onclick="setBulkInputMode('separate')">🧩 Alag-Alag Box (Question / Options / Answer)</button>
+          </div>
+
+          <div id="bulk-combined-panel">
+            <div class="field-row">
+              <label for="bulk-raw-text">Questions Paste Karein</label>
+              <textarea id="bulk-raw-text" rows="12" style="font-family:monospace;font-size:.85rem;" placeholder="प्रश्‍न 1. किसी बहुपद में चर का घात इनमें से कौन होगा?
+(क) धन पूर्णांक
+(ख) ऋण पूर्णांक
+(ग) भिन्‍न संख्‍या
+(घ) कोई नहीं
+उत्तर– (क)
+
+1. भारत की राजधानी क्या है?
+A) दिल्ली
+B) मुंबई
+C) पटना
+D) जयपुर
+Ans: A
+
+2. समाजवाद पर एक निबंध लिखिए।
+Marks: 5
+Model Answer: समाजवाद एक आर्थिक व्यवस्था है जिसमें..."></textarea>
+              <div style="font-size:.78rem;color:#64748b;margin-top:4px;line-height:1.5;">
+                💡 Har question naye number se shuru karein (1. ya Q1.). MCQ ke liye A)/B)/C)/D) options aur "Ans: A" line. <strong>Subjective</strong> ke liye options ki jagah <strong>"Marks: 5"</strong> aur (optional) <strong>"Model Answer: ..."</strong> line likhein.
+              </div>
+            </div>
+          </div>
+
+          <div id="bulk-separate-panel" class="hidden">
+            <p class="muted-text" style="font-size:.8rem;">
+              Alag-alag boxes bharein — <strong>har line ek sawaal</strong> ke liye hai, aur sabhi boxes mein line ka number match hona chahiye (jaise Questions box ki line 3 = Option A box ki line 3 = Answer box ki line 3, waise hi sab).
+            </p>
+            <div class="field-row">
+              <label for="bulk-sep-questions">1️⃣ Questions (har line = ek sawaal)</label>
+              <textarea id="bulk-sep-questions" rows="5" style="font-family:monospace;font-size:.85rem;" placeholder="भारत की राजधानी क्या है?
+भारत का राष्ट्रीय पशु कौन सा है?"></textarea>
+            </div>
+            <div class="field-row" style="display:flex;gap:10px;flex-wrap:wrap;">
+              <div style="flex:1;min-width:220px;">
+                <label for="bulk-sep-opt-a">2️⃣ Option A</label>
+                <textarea id="bulk-sep-opt-a" rows="5" style="font-family:monospace;font-size:.85rem;width:100%;" placeholder="दिल्ली
+बाघ"></textarea>
+              </div>
+              <div style="flex:1;min-width:220px;">
+                <label for="bulk-sep-opt-b">3️⃣ Option B</label>
+                <textarea id="bulk-sep-opt-b" rows="5" style="font-family:monospace;font-size:.85rem;width:100%;" placeholder="मुंबई
+शेर"></textarea>
+              </div>
+              <div style="flex:1;min-width:220px;">
+                <label for="bulk-sep-opt-c">4️⃣ Option C</label>
+                <textarea id="bulk-sep-opt-c" rows="5" style="font-family:monospace;font-size:.85rem;width:100%;" placeholder="पटना
+हाथी"></textarea>
+              </div>
+              <div style="flex:1;min-width:220px;">
+                <label for="bulk-sep-opt-d">5️⃣ Option D</label>
+                <textarea id="bulk-sep-opt-d" rows="5" style="font-family:monospace;font-size:.85rem;width:100%;" placeholder="जयपुर
+तेंदुआ"></textarea>
+              </div>
+            </div>
+            <div class="field-row">
+              <label for="bulk-sep-answers">6️⃣ Answer (har line = us sawaal ka sahi jawaab — <code>A/B/C/D</code>, <code>1/2/3/4</code>, ya seedha sahi option ka text)</label>
+              <textarea id="bulk-sep-answers" rows="4" style="font-family:monospace;font-size:.85rem;" placeholder="A
+B"></textarea>
+            </div>
+            <div class="field-row">
+              <label for="bulk-sep-explanations">7️⃣ Explanation (optional — khaali chhod sakte hain)</label>
+              <textarea id="bulk-sep-explanations" rows="4" style="font-family:monospace;font-size:.85rem;" placeholder="दिल्ली भारत की राजधानी है।
+बाघ भारत का राष्ट्रीय पशु है।"></textarea>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button type="button" id="bulk-preview-btn" class="btn-primary" onclick="previewBulkQuestions()">🔍 Preview Questions</button>
+            <button type="button" id="bulk-upload-btn" class="btn-primary" onclick="confirmBulkUpload()" disabled style="opacity:.5;">🚀 Confirm &amp; Upload</button>
+            <button type="button" class="btn-secondary" onclick="downloadBulkCSVTemplate()">⬇️ CSV Template Download</button>
+            <button type="button" id="bulk-undo-btn" class="btn-secondary" onclick="undoLastBulkUpload()" style="display:none;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;">↩️ Undo Last Upload</button>
+          </div>
+
+          <div id="bulk-preview-area" style="display:none;margin-top:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+              <strong id="bulk-preview-summary" style="font-size:.88rem;color:#334155;"></strong>
+              <label style="font-size:.82rem;color:#475569;display:flex;align-items:center;gap:6px;" for="admin-reset-student-mobile">
+                <input type="checkbox" id="bulk-select-all" checked onchange="toggleAllBulkRows(this.checked)" /> Sab select karein
+              </label>
+            </div>
+            <div style="max-height:420px;overflow:auto;border:1px solid #e2e8f0;border-radius:8px;">
+              <table style="width:100%;border-collapse:collapse;font-size:.82rem;" id="bulk-preview-table">
+                <thead style="background:#f1f5f9;position:sticky;top:0;">
+                  <tr>
+                    <th style="padding:6px;width:30px;"></th>
+                    <th style="padding:6px;text-align:left;">#</th>
+                    <th style="padding:6px;text-align:left;">Question / Options (editable)</th>
+                    <th style="padding:6px;text-align:left;width:90px;">Answer</th>
+                    <th style="padding:6px;text-align:left;width:90px;">Image</th>
+                    <th style="padding:6px;text-align:left;width:110px;">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="bulk-preview-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="bulk-progress-wrap" style="display:none;margin-top:14px;">
+            <div style="background:#e2e8f0;border-radius:8px;height:18px;overflow:hidden;">
+              <div id="bulk-progress-bar" style="background:#0ea5e9;height:100%;width:0%;transition:width .2s;"></div>
+            </div>
+            <div id="bulk-progress-text" style="font-size:.8rem;color:#475569;margin-top:4px;">0 / 0</div>
+          </div>
+
+          <div id="bulk-upload-log" style="margin-top:14px;padding:12px;background:#f1f5f9;border-radius:8px;max-height:240px;overflow-y:auto;font-size:.82rem;color:#475569;display:none;"></div>
+
+          <div id="bulk-failed-area" style="display:none;margin-top:14px;padding:12px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;">
+            <strong style="color:#b91c1c;font-size:.85rem;">⚠️ Kuch questions fail ho gaye</strong>
+            <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+              <button type="button" class="btn-secondary" onclick="retryFailedBulk()">🔁 Retry Failed</button>
+              <button type="button" class="btn-secondary" onclick="exportFailedBulk()">⬇️ Export Failed (text)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Records -->
+      <div id="records-box" class="hidden">
+
+        <!-- Records Hub — teen alag function cards, ek waqt mein sirf ek. -->
+        <div id="records-hub" class="cd-wrap" style="padding:0;">
+          <div class="cd-section-title" style="margin-top:0;">Records</div>
+          <div class="cd-grid">
+            <button type="button" class="cd-card cd-red" onclick="showRecordsSubTab('reset')">
+              <div class="cd-card-top"><div class="cd-icon-circle">🔑</div><span class="cd-badge">Admin</span></div>
+              <div class="cd-card-title">Password Reset</div>
+              <div class="cd-card-sub">Student ka password reset karein</div>
+              <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+            </button>
+            <button type="button" class="cd-card cd-blue" onclick="showRecordsSubTab('directory')">
+              <div class="cd-card-top"><div class="cd-icon-circle">👥</div><span class="cd-badge">Students</span></div>
+              <div class="cd-card-title">Students Directory</div>
+              <div class="cd-card-sub">Naam, mobile aur unke answers dekhein</div>
+              <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+            </button>
+            <button type="button" class="cd-card cd-green" onclick="showRecordsSubTab('results')">
+              <div class="cd-card-top"><div class="cd-icon-circle">📁</div><span class="cd-badge">Sheets</span></div>
+              <div class="cd-card-title">Result Sheets</div>
+              <div class="cd-card-sub">Excel/PDF/WhatsApp export karein</div>
+              <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+            </button>
+            <button type="button" class="cd-card cd-orange" onclick="showRecordsSubTab('fixmobile')">
+              <div class="cd-card-top"><div class="cd-icon-circle">🔧</div><span class="cd-badge">Fix</span></div>
+              <div class="cd-card-title">Fake/Galat Mobile Number Theek Karein</div>
+              <div class="cd-card-sub">Placeholder number (jaise 1111111111) aur registered number se mismatch — dono pakde jaate hain</div>
+              <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Password Reset -->
+        <div id="record-reset-box" class="hidden">
+          <button type="button" class="btn-secondary" onclick="backToRecordsHub()" style="margin-bottom:12px;">⬅ Records par wapas</button>
+        <div class="card" style="background:linear-gradient(135deg,#fef2f2,#fee2e2);border:1.5px solid #fca5a5;margin-bottom:12px;">
+          <h3 class="section-title" style="color:#991b1b;">🔑 Student Password Reset (Admin)</h3>
+          <p style="font-size:.82rem;color:#7f1d1d;margin-bottom:10px;">Student ka password AUR security PIN dono bhool jaayein to pehchaan (WhatsApp/class mein) confirm karke hi reset karein.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+            <div class="field-row" style="margin:0;">
+              <label for="admin-reset-student-mobile">Student Mobile Number</label>
+              <input id="admin-reset-student-mobile" type="tel" placeholder="jaise: 9876543210" style="max-width:200px;" />
+            </div>
+            <div class="field-row" style="margin:0;">
+              <label for="admin-reset-student-pass">Naya Password</label>
+              <input id="admin-reset-student-pass" type="text" placeholder="Kam se kam 4 characters" style="max-width:200px;" />
+            </div>
+            <button type="button" id="admin-reset-student-btn" class="btn-primary" style="background:linear-gradient(135deg,#dc2626,#b91c1c);">Reset Karein</button>
+          </div>
+          <p style="font-size:.75rem;color:#7f1d1d;margin-top:8px;">ℹ️ Note: Asli password kabhi bhi dekha nahi ja sakta (security ke liye sirf ek-tarfa hash save hota hai) — yahan sirf <strong>naya</strong> password set kiya ja sakta hai.</p>
+        </div>
+        </div>
+        <!-- /Password Reset -->
+
+        <!-- Students Directory -->
+        <div id="record-directory-box" class="hidden">
+          <button type="button" class="btn-secondary" onclick="backToRecordsHub()" style="margin-bottom:12px;">⬅ Records par wapas</button>
+        <div class="card" style="margin-bottom:16px;">
+          <h3 class="section-title">👥 Students Directory</h3>
+          <p class="muted-text">Har registered student ka naam, mobile (ID) aur MCQ answers yahan milenge — online, OMR ya Manual Entry, kisi bhi tarah se diya ho.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px;">
+            <div class="field-row" style="margin:0;flex:1;min-width:180px;">
+              <label for="students-directory-search">Naam ya Mobile Se Search Karein</label>
+              <input id="students-directory-search" type="text" placeholder="jaise: Rahul ya 9876543210" oninput="renderStudentsDirectory()" />
+            </div>
+            <button type="button" class="btn-secondary" onclick="loadStudentsDirectory()">🔄 Refresh</button>
+            <button type="button" class="btn-secondary" onclick="loadStudentsDirectory(true)" title="Speed ke liye default list sirf apne institute + unassigned students dikhati hai. Bahut purane (institute set hone se pehle wale) students ke liye ye poora scan karta hai — thoda dheema ho sakta hai.">🗄️ Purane students bhi (poora scan)</button>
+          </div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;margin-bottom:10px;cursor:pointer;" for="students-directory-only-with-records">
+            <input type="checkbox" id="students-directory-only-with-records" onchange="renderStudentsDirectory()" />
+            Sirf test diye hue students dikhayein (abhi default: <strong>sabhi</strong> registered students dikh rahe hain)
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;margin-bottom:10px;cursor:pointer;">
+            <input type="checkbox" id="students-directory-only-incomplete-proof" onchange="renderStudentsDirectory()" />
+            ⚠️ Sirf incomplete pehchan-data wale students dikhayein
+          </label>
+          <div id="students-directory-list"><p class="muted-text">Loading...</p></div>
+
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid #e2e8f0;">
+            <label for="students-directory-lookup-mobile" style="font-size:.85rem;font-weight:600;">Ya seedha mobile number se answers dekhein (chahe student registered ho ya na ho):</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
+              <input id="students-directory-lookup-mobile" type="tel" placeholder="10-digit mobile number" maxlength="10" style="max-width:200px;" />
+              <button type="button" class="btn-primary" onclick="viewStudentAnswersByInput()">📄 Answers Dekhein</button>
+            </div>
+          </div>
+
+          <div id="student-answers-detail-area"></div>
+        </div>
+        </div>
+        <!-- /Students Directory -->
+
+        <!-- 🪪 Complete Student Profile (Missing Proof form) — v25 -->
+        <div id="student-proof-overlay" class="test-analysis-overlay examgr-overlay-full hidden" onclick="if(event.target===this) closeStudentProofForm()">
+          <div class="test-analysis-sheet">
+            <button type="button" class="test-analysis-close" onclick="closeStudentProofForm()">✕</button>
+            <div class="test-analysis-title">🪪 Student Profile Complete Karein</div>
+            <p class="muted-text">
+              <strong id="proof-form-student-name">-</strong> ·
+              Mobile: <strong id="proof-form-student-mobile">-</strong><br>
+              Jo field ⚠️ highlight hai wahi abhi missing hai — baaki pehle se bhari hui hain, zaroorat ho to unhe bhi badal sakte hain.
+            </p>
+            <form onsubmit="return submitStudentProofForm(event)">
+              <div class="field-row" data-proof-field="photoDataUrl">
+                <label for="proof-form-photo-input">Photo</label>
+                <img id="proof-form-photo-preview" src="" alt="" style="display:none;max-width:120px;max-height:120px;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:6px;">
+                <input type="file" accept="image/*" capture="environment" id="proof-form-photo-input" onchange="handleStudentProofPhotoChange(event)">
+              </div>
+              <div class="field-row" data-proof-field="classId">
+                <label for="proof-form-class">Class</label>
+                <select id="proof-form-class"></select>
+              </div>
+              <div class="field-row" data-proof-field="rollNumber">
+                <label for="proof-form-roll">Roll Number</label>
+                <input type="text" id="proof-form-roll" placeholder="jaise: 23">
+              </div>
+              <div class="field-row" data-proof-field="guardianName">
+                <label for="proof-form-guardian-name">Parent/Guardian ka Naam</label>
+                <input type="text" id="proof-form-guardian-name" placeholder="jaise: Suresh Kumar">
+              </div>
+              <div class="field-row" data-proof-field="guardianMobile">
+                <label for="proof-form-guardian-mobile">Parent/Guardian ka Mobile</label>
+                <input type="tel" id="proof-form-guardian-mobile" maxlength="10" placeholder="10-digit mobile number">
+              </div>
+              <div class="field-row" data-proof-field="instituteId">
+                <strong id="proof-form-institute-title">Institute</strong>
+                <p id="proof-form-institute-label" class="muted-text" aria-labelledby="proof-form-institute-title" style="margin:0;">-</p>
+              </div>
+              <button type="submit" class="btn-primary" id="proof-form-save-btn" style="width:100%;margin-top:6px;">💾 Save Karein</button>
+            </form>
+          </div>
+        </div>
+        <!-- /Complete Student Profile -->
+
+
+        <!-- Fake Mobile Number Fix -->
+        <div id="record-fixmobile-box" class="hidden">
+          <button type="button" class="btn-secondary" onclick="backToRecordsHub()" style="margin-bottom:12px;">⬅ Records par wapas</button>
+        <div class="card" style="margin-bottom:16px;">
+          <h3 class="section-title">🔧 Fake/Galat Mobile Number Theek Karein</h3>
+          <p class="muted-text">Manual Entry/OMR mein kabhi-kabhi placeholder number (jaise <code>1111111111</code>, <code>0000000000</code>) chadh jaate hain — aur kabhi-kabhi teacher se koi bhi RANDOM valid-dikhne wala number bhi galat type ho jaata hai (jo placeholder pattern na hone ki wajah se pehle pakda nahi jaata tha). Dono cases mein wo student Students Directory ke registered account se match nahi hota aur Leaderboard mein alag-se (duplicate) entry ban jaati hai. Yeh tool ab Students Directory se cross-check karke, registered number se mismatch bhi pakadta hai — jahan possible ho wahan sahi number apne aap suggest bhi kar deta hai. Confirm karke "Update Karein" dabayein — us group ke SAARE galat-number records ek saath sahi ho jaayenge.</p>
+          <button type="button" class="btn-secondary" onclick="loadFakeMobileGroups()" style="margin-bottom:12px;">🔄 Refresh</button>
+          <div id="fixmobile-list"><p class="muted-text">Loading...</p></div>
+        </div>
+        </div>
+        <!-- /Fake Mobile Number Fix -->
+
+        <!-- Result Sheets -->
+        <div id="record-results-box" class="hidden">
+          <button type="button" class="btn-secondary" onclick="backToRecordsHub()" style="margin-bottom:12px;">⬅ Records par wapas</button>
+        <div class="card">
+          <h3 class="section-title">Student Result Sheets</h3>
+          <button id="clear-records" class="btn-danger">🗑️ Clear All Records</button>
+          <button type="button" class="btn-secondary" onclick="window.print()" style="margin-left:8px;">🖨️ Print Results</button>
+
+          <div class="field-row" style="margin-top:10px;">
+            <label for="admin-result-test-select">📋 Select Test (Excel/PDF/WhatsApp ke liye)</label>
+            <select id="admin-result-test-select" onchange="if(window.renderAdminRecordsForSelectedTest) renderAdminRecordsForSelectedTest()">
+              <option value="">— Sabhi Tests (ya neeche se ek test chunein) —</option>
+            </select>
+          </div>
+
+          <!-- Mega Update: Export Buttons -->
+          <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+            <button type="button" class="btn-primary" onclick="exportToExcel()" style="background:linear-gradient(135deg,#16a34a,#15803d); font-size:0.85rem;">📊 Download Excel</button>
+            <button type="button" class="btn-primary" onclick="exportToPdf()" style="background:linear-gradient(135deg,#e11d48,#be123c); font-size:0.85rem;">📄 Download PDF</button>
+            <button type="button" class="btn-primary" onclick="bulkSendWhatsApp()" style="background:linear-gradient(135deg,#25d366,#128c7e); font-size:0.85rem;">💬 Auto-Send WhatsApp</button>
+          </div>
+
+          <div style="margin-top:10px;padding:10px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;font-size:13px;color:#166534">
+            💡 <strong>WhatsApp:</strong> Pehle upar se "Select Test" mein test chunein, phir "Auto-Send WhatsApp" button se us test ke sabhi students ke liye bulk messages generate kar sakte hain.
+          </div>
+
+          <!-- Class-wide Weak-Chapter Analytics: same chapter-wise accuracy
+               view students see for themselves after a test, but aggregated
+               across every student's attempt for the test(s) currently in
+               view above — so admin can see which chapters the WHOLE CLASS
+               struggles with, not just one student. Auto-updates whenever
+               "Select Test" changes (see renderClasswideWeakChapters()). -->
+          <div class="card" style="margin-top:16px;border:1.5px solid #6366f1;">
+            <h3 class="section-title" style="color:#4338ca;">📊 Class-wide Weak Chapters</h3>
+            <p class="muted-text" style="margin-top:-6px;">Test chunein (ya "Sabhi Tests" rehne dein) — neeche har chapter mein poori class ki accuracy dikhegi.</p>
+            <div id="classwide-analytics-box"><p class="muted-text" style="margin:0;">Loading...</p></div>
+          </div>
+
+          <div id="records-list" class="records-sheets-wrap"></div>
+        </div>
+        </div>
+        <!-- /Result Sheets -->
+      </div>
+      <!-- GRADE SUBJECTIVE -->
+      <div id="grade-box" class="hidden">
+        <div class="card">
+          <h3 class="section-title">📝 Grade Subjective Answers</h3>
+          <p class="muted-text">Test chunein — subjective jawab likhne wale students ki list neeche aayegi. Jawab padhkar marks dein aur Save karein.</p>
+          <div class="field-row"><label for="grade-test-select">Test</label><select id="grade-test-select"></select></div>
+          <div id="grade-students-list" class="list-box"></div>
+        </div>
+        <div id="grade-detail-box" class="card hidden"></div>
+      </div>
+
+      <!-- Generator Box -->
+      <div id="generator-box" class="hidden">
+        <iframe id="qgen-iframe" title="Question paper generator" loading="lazy" src="question-generator.html?v=20261102" style="width: 100%; height: calc(100vh - 90px); min-height: 600px; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 10px;"></iframe>
+      </div>
+
+      <!-- TOP PERFORMERS / LEADERBOARD -->
+      <div id="leaderboard-box" class="hidden">
+        <div class="card">
+          <h3 class="section-title">🏆 Top Performers</h3>
+          <p class="muted-text">Sabhi students total marks ke hisaab se rank mein dikhte hain. Student par click karein to test-wise marks khulenge. Leaderboard OFF wale test ke marks count nahi hote.</p>
+          <button type="button" class="btn-secondary" onclick="window.SavyaExtras.renderAdminLeaderboard()" style="margin-bottom:10px;">🔄 Refresh</button>
+          <div id="admin-leaderboard-list"></div>
+        </div>
+      </div>
+
+      <!-- RECYCLE BIN -->
+      <div id="trash-box" class="hidden"></div>
+
+      <!-- SETTINGS (Firebase Seed + Admin Password) -->
+      <div id="settings-box" class="hidden">
+        <div class="card" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1.5px solid #86efac;margin-bottom:12px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <div>
+            <strong style="color:#166534;">👤 Logged in as</strong>
+            <p id="admin-settings-email" style="font-size:.9rem;color:#14532d;margin-top:3px;font-weight:600;">—</p>
+          </div>
+        </div>
+        <!-- ── Admin ID Card (v111) ───────────────────────────────────
+             Student ID Card jaisa hi design — bas ID Number/Class/
+             Academic Session ke bina (wo sirf students ke liye
+             relevant hain). Corner-logo par click karke Admin apne
+             institute ka logo upload karta hai — ye logo turant Admin
+             ke is card par AUR sabhi students ke ID Card par bhi
+             dikhne lagta hai (dono ek hi field —
+             institutes/{id}.logoDataUrl — use karte hain). Beech ki
+             photo aur "Name" Admin apne liye alag se set karta hai
+             (id-card.js → renderAdminIdCard). -->
+        <div class="card" style="margin-bottom:12px;">
+          <h3 class="section-title" style="margin-top:0;">🪪 Aapka ID Card</h3>
+          <p class="muted-text" style="margin-top:-6px;">Logo par click karke institute ka logo lagayein (ID Card par bhi dikhega). Photo aur Naam par click/✏️ karke details set karein.</p>
+          <div class="idcard-outer" id="admin-idcard-outer">
+            <div class="idcard">
+              <div class="idcard-header">
+                <div class="idcard-header-left">
+                  <label for="admin-institute-logo-input" class="idcard-logo-circle idcard-logo-clickable" title="Institute logo lagayein/badlein">
+                    <img id="admin-idcard-logo-left-img" src="" alt="" style="display:none;" />
+                    <span id="admin-idcard-logo-left-fallback" class="idcard-logo-fallback">🏫</span>
+                  </label>
+                  <div class="idcard-header-text">
+                    <div class="idcard-inst-name" id="admin-idcard-inst-name">Loading...</div>
+                    <div class="idcard-subtitle">Admin ID Card</div>
+                  </div>
+                </div>
+                <label for="admin-institute-logo-input" class="idcard-logo-badge idcard-logo-clickable" title="Institute logo lagayein/badlein">
+                  <img id="admin-idcard-logo-right-img" src="" alt="" style="display:none;" />
+                  <span id="admin-idcard-logo-right-fallback" class="idcard-logo-fallback">🏫</span>
+                </label>
+                <input type="file" id="admin-institute-logo-input" accept="image/*" style="display:none;" onchange="handleInstituteLogoChange(event)" />
+              </div>
+
+              <div class="idcard-body">
+                <div class="idcard-photo-col">
+                  <label for="admin-dp-photo-input" class="idcard-photo-frame" title="Apni photo lagayein/badlein">
+                    <img id="admin-dp-preview" src="" alt="Admin Photo" style="display:none;" />
+                    <div id="admin-dp-placeholder" class="idcard-photo-placeholder">
+                      <span class="idcard-photo-icon">📷</span>
+                      <span class="idcard-photo-text">Photo Lagayein</span>
+                    </div>
+                  </label>
+                  <input type="file" id="admin-dp-photo-input" accept="image/*" style="display:none;" onchange="handleAdminDpPhotoChange(event)" />
+                  <p id="admin-dp-photo-status" class="idcard-photo-status"></p>
+                </div>
+                <div class="idcard-fields">
+                  <div class="idcard-field">
+                    <span class="idcard-label">Name:</span>
+                    <span class="idcard-value" id="admin-idcard-name">Loading...</span>
+                    <button type="button" class="idcard-edit-btn" onclick="handleAdminNameEdit()" title="Naam badlein">✏️</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="idcard-footer">
+                <div class="idcard-issue">
+                  <div class="idcard-footer-label">Issue Date</div>
+                  <div class="idcard-footer-value" id="admin-idcard-issue-date">-</div>
+                </div>
+                <div class="idcard-signature">
+                  <div class="idcard-sign-script" id="admin-idcard-sign-name">-</div>
+                  <div class="idcard-sign-label">Owner of Institute</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p id="admin-institute-logo-status" class="muted-text" style="margin-top:8px;font-size:.8rem;"></p>
+        </div>
+        <!-- v132: Institute Join Code — student registration ko is
+             institute tak seedha "koi bhi ghus jaaye" hone se rokta
+             hai. Asli code Firestore rules ke through hi verify hota
+             hai (studentSecrets/password wale pattern jaisa) — client
+             ko kabhi doosre institutes ka code dikhta nahi. -->
+        <div class="card" style="margin-bottom:12px;">
+          <h3 class="section-title" style="margin-top:0;">🔑 Institute Join Code</h3>
+          <p class="muted-text" style="margin-top:-6px;">Naye students ko registration ke waqt ye code dena hoga — bina code ke koi aapke institute mein register nahi kar paayega. Code sirf apne students ko dein.</p>
+          <p id="institute-joincode-status" class="muted-text" style="font-weight:700;">Loading...</p>
+          <div class="field-row">
+            <label for="institute-joincode-input">Naya Code Set/Badlein</label>
+            <input type="text" id="institute-joincode-input" placeholder="jaise: SAVYA2026" maxlength="20" style="text-transform:uppercase;" />
+          </div>
+          <button type="button" class="btn-primary" onclick="saveInstituteJoinCode()">💾 Code Save Karein</button>
+          <button type="button" class="btn-secondary" onclick="disableInstituteJoinCode()" style="margin-left:8px;">🚫 Protection Hatayein</button>
+        </div>
+        <div class="card" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1.5px solid #93c5fd;margin-bottom:12px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <div>
+            <strong style="color:#1e40af;">📥 Firebase Question Bank Seed</strong>
+            <p style="font-size:.82rem;color:#3730a3;margin-top:3px;">Pehli baar click karein — sabhi subjects (Math &amp; History) ke questions save/update ho jaayenge.</p>
+          </div>
+          <button id="seed-questions-btn" class="btn-primary" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);">🌱 Seed All Questions to Firebase</button>
+        </div>
+        <div class="card" style="background:linear-gradient(135deg,#fff7ed,#ffedd5);border:1.5px solid #fdba74;margin-bottom:12px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <div>
+            <strong style="color:#9a3412;">🔐 Admin Password</strong>
+            <p style="font-size:.82rem;color:#7c2d12;margin-top:3px;">Password ab online save hota hai, isliye har device par same rahega.</p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button id="change-admin-password-btn" class="btn-primary" style="background:linear-gradient(135deg,#ea580c,#c2410c);">🔁 Change Password</button>
+            <button id="set-recovery-btn" class="btn-primary" style="background:linear-gradient(135deg,#0891b2,#0e7490);">ℹ️ Recovery Info</button>
+            <button id="admin-logout-btn" type="button" class="btn-primary" style="background:linear-gradient(135deg,#64748b,#334155);">🚪 Admin Logout</button>
+          </div>
+        </div>
+        
+      </div>
+
+      <!-- 3D SOLIDS LAB (v125) -->
+      <div id="solidslab-box" class="hidden">
+        <div class="card">
+          <h3 class="section-title">📐 3D Solids Lab</h3>
+          <p class="muted-text">Surface Area aur Volume ke solids (cylinder, cone, sphere, cuboid) 3D mein banayein, ghumayein, kaat kar andar dekhein — class mein concept live dikhane ke liye.</p>
+          <div id="solids-lab-mount-admin" class="solids-lab-root"></div>
+        </div>
+      </div>
+
+      <!-- OMR -->
+      <div id="omr-box" class="hidden">
+
+        <!-- OMR Hub — do alag function cards, ek waqt mein sirf ek. -->
+        <div id="omr-hub" class="cd-wrap" style="padding:0;">
+          <div class="cd-section-title" style="margin-top:0;">OMR</div>
+          <div class="cd-grid">
+            <button type="button" class="cd-card cd-indigo" onclick="showOmrSubTab('exammgr')">
+              <div class="cd-card-top"><div class="cd-icon-circle">🗂️</div><span class="cd-badge">New</span></div>
+              <div class="cd-card-title">Exam Manager</div>
+              <div class="cd-card-sub">Offline paper exams — answer key, scan-count, reports</div>
+              <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Generate OMR Sheet -->
+        <div id="omr-generate-box" class="hidden">
+          <button type="button" class="btn-secondary" onclick="backToOmrHub()" style="margin-bottom:12px;">⬅ OMR par wapas</button>
+        <div class="card" style="margin-bottom:16px;">
+          <h3 class="section-title">🖨️ OMR Sheet Banayein</h3>
+          <p class="muted-text">Kisi bhi test ke liye printable OMR answer sheet (PDF) banayein — students isi par offline answers bharenge.</p>
+          <div class="field-row">
+            <label for="omr-sheet-test-select">Test Chunein</label>
+            <select id="omr-sheet-test-select"></select>
+          </div>
+          <button type="button" id="omr-generate-sheet-btn" class="btn-primary">🖨️ OMR Sheet Generate Karein (JPG)</button>
+          <p class="muted-text" style="margin-top:8px;">Note: Sheet ki poori photo kheenchein (bina crop, seedhi, achhi light mein) — corner ke 4 kaale square poore dikhne chahiye.</p>
+        </div>
+        </div>
+        <!-- /Generate OMR Sheet -->
+
+        <!-- Manual Entry -->
+        <div id="omr-manual-box" class="hidden">
+          <button type="button" class="btn-secondary" onclick="backToOmrHub()" style="margin-bottom:12px;">⬅ OMR par wapas</button>
+
+        <div class="card" style="margin-bottom:16px;border:1.5px solid #7c3aed;">
+          <h3 class="section-title" style="color:#6d28d9;">🤖 Auto-Scan Galat Ho To — ChatGPT Se Answers Nikalwayein</h3>
+          <p class="muted-text">Agar OMR Scanner kisi sheet ke answers galat pakde (halki marking, camera angle ya shadow se), to us sheet ki photo ChatGPT ko dikhakar sahi answers nikalwayein, phir neeche "Answers Type Karein" box mein paste karke save karein.</p>
+          <button type="button" class="btn-secondary" onclick="copyChatGptOmrPrompt()">📋 ChatGPT Prompt Copy Karein</button>
+          <ol style="margin:10px 0 0;padding-left:20px;font-size:.85rem;color:#475569;line-height:1.7;">
+            <li><a href="https://chatgpt.com" target="_blank" rel="noopener">chatgpt.com</a> par ek naya chat kholein.</li>
+            <li>Upar wala "📋 ChatGPT Prompt Copy Karein" button dabayein, phir ChatGPT mein paste karein.</li>
+            <li>Us sheet ki photo(s) usi message mein attach karke bhejein.</li>
+            <li>ChatGPT jo <code>1 A</code> / <code>2</code> / <code>3 C</code> jaisa format wapas dega, use poora copy karein.</li>
+            <li>Neeche "Answers" box mein paste karke "Answers Parse Karein" dabayein — answers apne aap bhar jaayenge, baaki dropdown se check/fix karein.</li>
+          </ol>
+        </div>
+
+        <div class="card" style="margin-bottom:16px;">
+          <h3 class="section-title">✍️ Answers Type Karke Marks Chadhayein</h3>
+          <p class="muted-text">Photo ki zaroorat nahi — student ka OMR khud dekh kar answers yahan type karein, jaise: <code>1 c 2 b 3 a 4 d</code> (ek line me ya alag-alag lines me, "x" ya "-" likhne se woh question not-attempted maana jaayega).</p>
+          <div class="field-row">
+            <label for="omr-manual-test-select">Test Chunein</label>
+            <select id="omr-manual-test-select"></select>
+          </div>
+          <div class="field-row">
+            <label for="omr-manual-student-name">Student Ka Naam</label>
+            <input id="omr-manual-student-name" type="text" placeholder="Poora naam" />
+          </div>
+          <div class="field-row">
+            <label for="omr-manual-student-mobile">WhatsApp Number</label>
+            <input id="omr-manual-student-mobile" type="text" placeholder="10-digit number" maxlength="10" />
+          </div>
+          <div class="field-row">
+            <label for="omr-manual-answers-text">Answers (jaise: 1 c 2 b 3 a ...)</label>
+            <textarea id="omr-manual-answers-text" rows="4" placeholder="1 c
+2 b
+3 a
+4 d ..."></textarea>
+          </div>
+          <button type="button" id="omr-manual-parse-btn" class="btn-primary">📝 Answers Parse Karein &amp; Review Dikhayein</button>
+          <p id="omr-manual-status" class="muted-text" style="margin-top:8px;"></p>
+          <div id="omr-manual-review-area"></div>
+        </div>
+        </div>
+        <!-- /Manual Entry -->
+
+        <!-- Exam Manager -->
+        <div id="omr-exammgr-box" class="hidden">
+          <button type="button" class="btn-secondary" onclick="backToOmrHub()" style="margin-bottom:12px;">⬅ OMR par wapas</button>
+
+        <div class="card" style="margin-bottom:16px;">
+          <h3 class="section-title">🗂️ Exam Manager</h3>
+          <p class="muted-text">Offline/paper exams ka record yahan rakhein: answer key, sheets ki ginti aur reports.</p>
+          <button type="button" class="btn-secondary" onclick="__examgrOpenRegSafe()" style="width:100%;margin-bottom:8px;">📝 Registration aur Admit Card</button>
+          <button type="button" class="btn-secondary" onclick="syncOldTestsToExamManager()" id="examgr-sync-old-btn" style="width:100%;margin-top:10px;">🔄 Purane Tests Sync Karein</button>
+          <button type="button" class="btn-secondary" onclick="examgrCleanOrphans()" id="examgr-orphan-btn" style="width:100%;margin-top:10px;">🧹 Student side ke purane OMR results hatayein</button>
+          <p class="muted-text" style="font-size:.78rem;margin-top:4px;">Naye tests apne aap yahan aate hain. Ye button sirf purane tests ke liye hai.</p>
+        </div>
+
+        <div class="examgr-intro-row">
+          <span class="muted-text" style="margin:0;">Aapke exams</span>
+          <button type="button" class="examgr-sort-btn" id="examgr-sort-btn">⇅ Newest first</button>
+        </div>
+        <div id="examgr-list"></div>
+        </div>
+        <!-- /Exam Manager -->
+
+      </div>
+
+    </div>
+  </main>
+</div>
+<!-- /home-screen -->
+
+<!-- ═══════════════════════ EXAM SCREEN ═══════════════════════ -->
+<div id="exam-screen" class="hidden">
+  <div class="exam-header">
+    <div class="exam-header-left">
+      <div id="exam-title" class="exam-title-text"></div>
+      <div id="exam-meta" class="exam-meta-text"></div>
+    </div>
+    <div class="exam-header-right">
+      <div class="lang-toggle">
+        <button id="lang-en" class="lang-btn">EN</button>
+        <button id="lang-hi" class="lang-btn active">HI</button>
+        <button id="lang-both" class="lang-btn">EN+HI</button>
+      </div>
+      <div id="timer" class="timer-box">30:00</div>
+    </div>
+  </div>
+  <div class="exam-progress-track"><div id="exam-progress-fill" class="exam-progress-fill"></div></div>
+
+  <div class="exam-body">
+    <div class="exam-main">
+      <div class="q-meta-row">
+        <span id="question-count" class="q-count"></span>
+        <span class="q-meta-dot">·</span>
+        <span id="exam-question-marks" class="q-marks"></span>
+      </div>
+      <div id="exam-section-banner" class="exam-section-banner hidden"></div>
+      <div id="exam-question" class="q-text"></div>
+      <div id="exam-options" class="options-list"></div>
+
+      <div class="exam-actions">
+        <div class="exam-actions-left">
+          <button id="mark-review" class="btn-ghost">🔖 Mark For Review</button>
+          <button id="clear-response" class="btn-ghost">✖ Clear Response</button>
+        </div>
+        <div class="exam-actions-right">
+          <button id="prev-question" class="btn-pager">← Prev</button>
+          <button id="next-question" class="btn-pager">Next →</button>
+        </div>
+      </div>
+      <div class="exam-footer-btns">
+        <button id="exam-back" class="btn-text-muted">🏠 Back Home</button>
+        <button id="submit-test" class="btn-primary">✅ Submit Test</button>
+      </div>
+    </div>
+
+    <div class="exam-sidebar" id="exam-sidebar">
+      <div class="stats-card">
+        <div class="stats-row">
+          <span id="answered-count" class="stat answered">Answered 0</span>
+          <span id="unanswered-count" class="stat not-answered">Unanswered 0</span>
+          <span id="review-count" class="stat review">Review 0</span>
+        </div>
+      </div>
+      <div id="total-questions" class="total-q"></div>
+      <div id="question-nav" class="q-nav-grid"></div>
+      <div class="q-nav-legend">
+        <span><i class="dot answered"></i>Answered</span>
+        <span><i class="dot not-answered"></i>Not answered</span>
+        <span><i class="dot review"></i>For review</span>
+        <span><i class="dot not-visited"></i>Not visited</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="qnav-backdrop" class="qnav-backdrop"></div>
+  <button type="button" id="qnav-fab" class="qnav-fab" aria-label="Open question navigation">
+    🗂️<span id="qnav-fab-badge" class="qnav-fab-badge hidden">0</span>
+  </button>
+</div>
+<!-- /exam-screen -->
+
+<!-- ═══════════════════════ RESULT SCREEN ═══════════════════════ -->
+<div id="result-screen" class="hidden">
+  <div class="result-wrap">
+    <div id="board-result-sheet" class="board-result-sheet-wrap"></div>
+    <button type="button" class="btn-secondary rs-print-btn" onclick="window.print()">🖨️ Print Result Sheet</button>
+
+    <div class="result-header-card">
+      <div class="result-logo">🏆</div>
+      <div id="result-greeting" class="result-greeting"></div>
+      <div id="result-feedback" class="result-feedback"></div>
+    </div>
+
+    <!-- Performance Cards -->
+    <div class="perf-grid">
+      <div class="perf-card">
+        <div class="perf-label">🏅 Rank</div>
+        <div id="perf-rank" class="perf-value">-</div>
+        <div class="progress-bar-container"><div id="perf-rank-progress" class="progress-bar-fill blue"></div></div>
+      </div>
+      <div class="perf-card">
+        <div class="perf-label">📊 Score</div>
+        <div id="perf-score" class="perf-value">-</div>
+        <div class="progress-bar-container"><div id="perf-score-progress" class="progress-bar-fill green"></div></div>
+      </div>
+      <div class="perf-card">
+        <div class="perf-label">🎯 Accuracy</div>
+        <div id="perf-accuracy" class="perf-value">-</div>
+        <div class="progress-bar-container"><div id="perf-accuracy-progress" class="progress-bar-fill orange"></div></div>
+      </div>
+      <div class="perf-card">
+        <div class="perf-label">📈 Percentile</div>
+        <div id="perf-percentile" class="perf-value">-</div>
+        <div class="progress-bar-container"><div id="perf-percentile-progress" class="progress-bar-fill purple"></div></div>
+      </div>
+      <div class="perf-card">
+        <div class="perf-label">✅ Attempted</div>
+        <div id="perf-attempted" class="perf-value">-</div>
+        <div class="progress-bar-container"><div id="perf-attempted-progress" class="progress-bar-fill teal"></div></div>
+      </div>
+      <div class="perf-card">
+        <div class="perf-label">⏱️ Time Spent</div>
+        <div id="perf-time" class="perf-value">-</div>
+        <div class="progress-bar-container"><div id="perf-time-progress" class="progress-bar-fill red"></div></div>
+      </div>
+    </div>
+
+    <!-- Section-wise performance -->
+    <div class="card">
+      <h3 class="section-title">📚 Section-wise Performance</h3>
+      <div id="section-perf-list"></div>
+    </div>
+
+    <!-- Answer Summary -->
+    <div class="card">
+      <h3 class="section-title">📋 Answer Summary</h3>
+      <div class="answer-summary-counts" id="answer-summary-counts"></div>
+    </div>
+
+    <!-- Chapter-wise weak area report -->
+    <div class="card" id="chapterwise-report-card">
+      <h3 class="section-title">📊 Chapter-wise Analysis — Weak Areas</h3>
+      <div id="chapterwise-report-list"></div>
+    </div>
+
+    <div class="result-btns">
+      <button id="back-home" class="btn-secondary">🏠 Back to Home</button>
+      <button id="reattempt-wrong-btn" class="btn-secondary" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;">🔁 Re-attempt Wrong</button>
+      <button id="weak-practice-btn" class="btn-secondary" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;border:none;">🎯 Weak Topics Practice</button>
+      <button id="view-solution" class="btn-primary">🔍 View Solution</button>
+    </div>
+  </div>
+</div>
+<!-- /result-screen -->
+
+<!-- ═══════════════════════ PRACTICE RESULT (small card, no certificate) ═══════════════════════ -->
+<div id="practice-result-screen" class="hidden">
+  <div class="result-wrap">
+    <div id="practice-result-card-holder"></div>
+    <div class="result-btns">
+      <button id="practice-result-back" class="btn-secondary">🏠 Back to Home</button>
+    </div>
+  </div>
+</div>
+<!-- /practice-result-screen -->
+
+<!-- ═══════════════════════ SOLUTION SCREEN ═══════════════════════ -->
+<div id="solution-screen" class="hidden">
+  <div class="solution-header">
+    <button id="solution-back" class="btn-secondary">← Back to Result</button>
+    <div class="lang-toggle">
+      <button id="sol-lang-en" class="lang-btn">EN</button>
+      <button id="sol-lang-hi" class="lang-btn active">HI</button>
+      <button id="sol-lang-both" class="lang-btn">EN+HI</button>
+    </div>
+    <div id="sol-progress-text" class="sol-progress"></div>
+  </div>
+  <div class="solution-body">
+    <div id="solution-question-area"></div>
+    <div class="sol-nav-btns">
+      <button id="sol-prev" class="btn-secondary">← Prev</button>
+      <button id="sol-next" class="btn-primary">Next →</button>
+    </div>
+          <div id="sol-q-nav" class="q-nav-grid"></div>
+  </div>
+</div>
+<!-- /solution-screen -->
+
+<!-- v179: Owner Panel ab alag Owner APK / owner-app.html me hai — main app me nahi. -->
+
+<!-- Firebase SDKs -->
+<script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+<script defer src="read-diet.js?v=1"></script>
+<script defer src="app-config.js"></script>
+<script defer src="own-backend.js?v=5"></script>
+<script defer src="firebase-config.js"></script>
+<script defer src="records-lockdown.js"></script>
+<script defer src="server-auth.js"></script>
+
+<!-- PERF FIX: 5 question-bank files (176 KiB combined — mathematics
+     akela 118 KiB) yahan se hata di gayi. Inka data sirf ek baar,
+     Admin panel ke "🌱 Seed All Questions to Firebase" button se
+     Firebase mein seed karne ke kaam aata hai (student/normal test-
+     taking flow inhe kabhi touch nahi karta — dekhein script.js ke
+     seedAllQuestions() mein "AUTO-SEED DISABLED" comment). Ab yeh
+     __ensureLib se sirf us button dabane par hi load hoti hain. -->
+<!-- Main App
+     NOTE: Pehle ye files document.write('<script src="X?v='+Date.now()+'">')
+     se load hoti thi. Iske 2 nuksaan the:
+       1) document.write render-blocking hai (browser HTML parsing rok kar
+          isse chalata hai) — normal <script> tag se koi extra fayda nahi
+          deta, bas extra overhead.
+       2) ?v=Date.now() — matlab URL HAR SINGLE PAGE-LOAD par badal jaata
+          hai, isliye browser is file ko KABHI cache nahi kar paata; har
+          baar poora script.js (sabse badi file) dobara download hota
+          tha. Service Worker ka fetch handler pehle se hi network-first
+          {cache:'no-store'} use karta hai, to freshness wahi se
+          guaranteed hai — is URL-versioning ki ab zaroorat nahi. Stable
+          URL rakhne se browser/SW ka apna cache theek se kaam karta hai
+          aur repeat visits kaafi fast ho jaate hain. -->
+<script defer src="paper-sets.js?v=1"></script>
+<script defer src="subject-resolver.js"></script>
+<script defer src="bank-idb.js?v=1"></script>
+<script defer src="pdf-import.js"></script>
+<script defer src="script.js"></script>
+<script defer src="presence-ping.js"></script>
+<script defer src="admin-notify.js?v=2"></script>
+<script defer src="question-report.js?v=2"></script>
+<script defer src="question-editor.js?v=1"></script>
+<script defer src="version-gate.js?v=1"></script>
+<script defer src="clip-panel.js?v=2"></script>
+<script defer src="admin-settings-pro.js?v=2"></script>
+<!-- PERF FIX v120: owner-panel.js (50 KiB) aur exam-manager.js (231 KiB)
+     yahan se hata di gayi. owner-panel.js sirf ek hi banda (Owner) use
+     karta hai, exam-manager.js sirf Admin apne "Exam Manager" tab mein —
+     dono normal student ke test-taking flow mein kabhi chhute hi nahi,
+     phir bhi pehle HAR visitor ke liye eager download+parse hoti thin.
+     Ab __ensureLib se sirf actual use-point par load hoti hain:
+       - ownerPanel → "🏢 Owner Panel Kholein" button
+       - examManager → OMR hub → "🗂️ Exam Manager" sub-tab
+     SAVYA_CLASS_OPTIONS (owner-panel.js ka ek chhota top-level global,
+     jo script.js/exam-manager.js/id-card.js mein turant chahiye hota
+     hai) neeche __ensureLib ke saath hi eager define kar diya gaya hai,
+     taaki owner-panel.js load hue bina bhi sahi list turant mile. -->
+<script defer src="upgrade.js"></script>
+<script defer src="whatsapp-poll-export.js"></script>
+<script defer src="student-features.js"></script>
+<script type="module" src="modules/app.mjs"></script>
+<script defer src="student-session.js?v=1"></script>
+<script defer src="batch-catalog.js?v=1"></script>
+<script defer src="batch-system.js?v=2"></script>
+<script defer src="batch-phase2.js?v=1"></script>
+<script defer src="batch-v169.js?v=1"></script>
+<script defer src="snap-files.js?v=1"></script>
+<script defer src="drive-upload.js?v=1"></script>
+<script defer src="lock-config.js?v=1"></script>
+<script defer src="app-lock.js?v=1"></script>
+<script defer src="branding.js?v=2"></script>
+<script defer src="pdf-viewer.js?v=1"></script>
+<script defer src="id-card.js"></script>
+<script defer src="admit-card.js?v=2"></script>
+<script defer src="omr.js?v=2"></script>
+<script defer src="push-notifications.js"></script>
+<script defer src="native-push.js"></script>
+<script defer src="app-update.js"></script>
+<script defer src="auto-update.js"></script>
+<script defer src="offline-sync.js"></script>
+<!-- Android/TWA back-button fix: exam ya kisi bhi screen ke beech
+     back dabane par app close hone se rokta hai -->
+<script defer src="overlay-back.js"></script>
+<script defer src="back-button-guard.js"></script>
+
+<!-- PERF FIX v2: TRUE on-demand loader for the 8 heavy CDN libraries
+     (chart.js, tesseract.js, xlsx, html2pdf, jspdf, docx,
+     canvas-confetti, katex). Pehla attempt (page "load" ke turant baad
+     background mein sabko load karna) se Total Blocking Time UL̥TA
+     BADH gaya tha (1,890ms → 3,600ms) — kyunki Lighthouse TBT sirf
+     "page load" tak nahi, balki jab tak page CPU/network dono par
+     "quiet" na ho jaaye tab tak count karta hai, aur 8 bhaari
+     libraries ek saath background mein parse/execute hone se bade
+     "long tasks" ban rahe the jo isi window ke andar aa rahe the.
+     Ab in libraries ko bilkul bhi load NAHI kiya jaata jab tak student/
+     admin actual feature (Scan-Sheet OCR / Export Excel-PDF-Word /
+     Math question / Chart / results confetti) use na kare — isliye
+     normal PageSpeed audit (jo koi button nahi dabata) ke dauraan yeh
+     8 libraries bilkul download/execute hi nahi hoti, TBT par zero
+     asar padta hai. window.__ensureLib(key) neeche wale sabhi files
+     (upgrade.js, exam-manager.js, omr.js, student-features.js, aur
+     KaTeX render karne wale code) ke andar unke actual use-point par
+     call kiya gaya hai. -->
+<script src="inline/index-inline-06.js"></script>
+
+<script src="inline/index-inline-07.js"></script>
+<script src="inline/index-inline-08.js"></script>
+<script src="inline/index-inline-09.js"></script>
+<script src="inline/index-inline-10.js"></script>
+<script src="app-ui.js" defer></script>
+<script src="student-settings-pro.js" defer></script>
+<script src="smooth-ui.js?v=1" defer></script>
+</body>
+</html>

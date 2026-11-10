@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https: wss: blob: data:; frame-src 'self' https: blob: data:; worker-src 'self' blob: https://cdnjs.cloudflare.com; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<script src="safe-html.js"></script>
+<script src="perf-lite.js"></script>
+<script src="app-bridge.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>The Vishnu Sharma — Owner Panel</title>
+<meta name="description" content="The Vishnu Sharma Owner Panel — saare institutes aur unke admins manage karein." />
+
+<!-- ══════════════════════════════════════════════════════════════════
+     OWNER APP — poori tarah ALAG, self-contained PWA
+     ----------------------------------------------------------------
+     v24: Pehle ye sirf ek "install landing" page tha jo install/skip
+     ke baad index.html?owner=1 par le jaata tha — matlab Owner install
+     bhi asal mein Admin/Student wala hi poora app (index.html,
+     script.js, exam-manager.js, omr.js, wagera) load karta tha, sirf
+     ek overlay upar dikhta tha. Isi wajah se dono installs "ek jaisa"
+     dikhte the.
+
+     Ab ye page khud hi poora Owner app hai — apna Firebase init, apna
+     owner-panel.js, apna chhota sa login/panel markup. Admin/Student
+     ki koi bhi file (script.js, exam-manager.js, omr.js, question
+     banks, wagera) yahan load hi nahi hoti. Manifest ka start_url ab
+     seedha isi file par point karta hai, isliye installed icon tap
+     karte hi (Android/Chrome) ya "Add to Home Screen" ke baad
+     (iOS) — dono jagah — seedha yahi page khulta hai. iOS ke liye ab
+     koi alag redirect-trick ki zaroorat nahi (pehle thi), kyunki ye
+     page khud hi apna destination hai.
+
+     Student/Admin install abhi bhi index.html se hi hota hai (wahi
+     manifest.webmanifest) — is file se uska koi lena-dena nahi.
+     ══════════════════════════════════════════════════════════════════ -->
+
+<link rel="manifest" href="/manifest-owner.webmanifest" />
+<link rel="icon" href="icon-192-owner.png" type="image/png" />
+
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="The Vishnu Sharma Owner" />
+<link rel="apple-touch-icon" sizes="192x192" href="icon-192-owner.png" />
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512-owner.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#dfe9ff" />
+
+<!-- Sirf shared design-system classes (.card, .field-row, .btn-primary,
+     .section-title, .muted-text, .hidden, colors/fonts) ke liye —
+     Admin/Student ke tabs/panels wali koi bhi CSS (theme-picker,
+     creative-dashboard, exam-manager) yahan jaan-boojh kar NAHI
+     load ki gayi. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="styles.css?v=8">
+
+<style>
+  :root{--oa-bg:#f4f6fb;--oa-ink:#0f172a;--oa-mut:#64748b}
+  html,body{background:var(--oa-bg)}
+  body{padding:0;margin:0;color:var(--oa-ink);line-height:1.4;-webkit-tap-highlight-color:transparent}
+  .oa-shell{max-width:480px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:calc(160px + env(safe-area-inset-bottom,0px))}
+  .oa-shell button{transition:background .15s,color .15s,opacity .15s;min-height:0}
+  .oa-shell button:active{transform:scale(.97);box-shadow:none}
+  .oa-shell svg{display:block;flex-shrink:0}
+  .owner-install-banner{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;margin:calc(10px + env(safe-area-inset-top,0px)) 16px 0;padding:10px 12px;border-radius:14px;font-size:.8rem}
+  .owner-install-banner button{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-weight:700;font-size:.8rem}
+  .owner-install-banner button:disabled{opacity:.6}
+  .oa-top{padding:calc(16px + env(safe-area-inset-top,0px)) 18px 10px;display:flex;align-items:center;gap:10px}
+  .oa-lg{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:grid;place-items:center;color:#fff;font-weight:800;flex-shrink:0;overflow:hidden}
+  .oa-top h1{font-size:1.05rem;font-weight:800;color:var(--oa-ink);line-height:1.2}
+  .oa-top p{font-size:.7rem;color:var(--oa-mut);word-break:break-all}
+  .oa-av{margin-left:auto;width:36px;height:36px;border-radius:50%;background:#e0e7ff;color:#4338ca;display:grid;place-items:center;border:none;flex-shrink:0}
+  .oa-h2{font-size:1.25rem;font-weight:800;padding:calc(16px + env(safe-area-inset-top,0px)) 18px 8px;display:flex;align-items:center;justify-content:space-between}
+  .oa-h2 small{font-size:.72rem;color:var(--oa-mut);font-weight:600}
+  .oa-hero{margin:6px 16px 12px;border-radius:22px;padding:18px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;display:flex;justify-content:space-between;align-items:center}
+  .oa-hero b{font-size:2.1rem;display:block;line-height:1.1}.oa-hero small{opacity:.88;font-size:.75rem}
+  .oa-ring{width:76px;height:76px;border-radius:50%;display:grid;place-items:center;flex-shrink:0}
+  .oa-ring i{width:58px;height:58px;border-radius:50%;background:#5b4fe0;display:grid;place-items:center;font-style:normal;font-size:.75rem;font-weight:700}
+  .oa-g{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 16px 12px}
+  .oa-k{background:#fff;border-radius:14px;padding:10px 3px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+  .oa-k b{display:block;font-size:.95rem;line-height:1.3}.oa-k span{font-size:.56rem;color:var(--oa-mut);line-height:1.2;display:block;margin-top:2px}
+  .oa-qa{display:flex;gap:8px;margin:0 16px 8px}
+  .oa-qa button{flex:1;background:#fff;border:none;border-radius:14px;padding:10px 2px;font-size:.62rem;color:#4338ca;font-weight:700;box-shadow:0 1px 3px rgba(15,23,42,.06);display:flex;flex-direction:column;align-items:center;gap:4px}
+  #owner-dash-msg{margin:0 18px 10px;font-size:.72rem;color:var(--oa-mut)}
+  .oa-card{background:#fff;border-radius:18px;margin:0 16px 12px;padding:14px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+  .oa-card h3{font-size:.88rem;display:flex;align-items:center;gap:6px;font-weight:700}
+  .oa-card h3 button{margin-left:auto;background:none;border:none;color:#4f46e5;font-weight:700;font-size:.72rem;padding:2px 0}
+  .oa-sum{margin-top:10px;border-radius:12px;padding:10px;font-size:.78rem;display:flex;gap:6px;align-items:center;line-height:1.35}
+  .oa-sum.ok{background:#ecfdf5;color:#047857}.oa-sum.bad{background:#fef2f2;color:#b91c1c}.oa-sum.warn{background:#fffbeb;color:#b45309}.oa-sum.idle{background:#f1f5f9;color:#475569}
+  #owner-alerts-list{margin-top:10px;font-size:.78rem;color:#334155;word-break:break-word}
+  .oa-row2{display:flex;gap:8px;margin-top:10px}
+  .oa-pill{background:#eef2ff;color:#3730a3;border:none;border-radius:10px;padding:8px 12px;font-size:.74rem;font-weight:700;display:inline-flex;align-items:center;gap:5px}
+  .oa-pill.red{background:#fee2e2;color:#b91c1c}
+  .oa-s{margin:0 16px 10px;background:#fff;border-radius:14px;padding:0 12px;display:flex;gap:8px;color:#94a3b8;align-items:center}
+  .oa-s input{flex:1;border:none;outline:none;background:transparent;padding:12px 0;font-size:.85rem;color:var(--oa-ink);min-width:0}
+  .oa-fc{display:flex;gap:6px;margin:0 16px 12px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .oa-fc::-webkit-scrollbar{display:none}
+  .oa-fc button{padding:7px 12px;border-radius:99px;background:#fff;font-size:.7rem;color:#475569;white-space:nowrap;border:none;font-weight:600;flex-shrink:0}
+  .oa-fc button.on{background:#4f46e5;color:#fff}
+  .owner-inst-card.oa-card{padding:14px;margin-bottom:12px;border:none}
+  .oa-ib{display:flex;gap:10px;align-items:center}
+  .oa-ib .oa-lg{width:42px;height:42px;font-size:.95rem}
+  .oa-ib h4{font-size:.9rem;font-weight:800;word-break:break-word;margin:0}.oa-ib p{font-size:.7rem;color:var(--oa-mut);margin:0}
+  .oa-ib .owner-badge{margin-left:auto;font-size:.62rem;padding:4px 9px}
+  .oa-bars{margin-top:12px}
+  .oa-rw{display:flex;justify-content:space-between;font-size:.7rem;color:#475569;gap:8px}
+  .oa-bar{height:6px;background:#e5e7eb;border-radius:9px;margin:4px 0 8px;overflow:hidden}
+  .oa-bar i{display:block;height:100%;background:linear-gradient(90deg,#4f46e5,#7c3aed);border-radius:9px}
+  .oa-bar i.r{background:#dc2626}
+  .oa-card .owner-inst-classes{background:none;border:none;padding:0;margin:8px 0;gap:5px;display:flex;flex-wrap:wrap}
+  .oa-card .owner-classes-label{display:none}
+  .oa-card .owner-class-chip{font-size:.62rem;padding:4px 9px;border-radius:8px;background:#f1f5f9;color:#94a3b8;border:none}
+  .oa-card .owner-class-chip input{display:none}
+  .oa-card .owner-class-chip-on,.oa-card .owner-class-chip:has(input:checked){background:#eef2ff;color:#4338ca}
+  .oa-ac{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .oa-ac button{background:#f4f6fb;border:none;border-radius:10px;padding:8px 2px;font-size:.6rem;color:#334155;display:flex;flex-direction:column;align-items:center;gap:3px;font-weight:600}
+  .oa-ac button.d{color:#dc2626}
+  .oa-adm{margin-top:10px;background:#f8fafc;border-radius:10px;font-size:.7rem;color:#475569}
+  .oa-adm summary{padding:9px 10px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:8px;word-break:break-all}
+  .oa-adm summary::-webkit-details-marker{display:none}
+  .oa-adm summary b{flex-shrink:0;color:#4338ca}
+  .oa-adm-body{padding:0 8px 8px}
+  .oa-card .owner-admin-row{background:#fff;border:1px solid #eef2f7;border-radius:10px;padding:8px}
+  .oa-card .owner-admin-email{font-size:.74rem;word-break:break-all}
+  .oa-card .owner-mini-btn{font-size:.66rem;padding:6px 8px}
+  .oa-card .owner-add-admin-form input{min-width:0;font-size:.78rem}
+  .owner-inst-card-orphan{background:#fffbeb!important}
+  .owner-mini-btn{background:#eef2ff;color:#3730a3;border:none;border-radius:8px;padding:6px 10px;font-size:.78rem;font-weight:600;cursor:pointer}
+  .owner-mini-primary{background:#4f46e5;color:#fff}.owner-mini-danger{background:#fee2e2;color:#b91c1c}
+  .owner-badge{font-size:.7rem;font-weight:700;border-radius:999px;padding:2px 9px}.owner-badge-on{background:#dcfce7;color:#15803d}.owner-badge-off{background:#fee2e2;color:#b91c1c}
+  .owner-admin-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+  .owner-admin-email{font-weight:600;color:#1e293b;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .owner-admin-actions,.owner-inst-actions{display:flex;gap:6px;flex-wrap:wrap}
+  .owner-add-admin-form{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .owner-add-admin-form input{flex:1;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px}
+  .owner-class-chip{display:inline-flex;align-items:center;gap:5px;font-weight:600;border-radius:999px}
+  #owner-new-institute-classes{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px}
+  #owner-new-institute-classes .owner-class-chip{background:#f1f5f9;padding:8px 12px;font-size:.8rem}
+  #owner-new-institute-classes .owner-class-chip:has(input:checked){background:#eef2ff;color:#4338ca}
+  .oa-tab{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:480px;background:#fff;border-top:1px solid #e5e7eb;display:flex;justify-content:space-around;padding:8px 0 calc(8px + env(safe-area-inset-bottom,0px));z-index:50}
+  .oa-tab button{background:none;border:none;color:#94a3b8;font-size:.62rem;display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;position:relative;padding:4px 0}
+  .oa-tab button.on{color:#4f46e5;font-weight:800}
+  .oa-dot{position:absolute;top:0;left:calc(50% + 6px);width:9px;height:9px;border-radius:50%;background:#ef4444;border:2px solid #fff}
+  .oa-fab{position:fixed;right:max(18px,calc(50% - 222px));bottom:calc(84px + env(safe-area-inset-bottom,0px));width:54px;height:54px;border-radius:18px;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:grid;place-items:center;color:#fff;border:none;box-shadow:0 8px 20px rgba(79,70,229,.45);z-index:49}
+  .oa-sheet{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+  .oa-sheet-box{background:#fff;width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:10px 18px calc(20px + env(safe-area-inset-bottom,0px));max-height:90vh;overflow:auto}
+  .oa-grab{width:44px;height:5px;border-radius:9px;background:#e2e8f0;margin:0 auto 12px}
+  .oa-sheet-box h3{font-size:1.05rem;margin-bottom:12px}
+  .oa-sheet-box label,.oa-lbl{font-size:.7rem;font-weight:700;color:#475569;display:block;margin:8px 0 4px}
+  .oa-sheet-box input[type=text],.oa-login input{width:100%;padding:12px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:.9rem;background:#f8fafc;outline:none}
+  .oa-sheet-box input[type=text]:focus,.oa-login input:focus{border-color:#4f46e5;background:#fff}
+  .oa-btn{width:100%;padding:14px;border:none;border-radius:14px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;font-weight:800;font-size:.9rem;display:flex;gap:6px;align-items:center;justify-content:center}
+  .oa-btn.red{background:#fee2e2;color:#b91c1c}
+  .oa-login{margin:0 16px;padding-top:calc(60px + env(safe-area-inset-top,0px))}
+  .oa-login .oa-lg{width:60px;height:60px;border-radius:18px;font-size:1.5rem;margin:0 auto 14px}
+  .oa-login h2{text-align:center;font-size:1.3rem;font-weight:800}.oa-login p.s{text-align:center;color:var(--oa-mut);font-size:.8rem;margin:4px 0 18px}
+  .oa-login .box{background:#fff;border-radius:20px;padding:18px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+  .oa-login label{font-size:.7rem;font-weight:700;color:#475569;display:block;margin:4px 0}
+  .oa-login input{margin-bottom:12px}
+  .oa-link{background:none;border:none;color:#4f46e5;font-size:.8rem;margin-top:12px;display:block;width:100%;text-align:center;font-weight:600}
+  .oa-set-row{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #f1f5f9;font-size:.82rem}
+  .oa-set-row:last-child{border:none}.oa-set-row span{color:var(--oa-mut);font-size:.7rem;margin-left:auto;word-break:break-all;text-align:right}
+  .oa-toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom,0px));background:#0f172a;color:#fff;padding:10px 16px;border-radius:14px;font-size:.78rem;z-index:300;max-width:90%}
+  .oa-pk{display:flex;align-items:center;gap:10px;width:100%;background:#f8fafc;border:none;border-radius:12px;padding:10px;margin-bottom:8px;text-align:left;font-size:.85rem;font-weight:700}
+
+  .oa-card .owner-inst-classes .muted-text{display:none}
+</style>
+<link rel="stylesheet" href="liquid-glass.css?v=1">
+<link rel="stylesheet" href="smooth-ui.css?v=1">
+</head>
+<body>
+<div class="oa-shell">
+
+  <div id="install-banner" class="owner-install-banner hidden">
+    <span id="install-status-text"></span>
+    <button id="install-btn" type="button">Install Karein</button>
+  </div>
+
+  <div id="oa-boot" style="text-align:center;color:#475569;font-size:.8rem;padding-top:40vh">Load ho raha hai...</div>
+
+  <!-- Owner Login -->
+  <form id="owner-login-box" class="oa-login hidden" onsubmit="return ownerLogin(event)">
+    <div class="oa-lg">S</div>
+    <h2>The Vishnu Sharma Owner</h2>
+    <p class="s">Sirf product owner ke liye</p>
+    <div class="box">
+      <label>Owner Email</label>
+      <input id="owner-email" type="email" placeholder="Owner ka email" autocomplete="off" />
+      <label>Password</label>
+      <input id="owner-password" type="password" placeholder="Password" autocomplete="off" />
+      <button type="submit" class="oa-btn">Login</button>
+      <button type="button" id="owner-forgot-password-link" class="oa-link" onclick="ownerForgotPassword()">Password bhool gaye?</button>
+    </div>
+  </form>
+
+  <!-- Owner Panel -->
+  <div id="owner-panel-box" class="hidden">
+
+    <section id="oa-v-home" class="oa-view">
+      <header class="oa-top">
+        <div class="oa-lg">S</div>
+        <div><h1>The Vishnu Sharma Owner</h1><p id="owner-logged-in-as"></p></div>
+        <button type="button" class="oa-av" onclick="ouiTab('set')" aria-label="Settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
+      </header>
+      <div class="oa-hero" id="oa-hero"></div>
+      <div class="oa-g" id="oa-kpis"></div>
+      <div class="oa-qa">
+        <button type="button" onclick="ouiOpenSheet()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Naya Institute</button>
+        <button type="button" onclick="ownerRecountAll()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.5 15a9 9 0 1 1-2.1-9.4L23 10"/></svg>Recount</button>
+        <button type="button" onclick="ownerExportCsv()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>CSV</button>
+        <button type="button" onclick="ouiApkPick()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>APK</button>
+      </div>
+      <div id="owner-dash-msg"></div>
+      <div class="oa-card"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg> App Alerts <button type="button" onclick="ownerLoadAlerts()">Refresh</button></h3><div id="oa-alert-sum" class="oa-sum idle">Refresh dabakar alerts dekhein</div></div>
+      <div class="oa-card"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Jaldi expire hone wale <button type="button" onclick="ouiShowFilter('soon')">Sab dekhein</button></h3><div id="oa-soon" style="margin-top:8px;font-size:.78rem;color:#64748b"></div></div>
+    </section>
+
+    <section id="oa-v-inst" class="oa-view hidden">
+      <div class="oa-h2">Institutes <small id="oa-inst-count"></small></div>
+      <div class="oa-s"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.7" y2="16.7"/></svg><input id="oa-search" type="text" placeholder="Institute dhoondhein..." oninput="ownerDashApplyFilter()" autocomplete="off"></div>
+      <div class="oa-fc" id="oa-filters"></div>
+      <div id="owner-institutes-list"></div>
+    </section>
+
+    <section id="oa-v-alerts" class="oa-view hidden">
+      <div class="oa-h2">App Alerts</div>
+      <div class="oa-card">
+        <div style="font-size:.72rem;color:#64748b">error / quota / slow — apne aap</div>
+        <div class="oa-row2"><button type="button" class="oa-pill" onclick="ownerLoadAlerts()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.5 15a9 9 0 1 1-2.1-9.4L23 10"/></svg> Refresh</button><button type="button" class="oa-pill red" onclick="ownerClearAlerts()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m5 0V4h4v2"/></svg> Clear</button></div>
+        <div id="owner-alerts-list">Refresh dabayein.</div>
+      </div>
+    </section>
+
+    <section id="oa-v-reads" class="oa-view hidden">
+      <div class="oa-h2">Reads Monitor <small>poori site</small></div>
+      <div style="margin:0 16px 8px;font-size:.72rem;color:#64748b">Student + Admin + Owner + Worker — kab, kis collection se, kis wajah se. Firebase ke asli number se mila hua.</div>
+      <div id="oa-reads-body" style="margin:0 16px"></div>
+    </section>
+
+    <section id="oa-v-set" class="oa-view hidden">
+      <div class="oa-h2">Settings</div>
+      <div class="oa-card">
+        <div class="oa-set-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Account<span id="oa-set-email"></span></div>
+        <div class="oa-set-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><line x1="10.8" y1="12.2" x2="21" y2="2"/><line x1="17" y1="6" x2="20" y2="9"/></svg><a href="#" onclick="ownerForgotPassword();return false" style="color:inherit;text-decoration:none">Password reset email bhejein</a></div>
+        <div class="oa-set-row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>App version<span>Owner App v182</span></div>
+      </div>
+      <div style="margin:0 16px"><button type="button" class="oa-btn red" onclick="ownerLogout()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Logout</button></div>
+    </section>
+
+    <nav class="oa-tab">
+      <button type="button" data-t="home" class="on" onclick="ouiTab('home')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</button>
+      <button type="button" data-t="inst" onclick="ouiTab('inst')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 21v-4h6v4M8 7h2M14 7h2M8 11h2M14 11h2"/></svg>Institutes</button>
+      <button type="button" data-t="alerts" onclick="ouiTab('alerts')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>Alerts<i id="oa-dot" class="oa-dot hidden"></i></button>
+      <button type="button" data-t="reads" onclick="ouiTab('reads')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="12"/><line x1="12" y1="20" x2="12" y2="5"/><line x1="18" y1="20" x2="18" y2="9"/></svg>Reads</button>
+      <button type="button" data-t="set" onclick="ouiTab('set')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
+    </nav>
+    <button type="button" id="oa-fab" class="oa-fab" onclick="ouiOpenSheet()" aria-label="Naya Institute"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+
+    <div id="oa-sheet" class="oa-sheet hidden" onclick="if(event.target===this)ouiCloseSheet()">
+      <form class="oa-sheet-box" onsubmit="return ouiAddInst(event)">
+        <div class="oa-grab"></div>
+        <h3>Naya Institute</h3>
+        <label>Institute ka naam</label>
+        <input id="owner-new-institute-name" type="text" placeholder="Institute ka naam" required autocomplete="off">
+        <label>Institute ke Owner ka naam</label>
+        <input id="owner-new-institute-owner-name" type="text" placeholder="Institute ke Owner ka naam" required autocomplete="off">
+        <div class="oa-lbl" style="margin-top:12px">Ye Institute kin Classes ke liye eligible hai:</div>
+        <div id="owner-new-institute-classes"></div>
+        <button type="submit" class="oa-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Karein</button>
+        <button type="button" class="oa-link" onclick="ouiCloseSheet()">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<!-- Firebase SDKs (sirf jo Owner Panel ko chahiye — Storage nahi) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="app-config.js"></script>
+<script src="firebase-config.js"></script>
+<script src="owner-panel.js"></script>
+<script src="owner-push.js"></script>
+<script src="owner-wizard.js"></script>
+<script src="owner-demo.js"></script>
+<script src="read-tracker.js"></script>
+<script src="owner-reads.js"></script>
+<script src="owner-ui.js"></script>
+<script src="owner-live.js"></script>
+<script src="owner-enquiries.js"></script>
+<script defer src="auto-update.js"></script>
+
+<script>
+  function isStandaloneMode() {
+    return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+      || window.navigator.standalone === true;
+  }
+
+  // ── Install-to-home-screen banner (sirf tab mein khula ho, already
+  //    installed/standalone na ho tab hi dikhta hai) ──────────────────
+  if (!isStandaloneMode()) {
+    let deferredPrompt = null;
+    const banner = document.getElementById('install-banner');
+    const installBtn = document.getElementById('install-btn');
+    const statusEl = document.getElementById('install-status-text');
+
+    function detectPlatformInstructions() {
+      const ua = window.navigator.userAgent || '';
+      const isIos = /iphone|ipad|ipod/i.test(ua);
+      const isAndroid = /android/i.test(ua);
+      const isFirefox = /firefox|fxios/i.test(ua);
+      const isSafari = /safari/i.test(ua) && !/crios|fxios|chrome|android|edg/i.test(ua);
+
+      if (isIos) return 'Neeche Share button ⬆️ par tap karein, phir "Add to Home Screen" chunein.';
+      if (isAndroid && isFirefox) return 'Upar-daayein 3-dot menu kholein aur "Install" ya "Add to Home screen" chunein.';
+      if (!isAndroid && !isIos && isFirefox) return 'Firefox is page ko app ki tarah install support nahi karta. Chrome ya Edge mein kholein.';
+      if (!isAndroid && !isIos && isSafari) return 'Menu bar mein File → "Add to Dock" chunein (Safari 17+), ya Chrome/Edge mein kholein.';
+      return 'Address bar ke daayein taraf install icon ⊕ par click karein, ya browser ke 3-dot menu mein "Install App" dhoondein.';
+    }
+
+    function couldGetNativePrompt() {
+      const ua = window.navigator.userAgent || '';
+      const isIos = /iphone|ipad|ipod/i.test(ua);
+      const isFirefox = /firefox|fxios/i.test(ua);
+      const isSafari = /safari/i.test(ua) && !/crios|fxios|chrome|android|edg/i.test(ua);
+      return !isIos && !isFirefox && !isSafari;
+    }
+
+    function showBanner(text, showButton) {
+      statusEl.textContent = text;
+      installBtn.style.display = showButton ? '' : 'none';
+      banner.classList.remove('hidden');
+    }
+
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      deferredPrompt = e;
+      showBanner('The Vishnu Sharma Owner ko home screen par install karein — Admin/Student se bilkul alag icon.', true);
+      installBtn.onclick = function () {
+        installBtn.disabled = true;
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.finally(function () { deferredPrompt = null; });
+      };
+    });
+
+    window.addEventListener('appinstalled', function () {
+      banner.classList.add('hidden');
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+      if (couldGetNativePrompt()) {
+        setTimeout(function () {
+          if (deferredPrompt) return; // beforeinstallprompt ne pehle hi handle kar diya
+          showBanner(detectPlatformInstructions(), false);
+        }, 3000);
+      } else {
+        showBanner(detectPlatformInstructions(), false);
+      }
+    });
+  }
+
+  // Same service worker/scope — installability + offline ke liye.
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(function () {});
+  }
+
+  // ── Seedha Owner login/panel dikhao (persistent-login aware) ───────
+  // openOwnerOverlay() (owner-panel.js mein) khud check karta hai ki
+  // pehle se logged-in hai ya nahi (localStorage flag + Firebase Auth
+  // session) — agar haan, seedha Panel dikhata hai, warna Login form.
+  // Yahi wajah hai ki ye Admin Panel jaisa "ek baar login, phir login
+  // hi rehta hai" waala behaviour deta hai.
+  // v182: pehle saved login wapas aane ka intezaar (Firebase session IndexedDB se async restore hota hai),
+  // tabhi decide karo — warna app recents se hataane ke baad login screen dikha deta tha.
+  document.addEventListener('DOMContentLoaded', function () {
+    var decided = false, boot = document.getElementById('oa-boot');
+    function isOwner(u) { return !!(u && u.email && u.email.toLowerCase() === OWNER_TRUE_EMAIL.toLowerCase()); }
+    function decide(u) {
+      if (decided) return; decided = true;
+      if (boot) boot.classList.add('hidden');
+      try { if (isOwner(u)) { ownerSetLoggedInFlag(); ownerRememberEmail(u.email); } } catch (e) {}
+      openOwnerOverlay();
+    }
+    function start() {
+      var a = ownerGetAuth();
+      try { a.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function () {}); } catch (e) {}
+      a.onAuthStateChanged(function (u) {
+        if (!decided) { decide(u); return; }
+        // late restore (slow phone): login screen dikh chuki ho to bhi seedha panel par le jao
+        var panel = document.getElementById('owner-panel-box');
+        if (isOwner(u) && panel && panel.classList.contains('hidden') && !window.__ownerLoggingIn) {
+          try { ownerSetLoggedInFlag(); ownerRememberEmail(u.email); } catch (e) {}
+          openOwnerOverlay();
+        }
+      });
+      setTimeout(function () { decide(a.currentUser); }, 5000);
+    }
+    if (window.vishnuFirebase && window.vishnuFirebase.authReady) {
+      window.vishnuFirebase.authReady.then(start, start);
+    } else {
+      start();
+    }
+  });
+</script>
+</body>
+</html>

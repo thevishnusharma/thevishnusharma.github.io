@@ -1,0 +1,6 @@
+
+    /* Installed-app pinch/double-tap zoom lock — works alongside the
+       viewport meta tag above (which some browsers, notably iOS Safari
+       in non-standalone mode, partially ignore for accessibility). */
+    html, body { touch-action: manipulation; overscroll-behavior-y: contain; }
+  

@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1120,minimum-scale=0.1,maximum-scale=5">
+<meta name="color-scheme" content="dark">
+<meta name="page-version" content="v291">
+<meta name="theme-color" content="#000000">
+<title>The Vishnu Sharma — Your coaching institute, your own app</title>
+<meta name="description" content="Online tests, ranks, OMR scanning and admit cards in one app. Download your institute's app or open it on the web.">
+<link rel="icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.github.com https://firestore.googleapis.com https://cool-thunder-a280.vishnu1234stm.workers.dev; base-uri 'self'; form-action 'self'; object-src 'none'">
+<style>
+:root{--bg:#000;--ink:#f6f0e2;--mut:#a9a290;--gold:#f2b705;--gold2:#f7d154;--red:#d9291c;--line:#241e12;--card:#0c0a06;color-scheme:dark}
+*{box-sizing:border-box}html{overflow-x:hidden;scroll-behavior:smooth;scroll-padding-top:72px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(55% 45% at 80% 12%,#f2b70524,transparent 70%),radial-gradient(40% 35% at 5% 60%,#d9291c14,transparent 70%);pointer-events:none;z-index:-1}
+a{color:var(--gold2)}h1,h2,h3{font-family:"Playfair Display",Georgia,serif;line-height:1.12;margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+nav{position:sticky;top:0;z-index:20;background:#000000d6;backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:62px;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;font:700 1.25rem "Playfair Display",Georgia,serif;letter-spacing:0;color:var(--ink);text-decoration:none}.brand img{border-radius:9px}.brand i{color:var(--gold);font-style:italic;letter-spacing:0}
+.menu{display:flex;gap:22px;align-items:center}.menu a.l{color:#cfc8b6;text-decoration:none;font-size:.72rem;letter-spacing:.12em;font-weight:600}.menu a.l:hover{color:var(--gold2)}
+.btn{display:inline-block;border:0;border-radius:999px;padding:13px 24px;font:600 .82rem Inter,sans-serif;letter-spacing:.07em;text-decoration:none;cursor:pointer;text-align:center;transition:transform .15s,filter .15s}
+.btn:active{transform:scale(.97)}
+.gold{background:var(--gold);color:#140e00}.gold:hover{filter:brightness(1.1)}
+.red{background:var(--red);color:#fff;box-shadow:0 8px 28px #d9291c55}.red:hover{filter:brightness(1.12)}
+.ghost{background:transparent;color:var(--ink);border:1px solid #4a4128}.ghost:hover{border-color:var(--gold)}
+.sm{padding:9px 16px;font-size:.72rem}
+/* hero */
+.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:20px;align-items:center;padding:60px 0 50px}
+h1{font-size:clamp(2.5rem,6.6vw,4.7rem);font-weight:700;letter-spacing:-.01em}h1 em{color:var(--gold);font-style:italic}
+.lead{color:#b8b19f;max-width:500px;margin:20px 0 22px;font-size:1.03rem}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:26px}.chips span{display:flex;align-items:center;gap:6px;border:1px solid #3a3320;background:#0d0b07;border-radius:99px;padding:6px 13px;font-size:.78rem;color:#d8d1bf}.chips svg{width:14px;height:14px;stroke:var(--gold);fill:none;stroke-width:2}
+.cta{display:flex;gap:12px;flex-wrap:wrap}
+.stage{position:relative;height:560px;display:flex;justify-content:center;align-items:center}
+.orb{position:absolute;width:380px;height:380px;border-radius:50%;background:radial-gradient(circle,#f2b70540,transparent 68%);filter:blur(6px)}
+.archline{position:absolute;width:300px;height:470px;border-radius:150px 150px 24px 24px;border:1px dashed #f2b70555;transform:translate(46px,-6px)}
+.phone{position:relative;width:260px;height:530px;border-radius:44px;background:#0a0804;border:7px solid #1a150a;box-shadow:0 0 0 1px #3a3018,0 40px 90px #000,0 0 80px #f2b70530;overflow:hidden}
+.phone::before{content:"";position:absolute;top:8px;left:50%;width:80px;height:20px;margin-left:-40px;border-radius:12px;background:#000;z-index:3}
+.scr{padding:38px 16px 16px;height:100%;display:flex;flex-direction:column;gap:11px;background:linear-gradient(#120d04,#050403)}
+.top{display:flex;align-items:center;justify-content:space-between;font-size:.68rem;color:var(--mut)}.top b{display:flex;align-items:center;gap:6px;color:var(--ink);font-size:.78rem}.top img{width:20px;height:20px;border-radius:6px}
+.pill{background:#f2b70522;color:var(--gold2);border:1px solid #f2b70566;border-radius:99px;padding:2px 9px;font-weight:600}
+.q{background:#15100a;border:1px solid #2c2413;border-radius:16px;padding:13px;font-size:.78rem;line-height:1.5}.q small{display:block;color:var(--gold);letter-spacing:.1em;font-size:.6rem;margin-bottom:5px}
+.opt{border:1px solid #2c2413;border-radius:12px;padding:9px 12px;font-size:.76rem;color:#d5ceba;display:flex;gap:9px;align-items:center}.opt i{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;border:1px solid #5a4a22;font-style:normal;font-size:.65rem;color:var(--gold2)}
+.opt.on{border-color:var(--gold);background:#f2b70518;color:#fff}.opt.on i{background:var(--gold);color:#140e00;border-color:var(--gold)}
+.next{margin-top:auto;background:var(--gold);color:#140e00;text-align:center;border-radius:14px;padding:11px;font-weight:700;font-size:.78rem;letter-spacing:.06em}
+.fl{position:absolute;z-index:4;display:flex;align-items:center;gap:9px;background:#0d0b07ee;border:1px solid #4a3f1f;border-radius:16px;padding:10px 14px;font-size:.78rem;box-shadow:0 14px 40px #000;backdrop-filter:blur(8px)}
+.fl b{display:block;font-size:.8rem}.fl small{color:var(--mut);font-size:.68rem}.fl .ic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:#f2b70522}.fl .ic svg{width:16px;height:16px;stroke:var(--gold);fill:none;stroke-width:2}
+.f1{left:-60px;top:60px}.f2{right:-24px;top:270px}.f3{left:-48px;bottom:40px}
+/* marquee */
+.strip{border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden;background:#070605;padding:16px 0;white-space:nowrap}
+.strip div{display:inline-block;animation:mq 28s linear infinite;font:italic 600 1.15rem "Playfair Display",Georgia,serif;color:#8d8670}.strip span{margin:0 22px}.strip span::after{content:"✦";margin-left:44px;color:var(--gold)}
+@keyframes mq{to{transform:translateX(-50%)}}
+section{padding:68px 0}
+h2{font-size:clamp(1.8rem,4.2vw,2.7rem);margin-bottom:12px}h2 em{color:var(--gold);font-style:italic}.sub{color:var(--mut);max-width:620px;margin:0 0 30px}
+.eb{color:var(--gold);font-size:.74rem;letter-spacing:.2em;font-weight:600;margin-bottom:10px}
+/* download */
+.search{width:100%;max-width:480px;background:var(--card);border:1px solid #4a4128;color:var(--ink);border-radius:16px;padding:15px 18px;font:inherit;margin-bottom:22px}.search:focus{outline:2px solid var(--gold)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px}
+.inst{transition:transform .2s,border-color .2s}.inst:hover{transform:translateY(-3px);border-color:var(--gold)}
+.av{width:48px;height:48px;border-radius:15px;background:linear-gradient(135deg,var(--gold2),var(--gold));color:#140e00;display:grid;place-items:center;font:700 1.35rem "Playfair Display",serif;margin-bottom:14px}
+.card h3{font-size:1.2rem;margin-bottom:3px;overflow-wrap:anywhere}.card .v{color:var(--mut);font-size:.8rem;margin-bottom:16px}.card .row{display:flex;gap:8px;flex-wrap:wrap}
+.msg{color:var(--mut);padding:10px 0}
+/* bento */
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+.bt{background:linear-gradient(160deg,#120e07,#080604);border:1px solid var(--line);border-radius:22px;padding:24px;grid-column:span 2;position:relative;overflow:hidden}
+.bt.w{grid-column:span 3}.bt:hover{border-color:#5a4a22}
+.bt .ic{width:44px;height:44px;border-radius:14px;background:#f2b70520;display:grid;place-items:center;margin-bottom:16px}.bt .ic svg{width:22px;height:22px;stroke:var(--gold);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.bt h3{font-size:1.25rem;margin-bottom:6px}.bt p{margin:0;color:var(--mut);font-size:.93rem}
+.who{position:absolute;top:18px;right:18px;font-size:.6rem;letter-spacing:.14em;color:#8d8670;border:1px solid #2f2819;border-radius:99px;padding:3px 10px}
+/* home screen */
+.brandrow{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.home{width:250px;margin:0 auto;border-radius:38px;border:7px solid #1a150a;background:linear-gradient(#171108,#050403);padding:30px 18px 26px;box-shadow:0 30px 70px #000,0 0 60px #f2b70522}
+.apps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 6px;text-align:center;font-size:.6rem;color:#cfc8b6}
+.ap{width:52px;height:52px;border-radius:15px;margin:0 auto 5px;background:#1d1810;border:1px solid #2c2413}
+.ap.me{background:#fff;display:grid;place-items:center;box-shadow:0 0 0 2px var(--gold),0 0 24px #f2b70588}.ap.me img{width:38px;height:38px}
+/* steps */
+.steps{counter-reset:s;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;padding:0;list-style:none;margin:0}
+.steps li{counter-increment:s;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px}
+.steps li::before{content:counter(s);display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--gold);color:#140e00;font-weight:700;margin-bottom:14px}
+.steps b{display:block;margin-bottom:4px}.steps span{color:var(--mut);font-size:.92rem}
+details{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:4px 20px;margin-bottom:10px}
+summary{cursor:pointer;padding:15px 0;font-weight:600;list-style:none}summary::-webkit-details-marker{display:none}summary::after{content:"+";float:right;color:var(--gold);font-size:1.2rem}details[open] summary::after{content:"–"}
+details p{margin:0 0 16px;color:var(--mut)}
+.owner{background:radial-gradient(80% 120% at 50% 0,#f2b70524,transparent 70%),#0a0804;border:1px solid #4a4128;border-radius:28px;padding:clamp(28px,6vw,56px);text-align:center}
+.owner p{color:var(--mut);max-width:560px;margin:12px auto 24px}
+footer{border-top:1px solid var(--line);padding:30px 0 40px;color:var(--mut);font-size:.85rem}footer .wrap{display:flex;gap:18px;flex-wrap:wrap;justify-content:space-between}footer a{color:var(--mut)}
+#sticky{position:fixed;left:0;right:0;bottom:0;z-index:30;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:#000000ee;backdrop-filter:blur(12px);border-top:1px solid var(--line);transform:translateY(110%);transition:transform .3s;display:none}
+#sticky.show{transform:none}#sticky .btn{width:100%}
+.rv{opacity:0;transform:translateY(24px);transition:opacity .7s,transform .7s}.rv.in{opacity:1;transform:none}
+@media(max-width:860px){
+ .hero{grid-template-columns:1fr;padding-top:34px}.stage{height:610px}.menu a.l,.menu a.ghost{display:none}.brand{font-size:1.1rem;letter-spacing:0}
+ .bento{grid-template-columns:1fr 1fr}.bt,.bt.w{grid-column:span 2}.brandrow{grid-template-columns:1fr}#sticky{display:block}.f1{left:0;top:0}.f2{right:0;top:auto;bottom:0}.f3{display:none}
+}
+@media(prefers-reduced-motion:no-preference){.phone{animation:fy 7s ease-in-out infinite}.fl{animation:fy 5s ease-in-out infinite}.f2{animation-delay:-1.5s}.f3{animation-delay:-3s}@keyframes fy{50%{transform:translateY(-10px)}}}
+@media(prefers-reduced-motion:reduce){.strip div{animation:none}.rv{opacity:1;transform:none}}
+
+/* ===== 3D ===== */
+.stage{perspective:1100px;perspective-origin:50% 40%}
+.scene{position:absolute;inset:0;display:flex;justify-content:center;align-items:center;transform-style:preserve-3d;transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));will-change:transform}
+.rig{position:relative;width:260px;height:530px;transform-style:preserve-3d}
+.rig .phone{position:absolute;inset:0;animation:none!important;transform:translateZ(0)}
+.slab{position:absolute;inset:0;border-radius:44px;background:#2b2210;border:7px solid #1a150a;box-shadow:0 0 0 1px #4a3a14}
+.phone::after{content:"";position:absolute;inset:0;border-radius:36px;pointer-events:none;background:linear-gradient(115deg,transparent calc(38% + var(--sh,0)*1.4%),#ffffff26 calc(50% + var(--sh,0)*1.4%),transparent calc(62% + var(--sh,0)*1.4%))}
+.orb{transform:translateZ(-160px) scale(1.5)}.archline{transform:translateZ(-70px) translate(46px,-6px)}
+.floor{position:absolute;left:50%;bottom:6px;width:340px;height:50px;margin-left:-170px;border-radius:50%;background:radial-gradient(closest-side,#f2b7054d,#0000 72%);transform:translateZ(-20px);filter:blur(4px)}
+.f1{transform:translateZ(110px)}.f2{transform:translateZ(170px)}.f3{transform:translateZ(80px)}
+h1 em{text-shadow:0 1px 0 #b88a05,0 2px 0 #a37803,0 3px 0 #8a6602,0 4px 0 #6f5201,0 14px 22px #000c}
+.rv{transform:perspective(900px) translateY(40px) rotateX(16deg);transform-origin:50% 100%}.rv.in{transform:none}
+.bt,.inst,.wi,.rcard{transition:transform .25s ease-out,border-color .2s;transform-style:preserve-3d}
+@media(max-width:860px){.rig{margin-top:-30px}}
+@media(prefers-reduced-motion:reduce){.scene{transform:none}.rv{transform:none}}
+
+/* register */
+.reg{display:grid;grid-template-columns:.8fr 1.2fr;gap:36px;align-items:start}
+.reg .pts{list-style:none;margin:22px 0 0;padding:0;display:grid;gap:12px}.reg .pts li{display:flex;gap:12px;color:#cfc8b6;font-size:.95rem}.reg .pts li::before{content:"";flex:0 0 22px;height:22px;margin-top:2px;border-radius:50%;background:var(--gold) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23140e00' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/14px no-repeat}
+.fm{background:linear-gradient(160deg,#130e07,#080604);border:1px solid #4a4128;border-radius:26px;padding:clamp(20px,4vw,34px);box-shadow:0 30px 80px #000,0 0 70px #f2b70518}
+.fm fieldset{border:0;margin:0 0 22px;padding:0}.fm legend{font:700 1.15rem "Playfair Display",Georgia,serif;color:var(--gold2);margin-bottom:12px;padding:0}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.fm label.f{display:block;font-size:.78rem;color:var(--mut);margin-bottom:5px}
+.fm input[type=text],.fm input[type=tel],.fm input[type=email],.fm input[type=url],.fm input[type=number],.fm select,.fm textarea{width:100%;background:#0c0a06;border:1px solid #3a3320;color:var(--ink);border-radius:13px;padding:12px 14px;font:inherit;font-size:.93rem}
+.fm textarea{min-height:84px;resize:vertical}.fm input:focus,.fm select:focus,.fm textarea:focus{outline:2px solid var(--gold);border-color:transparent}
+.fm input.bad{border-color:var(--red)}.fm .hint{font-size:.72rem;color:#7d775f;margin-top:4px}
+.tg{display:flex;flex-wrap:wrap;gap:8px}.tg label{cursor:pointer}.tg input{position:absolute;opacity:0;pointer-events:none}
+.tg span{display:block;border:1px solid #3a3320;background:#0d0b07;border-radius:99px;padding:8px 15px;font-size:.82rem;color:#d8d1bf;transition:.15s}
+.tg input:checked+span{background:var(--gold);color:#140e00;border-color:var(--gold);font-weight:600}.tg input:focus-visible+span{outline:2px solid var(--gold2);outline-offset:2px}
+.colr{display:flex;gap:10px;align-items:center}.colr input[type=color]{width:54px;height:46px;border:1px solid #3a3320;border-radius:12px;background:#0c0a06;padding:3px}
+.hp{position:absolute;left:-9999px;height:0;overflow:hidden}
+.fm .btn{width:100%;padding:16px;font-size:.9rem}.fm .btn[disabled]{opacity:.6;cursor:wait}
+.ferr{color:#ff8a7e;font-size:.85rem;margin:10px 0 0;min-height:1.2em}
+.ok{text-align:center;padding:30px 10px}.ok .tick{width:84px;height:84px;margin:0 auto 18px;border-radius:50%;background:var(--gold);display:grid;place-items:center;box-shadow:0 0 0 8px #f2b70522,0 20px 50px #f2b70555;animation:pop .7s cubic-bezier(.2,1.4,.4,1)}
+.ok .tick svg{width:42px;height:42px;stroke:#140e00;fill:none;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}.ok p{color:var(--mut);max-width:420px;margin:10px auto 0}
+@keyframes pop{from{transform:scale(.3) rotateY(180deg);opacity:0}}
+@media(max-width:860px){.reg{grid-template-columns:1fr}.g2{grid-template-columns:1fr}}
+
+/* professional polish */
+.btn{letter-spacing:0;font-size:.92rem;font-weight:600;padding:13px 26px}.sm{padding:9px 18px;font-size:.85rem}
+.menu a.l{letter-spacing:0;font-size:.9rem;font-weight:500;color:#d9d2c0}
+.eb{letter-spacing:.02em;font-size:.88rem;font-weight:600;text-transform:none}
+.who{letter-spacing:0;font-size:.72rem}.next{letter-spacing:0}.q small{letter-spacing:.04em}
+.red{background:linear-gradient(180deg,#e23a2c,#c22418)}
+h1{letter-spacing:-.02em}.lead{font-size:1.08rem;line-height:1.7}
+.fm select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f2b705' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:16px;padding-right:38px}
+
+/* phone feature slides */
+.scr{gap:9px}.sl{position:relative;flex:1;min-height:0}
+.s{position:absolute;inset:0;display:flex;flex-direction:column;gap:8px;opacity:0;transform:translateX(26px) scale(.98);transition:opacity .5s,transform .5s;pointer-events:none}.s.on{opacity:1;transform:none}
+.rk{background:linear-gradient(135deg,#2a2008,#15100a);border:1px solid #4a3a14;border-radius:16px;padding:14px;text-align:center}.rk small{display:block;color:var(--gold);font-size:.58rem;letter-spacing:.06em;margin-bottom:4px}.rk b{display:block;font:700 2rem "Playfair Display",serif;color:var(--gold2);line-height:1.1}.rk span{font-size:.72rem;color:var(--mut)}
+.lb{display:grid;gap:6px}.lb div{display:flex;align-items:center;gap:9px;border:1px solid #2c2413;border-radius:12px;padding:8px 11px;font-size:.76rem;background:#110d07}.lb i{font-style:normal;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:#241c0c;color:var(--gold2);font-size:.66rem}.lb em{margin-left:auto;font-style:normal;color:var(--mut)}.lb .me{border-color:var(--gold);background:#f2b70520;color:#fff}.lb .me i{background:var(--gold);color:#140e00}
+.omr{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:9px;border:1px dashed #f2b70588;border-radius:16px;padding:14px;background:#0e0a05;overflow:hidden}
+.ob{display:flex;gap:5px;justify-content:center}.ob i{width:15px;height:15px;border-radius:50%;border:1px solid #6a5624}.ob i.f{background:var(--gold2);border-color:var(--gold2)}
+.sc{position:absolute;left:0;right:0;height:26px;top:0;background:linear-gradient(transparent,#f2b70566,transparent);border-bottom:2px solid var(--gold2);animation:scan 2.2s ease-in-out infinite;z-index:2}@keyframes scan{0%{transform:translateY(-30px)}100%{transform:translateY(125px)}}
+.ad{border:1px solid #4a3a14;border-radius:16px;background:linear-gradient(160deg,#1a130a,#0c0905);padding:13px;display:grid;gap:8px}.adh{display:flex;gap:9px;align-items:center;border-bottom:1px solid #2c2413;padding-bottom:9px}.adh img{width:30px;height:30px;border-radius:8px}.adh b{display:block;font-size:.82rem}.adh small{font-size:.56rem;color:var(--gold);letter-spacing:.06em}
+.adr{display:flex;justify-content:space-between;font-size:.72rem}.adr span{color:var(--mut)}.bar{height:34px;margin-top:4px;border-radius:6px;background:repeating-linear-gradient(90deg,#f6f0e2 0 2px,transparent 2px 5px,#f6f0e2 5px 6px,transparent 6px 10px)}
+.nt{display:flex;gap:10px;align-items:center;border:1px solid #2c2413;background:#110d07;border-radius:14px;padding:10px 12px}.nt i{flex:0 0 28px;height:28px;border-radius:9px;background:#f2b70522 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f2b705' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 21h4'/%3E%3C/svg%3E") center/15px no-repeat}.nt b{display:block;font-size:.76rem}.nt small{font-size:.66rem;color:var(--mut)}
+.s.on .nt{animation:nin .5s both}.s.on .nt:nth-child(2){animation-delay:.15s}.s.on .nt:nth-child(3){animation-delay:.3s}.s.on .nt:nth-child(4){animation-delay:.45s}@keyframes nin{from{opacity:0;transform:translateY(12px)}}
+.pb{display:grid;grid-template-columns:62px 1fr 34px;align-items:center;gap:8px;font-size:.72rem}.pb span{color:#d5ceba}.pb u{display:block;height:9px;border-radius:9px;background:#201808;position:relative;overflow:hidden}.pb u::after{content:"";position:absolute;inset:0;width:0;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:9px;transition:width 1s .3s}.s.on .pb u::after{width:var(--w)}.pb em{font-style:normal;color:var(--mut);text-align:right}
+.wk{margin-top:2px;border:1px solid #6b2a24;background:#d9291c1c;color:#ffb3aa;border-radius:12px;padding:9px 11px;font-size:.72rem}
+.cap{border-top:1px solid #2c2413;padding-top:10px;display:grid;gap:2px}.cap b{font-size:.86rem;color:var(--gold2)}.cap span{font-size:.7rem;color:var(--mut);line-height:1.4;min-height:2.1em}
+.dots{display:flex;gap:6px;margin-top:6px}.dots button{width:8px;height:8px;padding:0;border:0;border-radius:99px;background:#3a3320;cursor:pointer;transition:.3s}.dots button.on{width:22px;background:var(--gold)}
+@media(prefers-reduced-motion:reduce){.sc{animation:none;top:40%}}
+
+/* ===== v286 final: desktop-first, bigger type ===== */
+body{font-size:17px}
+.mega{font-size:clamp(2.8rem,5.4vw,4.4rem);letter-spacing:-.02em;margin-bottom:18px}
+.wg{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.wi{background:linear-gradient(160deg,#130e07,#080604);border:1px solid var(--line);border-radius:28px;padding:34px 30px}.wi:hover{border-color:#5a4a22}
+.wi.big{grid-column:span 3;display:grid;grid-template-columns:auto 1fr;column-gap:30px;align-items:center;padding:42px 40px;background:radial-gradient(70% 140% at 0 0,#f2b7052e,transparent 60%),linear-gradient(160deg,#130e07,#080604);border-color:#4a4128}
+.wi.big .ic{grid-row:span 2;width:84px;height:84px;border-radius:24px;margin:0}.wi.big .ic svg{width:42px;height:42px}.wi.big h3{font-size:clamp(2.1rem,4vw,3.2rem)}.wi.big p{font-size:1.2rem;max-width:640px}
+.wi .ic{width:52px;height:52px;border-radius:16px;background:#f2b70522;display:grid;place-items:center;margin-bottom:20px}.wi .ic svg{width:26px;height:26px;stroke:var(--gold);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.wi h3{font-size:1.75rem;margin-bottom:10px}.wi p{margin:0;color:#b8b19f;font-size:1.02rem;line-height:1.6}
+.avg{display:flex;align-items:center;gap:14px;margin:6px 0 26px;font-size:1.05rem;color:var(--mut)}.avg b{font:700 2.6rem "Playfair Display",serif;color:var(--gold2);line-height:1}
+.stars{color:var(--gold);letter-spacing:2px;font-size:1.05rem}.stars i{font-style:normal;color:#3a3320}
+.rg{display:grid;grid-template-columns:1.25fr .75fr;gap:26px;align-items:start;margin-top:8px}
+.rl{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-content:start}
+.rcard{background:linear-gradient(160deg,#130e07,#080604);border:1px solid var(--line);border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:12px}.rcard.pin{border-color:#6a5624;box-shadow:0 0 40px #f2b70518}
+.rcard p{margin:0;color:#e4dcc8;font-size:1rem;line-height:1.65;overflow-wrap:anywhere}
+.rwho{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.rwho b{font-size:1.08rem;color:#fff}
+.role{font-size:.74rem;border:1px solid #3a3320;border-radius:99px;padding:2px 10px;color:#cfc8b6}
+.rinst{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;background:#f2b70522;border:1px solid #f2b70566;color:var(--gold2);font-weight:600;font-size:.88rem;border-radius:99px;padding:6px 14px;overflow-wrap:anywhere}
+.rinst svg{width:15px;height:15px;stroke:var(--gold2);fill:none;stroke-width:2;flex:0 0 15px}
+.rrep{border-left:3px solid var(--gold);background:#f2b70510;border-radius:0 12px 12px 0;padding:10px 14px;font-size:.9rem;color:#d8d1bf}.rrep b{display:block;color:var(--gold2);font-size:.78rem;margin-bottom:2px}
+.rdate{margin-left:auto;font-size:.74rem;color:#7d775f}
+.rempty{grid-column:1/-1;border:1px dashed #4a4128;border-radius:22px;padding:40px 26px;text-align:center;color:var(--mut)}
+.rform{position:sticky;top:84px}
+.star-in{display:flex;gap:4px}.star-in button{background:none;border:0;padding:0;font-size:2rem;line-height:1;color:#3a3320;cursor:pointer;transition:transform .15s,color .15s}.star-in button.on{color:var(--gold)}.star-in button:hover{transform:scale(1.15)}.star-in button:focus-visible{outline:2px solid var(--gold2);border-radius:6px}
+.wi:last-child:not(.big){grid-column:span 2}.f2{right:0}
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="brand" href="#top"><img src="/icon-192.png" alt="" width="34" height="34">The Vishnu <i>Sharma</i></a>
+  <div class="menu"><a class="l" href="#why">Why The Vishnu Sharma</a><a class="l" href="#features">Features</a><a class="l" href="#reviews">Reviews</a><a class="l" href="#faq">FAQ</a><a class="l" href="#register">Register institute</a><a class="btn ghost sm" href="/?app=1">Open web app</a><a class="btn gold sm" href="#download">Download app</a></div>
+</div></nav>
+
+<main>
+<div class="wrap" id="top">
+  <div class="hero">
+    <div>
+      <h1>Your coaching institute, <em>your own</em> app.</h1>
+      <p class="lead">Conduct tests, publish ranks, scan OMR sheets and issue admit cards, all in one app under your institute's name.</p>
+      <div class="chips">
+        <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Hindi + English</span>
+        <span><svg viewBox="0 0 24 24"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h.01"/></svg>Works on low internet</span>
+        <span><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 21h4"/></svg>Notifications even when closed</span>
+      </div>
+      <div class="cta"><a class="btn red" href="#download">Download app</a><a class="btn ghost" href="/?app=1">Open on web</a></div>
+    </div>
+    <div class="stage" aria-hidden="true">
+<div class="scene">
+<div class="orb"></div><div class="archline"></div><div class="floor"></div>
+<div class="rig"><i class="slab" style="transform:translateZ(-2px)"></i><i class="slab" style="transform:translateZ(-4px)"></i><i class="slab" style="transform:translateZ(-6px)"></i><i class="slab" style="transform:translateZ(-8px)"></i><i class="slab" style="transform:translateZ(-10px)"></i><i class="slab" style="transform:translateZ(-12px)"></i><i class="slab" style="transform:translateZ(-14px)"></i><i class="slab" style="transform:translateZ(-16px)"></i>
+<div class="phone"><div class="scr">
+        <div class="top"><b><img src="/icon-192.png" alt=""><span id="ptitle">Test</span></b><span class="pill" id="ptag">12:40</span></div>
+        <div class="sl" id="sl">
+         <div class="s on" data-t="Test" data-p="12:40" data-h="Online tests" data-d="Timed tests with instant results.">
+          <div class="q"><small>QUESTION 7 OF 30 • SAMPLE</small>A car moving at 20 m/s comes to rest in 5 seconds. What is its retardation?</div>
+          <div class="opt"><i>A</i>2 m/s²</div><div class="opt on"><i>B</i>4 m/s²</div><div class="opt"><i>C</i>5 m/s²</div><div class="opt"><i>D</i>10 m/s²</div>
+         </div>
+         <div class="s" data-t="Results" data-p="Sample" data-h="Instant rank" data-d="See your rank the moment a test ends.">
+          <div class="rk"><small>PHYSICS UNIT TEST</small><b>Rank 3</b><span>of 48 students • 86%</span></div>
+          <div class="lb"><div><i>1</i>Aarav<em>96%</em></div><div><i>2</i>Meera<em>91%</em></div><div class="me"><i>3</i>You<em>86%</em></div><div><i>4</i>Kabir<em>82%</em></div><div><i>5</i>Sana<em>79%</em></div></div>
+         </div>
+         <div class="s" data-t="OMR scan" data-p="Sample" data-h="OMR scanning" data-d="Check answer sheets with the phone camera.">
+          <div class="omr"><div class="sc"></div>
+           <div class="ob"><i></i><i class="f"></i><i></i><i></i></div><div class="ob"><i></i><i></i><i class="f"></i><i></i></div><div class="ob"><i class="f"></i><i></i><i></i><i></i></div><div class="ob"><i></i><i></i><i></i><i class="f"></i></div><div class="ob"><i></i><i class="f"></i><i></i><i></i></div><div class="ob"><i></i><i></i><i class="f"></i><i></i></div>
+          </div>
+          <div class="rk" style="margin-top:10px"><span>Score</span><b style="font-size:1.4rem">42 / 50</b></div>
+         </div>
+         <div class="s" data-t="Admit card" data-p="Sample" data-h="Admit and ID cards" data-d="Download them on your phone anytime.">
+          <div class="ad"><div class="adh"><img src="/icon-192.png" alt=""><div><b>Your Institute</b><small>ADMIT CARD</small></div></div>
+           <div class="adr"><span>Student</span><b>Student Name</b></div><div class="adr"><span>Roll no.</span><b>2026 0147</b></div><div class="adr"><span>Exam</span><b>Monthly Test</b></div><div class="adr"><span>Date</span><b>15 Dec 2026</b></div><div class="bar"></div></div>
+         </div>
+         <div class="s" data-t="Alerts" data-p="Sample" data-h="Instant notifications" data-d="Reach students even when the app is closed.">
+          <div class="nt"><i></i><div><b>New test available</b><small>Physics Unit 2 • starts at 4 PM</small></div></div>
+          <div class="nt"><i></i><div><b>Result published</b><small>Your rank is now live</small></div></div>
+          <div class="nt"><i></i><div><b>Admit card ready</b><small>Monthly Test • 15 Dec</small></div></div>
+          <div class="nt"><i></i><div><b>Class notice</b><small>Tomorrow\'s class is at 8 AM</small></div></div>
+         </div>
+         <div class="s" data-t="Progress" data-p="Sample" data-h="Track progress" data-d="Spot weak subjects and practise them again.">
+          <div class="rk"><small>SUBJECT ACCURACY</small><b>Last 5 tests</b></div>
+          <div class="pb"><span>Maths</span><u style="--w:91%"></u><em>91%</em></div><div class="pb"><span>Physics</span><u style="--w:82%"></u><em>82%</em></div><div class="pb"><span>Chemistry</span><u style="--w:74%"></u><em>74%</em></div><div class="pb"><span>Biology</span><u style="--w:58%"></u><em>58%</em></div>
+          <div class="wk">Weak area: Biology. Practise mistakes</div>
+         </div>
+        </div>
+        <div class="cap"><b id="ch">Online tests</b><span id="cd">Timed tests with instant results.</span><div class="dots" id="dots"></div></div>
+      </div></div></div>
+      <div class="fl f1"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3M7 12h10"/></svg></div><div><b>OMR scanned</b><small>Sample</small></div></div>
+      <div class="fl f2"><div class="ic"><svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></div><div><b>Rank 3</b><small>Sample • 86%</small></div></div>
+      <div class="fl f3"><div class="ic"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 21h4"/></svg></div><div><b>New test available</b><small>Sample</small></div></div>
+</div>
+</div>
+  </div>
+</div>
+
+
+<section id="download"><div class="wrap rv">
+  <div class="eb">Download</div>
+  <h2>Find your institute's <em>app</em></h2>
+  <p class="sub">Search for your institute. Download the Android APK, or open the app on the web.</p>
+  <input class="search" id="q" type="search" placeholder="Search by institute name" autocomplete="off" aria-label="Search institutes">
+  <div class="grid" id="list"></div>
+  <p class="msg" id="state">Loading institutes…</p>
+</div></section>
+
+<section id="why" style="border-top:1px solid var(--line)"><div class="wrap">
+ <div class="rv"><div class="eb">Why choose us</div><h2 class="mega">Why should you choose <em>The Vishnu Sharma</em>?</h2>
+ <p class="sub" style="font-size:1.15rem;max-width:720px">Because your students should see your institute&rsquo;s name every time they study, not someone else&rsquo;s.</p></div>
+ <div class="wg rv"><div class="wi big"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 20V9l8-5 8 5v11M9 20v-6h6v6"/></svg></div><h3>Your name. Your logo. Your app.</h3><p>Every institute gets its own app with its own name, logo and color. Students install your brand, not ours.</p></div><div class="wi"><div class="ic"><svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/></svg></div><h3>Every test ends with a rank</h3><p>Students see their score and rank the moment a test is over, which keeps them coming back.</p></div><div class="wi"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3M7 12h10"/></svg></div><h3>Check answer sheets with a phone</h3><p>Scan OMR sheets with the phone camera. No scanner, no extra hardware.</p></div><div class="wi"><div class="ic"><svg viewBox="0 0 24 24"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h.01"/></svg></div><h3>Works on low internet</h3><p>Built for real classrooms and real networks, so students are not left waiting.</p></div><div class="wi"><div class="ic"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div><h3>Only your students get in</h3><p>A join code keeps outsiders out, so your tests and results stay with your institute.</p></div><div class="wi"><div class="ic"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 21h4"/></svg></div><h3>Notifications that reach them</h3><p>New tests, results and notices arrive even when the app is closed.</p></div></div>
+</div></section>
+
+<section id="features" style="border-top:1px solid var(--line)"><div class="wrap">
+  <div class="rv"><div class="eb">Features</div><h2>Everything your institute <em>needs</em></h2>
+  <p class="sub">Every feature listed here is already available in the app.</p></div>
+  <div class="bento rv">
+    <div class="bt w"><span class="who">Student</span><div class="ic"><svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/></svg></div><h3>Tests and ranks</h3><p>Take a test and see your rank instantly.</p></div>
+    <div class="bt w"><span class="who">Student</span><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/></svg></div><h3>Learn from mistakes</h3><p>Practise your wrong answers again, separately.</p></div>
+    <div class="bt"><span class="who">Student</span><div class="ic"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM9 9h6M9 13h6M9 17h3"/></svg></div><h3>Practice</h3><p>Pick a chapter and practise at your own pace.</p></div>
+    <div class="bt"><span class="who">Student</span><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M14 10h4M14 14h4M6 16c.5-1.5 5.5-1.5 6 0"/></svg></div><h3>Admit card and ID card</h3><p>Available right on your phone.</p></div>
+    <div class="bt"><span class="who">Teacher</span><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3M7 12h10"/></svg></div><h3>OMR scan</h3><p>Check answer sheets with the phone camera.</p></div>
+    <div class="bt w"><span class="who">Teacher</span><div class="ic"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h7"/></svg></div><h3>Papers and booklets</h3><p>Create question papers and print them.</p></div>
+    <div class="bt w"><span class="who">Teacher</span><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg></div><h3>Exam Manager</h3><p>Registrations, answer keys and records in one place, with notifications sent straight to students.</p></div>
+  </div>
+</div></section>
+
+
+
+<section id="install" style="border-top:1px solid var(--line)"><div class="wrap">
+  <div class="rv"><div class="eb">Install</div><h2>Install in <em>3 steps</em></h2><p class="sub">For Android phones.</p></div>
+  <ol class="steps rv">
+    <li><b>Download the APK</b><span>Choose your institute above and tap Download APK.</span></li>
+    <li><b>Install it</b><span>If your phone asks, allow installs from this source, then tap Install.</span></li>
+    <li><b>Register with your join code</b><span>Open the app, enter your institute's join code and register.</span></li>
+  </ol>
+</div></section>
+
+<section id="reviews" style="border-top:1px solid var(--line)"><div class="wrap">
+ <div class="rv"><div class="eb">Reviews</div><h2>What students and institutes <em>say</em></h2><div class="avg" id="avg" hidden></div></div>
+ <div class="rg">
+  <div id="rlist" class="rl"></div>
+  <form class="fm rform" id="rvf" novalidate>
+   <div id="rvbody">
+    <fieldset><legend>Write a review</legend>
+     <label class="f" for="v_name">Your name *</label><input type="text" id="v_name" name="Name" maxlength="60" autocomplete="name" required>
+     <div class="g2" style="margin-top:12px"><div><label class="f" for="v_role">I am a *</label><select id="v_role" name="Role"><option>Student</option><option>Teacher</option><option>Institute owner</option><option>Parent</option></select></div>
+     <div><label class="f" for="v_city">City</label><input type="text" id="v_city" name="City" maxlength="60"></div></div>
+     <label class="f" for="v_inst" style="margin-top:12px">Institute name *</label><input type="text" id="v_inst" name="Institute" maxlength="80" required>
+     <label class="f" style="margin-top:12px">Rating *</label>
+     <div class="star-in" id="v_stars" role="radiogroup" aria-label="Rating"></div>
+     <label class="f" for="v_text" style="margin-top:12px">Your review *</label><textarea id="v_text" name="Review" maxlength="400" placeholder="What did you like about the app?"></textarea>
+    </fieldset>
+    <div class="hp" aria-hidden="true"><label>Leave this empty<input type="text" name="_honey" tabindex="-1" autocomplete="off"></label></div>
+    <button class="btn red" type="submit" id="v_send">Submit review</button>
+    <p class="ferr" id="v_err" role="alert"></p>
+    <p class="hint">Reviews are checked before they appear on the site.</p>
+   </div>
+   <div class="ok" id="v_ok" hidden><div class="tick"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><h3 style="font-size:1.6rem">Thank you</h3><p>Your review has been received and will appear on this page once approved.</p></div>
+  </form>
+ </div>
+</div></section>
+
+<section id="faq" style="border-top:1px solid var(--line)"><div class="wrap rv">
+  <div class="eb">FAQ</div><h2 style="margin-bottom:24px">Frequently asked <em>questions</em></h2>
+  <details><summary>Is the app safe?</summary><p>The APK comes directly from our official GitHub release. Android may show a warning the first time because the app is installed from outside the Play Store. For how data is handled, see the <a href="/privacy.html">Privacy</a> page.</p></details>
+  <details><summary>How do I use it on an iPhone?</summary><p>The APK works on Android only. On iPhone, tap Open on web, then use Share in Safari and choose Add to Home Screen.</p></details>
+  <details><summary>My institute is not in the list.</summary><p>The APK for your institute may not be built yet. Please ask your institute. Until then, Open on web gives you the full app.</p></details>
+  <details><summary>Where do I get the join code?</summary><p>Your institute's admin or teacher will give you the join code.</p></details>
+</div></section>
+
+<section id="register" style="border-top:1px solid var(--line)"><div class="wrap">
+<div class="reg">
+ <div class="rv">
+  <div class="eb">Institute registration</div>
+  <h2>Get an app for <em>your</em> institute</h2>
+  <p class="sub" style="margin-bottom:0">Fill in the form below. Our team will contact you by phone or WhatsApp to take it from there.</p>
+  <ul class="pts">
+   <li>Your own app with your institute's name, logo and color</li>
+   <li>Students join your app directly with a join code</li>
+   <li>Tests, ranks, OMR scanning, admit cards and notifications in one place</li>
+   <li>Only 5 quick details, it takes less than a minute</li>
+  </ul>
+ </div>
+ <form class="fm rv" id="rf" novalidate>
+  <div id="rbody">
+  <fieldset><legend>Your details</legend><div class="g2">
+   <div><label class="f" for="r_owner">Your name *</label><input type="text" id="r_owner" name="Owner name" maxlength="80" autocomplete="name" required></div>
+   <div><label class="f" for="r_mob">Mobile number *</label><input type="tel" id="r_mob" name="Mobile" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="tel-national" required></div>
+   <div style="grid-column:1/-1"><label class="f" for="r_inst">Institute name *</label><input type="text" id="r_inst" name="Institute name" maxlength="80" required></div>
+   <div><label class="f" for="r_city">City / Town *</label><input type="text" id="r_city" name="City" maxlength="60" autocomplete="address-level2" required></div>
+   <div><label class="f" for="r_state">State *</label><select id="r_state" name="State" autocomplete="address-level1" required><option value="">Select state</option><option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option><option>Bihar</option><option>Chhattisgarh</option><option>Goa</option><option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option><option>Jharkhand</option><option>Karnataka</option><option>Kerala</option><option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option><option>Meghalaya</option><option>Mizoram</option><option>Nagaland</option><option>Odisha</option><option>Punjab</option><option>Rajasthan</option><option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option><option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option><option>Andaman and Nicobar Islands</option><option>Chandigarh</option><option>Dadra and Nagar Haveli and Daman and Diu</option><option>Delhi</option><option>Jammu and Kashmir</option><option>Ladakh</option><option>Lakshadweep</option><option>Puducherry</option></select></div>
+  </div></fieldset>
+  <div class="hp" aria-hidden="true"><label>Leave this empty<input type="text" name="_honey" tabindex="-1" autocomplete="off"></label></div>
+  <button class="btn red" type="submit" id="rsend">Submit enquiry</button>
+  <p class="ferr" id="rerr" role="alert"></p>
+  <p class="hint">We will call or WhatsApp you on this number. Your details are used only to process your registration.</p>
+  </div>
+  <div class="ok" id="rok" hidden>
+   <div class="tick"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+   <h3 style="font-size:1.6rem">Enquiry received</h3>
+   <p>Thank you. Our team will contact you on your mobile number shortly.</p>
+  </div>
+ </form>
+</div></div></section>
+
+</main>
+
+<footer><div class="wrap"><span>© The Vishnu Sharma</span><span><a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a> · <a href="/owner-app.html">Owner login</a> · <a href="/?app=1">Web app</a></span></div></footer>
+
+<script>
+(function(){
+  var REPO="thevishnusharma/thevishnusharma.github.io",list=document.getElementById("list"),state=document.getElementById("state"),q=document.getElementById("q"),items=[];
+  /* v288: APK hamesha Chrome me download ho (in-app browser / WebView me file save hoke bhi dikhti nahi thi) */
+  function chromeIntent(u){
+    try{var x=new URL(u);return "intent://"+x.host+x.pathname+x.search+"#Intent;scheme="+x.protocol.replace(":","")+";package=com.android.chrome;S.browser_fallback_url="+encodeURIComponent(u)+";end"}catch(e){return u}
+  }
+  function isAndroid(){return /Android/i.test(navigator.userAgent||"")}
+  function isRealChrome(){var ua=navigator.userAgent||"";return /Chrome\/\d/.test(ua)&&!/; wv\)|\bwv\b|FBAN|FBAV|Instagram|Line\/|Snapchat|Telegram|MiuiBrowser|EdgA|OPR\/|SamsungBrowser|UCBrowser|Version\/\d/.test(ua)&&!window.Capacitor}
+  function openApkInChrome(u){
+    /* v289: asli Chrome me ho to seedha download (intent se Chrome ka Custom Tab khulta tha jahan 100% par atak jata tha).
+       Intent sirf in-app browser / WebView me. */
+    if(!isAndroid()||isRealChrome()){
+      var a=document.createElement("a");a.href=u;a.rel="noopener";a.download="";a.style.display="none";document.body.appendChild(a);a.click();
+      setTimeout(function(){a.remove()},1500);return;
+    }
+    window.location.href=chromeIntent(u);
+  }
+  /* v288: tez download — Cloudflare Worker ke raste (worker ready ho tabhi), warna seedha GitHub */
+  var WORKER="https://cool-thunder-a280.vishnu1234stm.workers.dev",proxyOk=false,pingP=Promise.resolve();
+  function fastUrl(u){var m=/^https:\/\/github\.com\/[^\/]+\/[^\/]+\/releases\/download\/([^\/]+)\/([^\/]+\.apk)$/.exec(u||"");if(!m)return Promise.resolve(u);return pingP.then(function(){if(!proxyOk)return u;var p=WORKER+"/apk/"+m[1]+"/"+m[2],c=window.AbortController?new AbortController():null,t=setTimeout(function(){c&&c.abort()},4000);return fetch(p,{method:"HEAD",signal:c?c.signal:undefined}).then(function(r){clearTimeout(t);return r.ok?p:u}).catch(function(){return u})})}
+  try{var _c=window.AbortController?new AbortController():null,_t=setTimeout(function(){_c&&_c.abort()},4000);pingP=fetch(WORKER+"/apk/ping",{signal:_c?_c.signal:undefined}).then(function(r){return r.json()}).then(function(j){clearTimeout(_t);proxyOk=!!(j&&j.ok)}).catch(function(){})}catch(e){}
+  /* v290: Chrome me APK ko page ke andar hi download karke save karte hain (progress dikhta hai).
+     Isse Chrome ka "Downloading..." interstitial / naya tab nahi khulta jo 100% par atak jata tha.
+     Worker na mile ya kuch bhi fail ho to purana seedha download chalta hai. */
+  var busy=false;
+  function saveBlob(blob,name){
+    var url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;a.style.display="none";document.body.appendChild(a);a.click();
+    setTimeout(function(){a.remove();URL.revokeObjectURL(url)},60000);
+  }
+  function blobDownload(u,name,btn,done){
+    var label="Download APK";
+    function fin(){btn.textContent=label;busy=false}
+    fetch(u).then(function(r){
+      if(!r.ok)throw new Error("http "+r.status);
+      var total=+r.headers.get("Content-Length")||0;
+      if(!r.body||!r.body.getReader)return r.blob();
+      var rd=r.body.getReader(),parts=[],got=0;
+      function pump(){return rd.read().then(function(x){
+        if(x.done)return new Blob(parts,{type:"application/vnd.android.package-archive"});
+        parts.push(x.value);got+=x.value.length;
+        btn.textContent=total?("Downloading "+Math.min(99,Math.floor(got*100/total))+"%"):("Downloading "+(got/1048576).toFixed(1)+" MB");
+        return pump()})}
+      return pump();
+    }).then(function(b){
+      if(!b||b.size<500000)throw new Error("small");
+      saveBlob(b,name);btn.textContent="Saved \u2713 \u2014 open from notification";setTimeout(fin,6000);
+    }).catch(function(){fin();done()});
+  }
+  function startApk(it,btn){
+    if(busy)return;busy=true;btn.textContent="Preparing\u2026";
+    var name=(it.apk.split("/").pop()||"app.apk").split("?")[0];
+    fastUrl(it.apk).then(function(u){
+      if(u.indexOf(WORKER)===0&&(!isAndroid()||isRealChrome())&&window.Blob&&window.URL&&URL.createObjectURL){
+        blobDownload(u,name,btn,function(){openApkInChrome(it.apk)});
+      }else{btn.textContent="Download APK";busy=false;openApkInChrome(u)}
+    });
+  }
+  function mk(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+  function render(){
+    var s=q.value.trim().toLowerCase(),n=0;list.textContent="";
+    items.forEach(function(it){
+      if(s&&it.name.toLowerCase().indexOf(s)<0)return;n++;
+      var c=mk("div","card inst");var av=mk("div","av",(it.name.trim().charAt(0)||"?").toUpperCase());c.appendChild(av);c.appendChild(mk("h3","",it.name));c.appendChild(mk("div","v",it.ver));
+      var r=mk("div","row"),a=mk("a","btn gold sm","Download APK");a.href=it.apk;a.rel="noopener";a.addEventListener("click",function(ev){ev.preventDefault();startApk(it,a)});r.appendChild(a);
+      c.appendChild(r);list.appendChild(c);
+    });
+    state.hidden=n>0;
+    if(!n)state.textContent=items.length?"No institute found with that name.":"No institutes are listed yet.";
+  }
+  q.addEventListener("input",render);
+  fetch("https://api.github.com/repos/"+REPO+"/releases?per_page=100",{headers:{Accept:"application/vnd.github+json"}})
+  .then(function(r){if(!r.ok)throw 0;return r.json()})
+  .then(function(rel){
+    var seen={};
+    (rel||[]).forEach(function(r){
+      var m=/^inst-(.+)-b(\d+)$/.exec(r.tag_name||"");if(!m||seen[m[1]]||r.draft||r.prerelease)return;
+      var a=(r.assets||[]).filter(function(x){return /\.apk$/i.test(x.name||"")})[0];if(!a)return;
+      seen[m[1]]=1;
+      var id=((/Institute:\s*(\S+)/.exec(r.body||""))||[])[1]||"";
+      items.push({name:String(r.name||m[1]).replace(/\s*\(b\d+\)\s*$/,"")||m[1],ver:"Version b"+m[2],apk:a.browser_download_url,id:/^[A-Za-z0-9_-]{1,100}$/.test(id)?id:""});
+    });
+    items.sort(function(a,b){return a.name.localeCompare(b.name)});render();
+  })
+  .catch(function(){state.hidden=false;state.textContent="The list could not be loaded. Please try again shortly, or use Open on web.";});
+})();
+
+(function(){
+  var els=document.querySelectorAll(".rv");
+  if(!("IntersectionObserver" in window)){els.forEach(function(e){e.classList.add("in")});}
+  else{var io=new IntersectionObserver(function(a){a.forEach(function(x){if(x.isIntersecting){x.target.classList.add("in");io.unobserve(x.target)}})},{threshold:.12});els.forEach(function(e){io.observe(e)});}
+  var bar=document.getElementById("sticky"),hero=document.getElementById("top");
+  if(bar&&"IntersectionObserver" in window){new IntersectionObserver(function(a){bar.classList.toggle("show",!a[0].isIntersecting)}).observe(hero)}
+})();
+</script>
+<script>
+(function(){
+var rm=matchMedia('(prefers-reduced-motion:reduce)').matches;if(rm)return;
+var sc=document.querySelector('.scene'),px=0,py=0,sy=0,cx=0,cy=0,t0=performance.now();
+addEventListener('pointermove',function(e){if(e.pointerType==='mouse'){px=e.clientX/innerWidth-.5;py=e.clientY/innerHeight-.5}},{passive:true});
+addEventListener('scroll',function(){sy=Math.min(scrollY,800)/800},{passive:true});
+function tick(t){
+ if(sc&&scrollY<1100){
+  var ty=px*26+Math.sin((t-t0)/1700)*9+sy*75, tx=-py*14+sy*12+Math.cos((t-t0)/2300)*3;
+  cy+=(ty-cy)*.07;cx+=(tx-cx)*.07;
+  sc.style.setProperty('--ry',cy.toFixed(2)+'deg');sc.style.setProperty('--rx',cx.toFixed(2)+'deg');sc.style.setProperty('--sh',cy.toFixed(1));
+ }
+ requestAnimationFrame(tick)}
+requestAnimationFrame(tick);
+document.addEventListener('pointermove',function(e){
+ if(e.pointerType!=='mouse')return;var c=e.target.closest&&e.target.closest('.bt,.inst,.wi,.rcard');
+ if(!c)return;var r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+ c.style.transform='perspective(700px) rotateX('+(-y*10).toFixed(1)+'deg) rotateY('+(x*12).toFixed(1)+'deg) translateZ(8px)'});
+document.addEventListener('pointerout',function(e){var c=e.target.closest&&e.target.closest('.bt,.inst,.wi,.rcard');if(c&&!c.contains(e.relatedTarget))c.style.transform=''});
+})();
+</script>
+<script>
+(function(){
+var f=document.getElementById('rf');if(!f)return;
+var err=document.getElementById('rerr'),btn=document.getElementById('rsend');
+var _cfg;window.fbCfg=function(){return _cfg||(_cfg=fetch('/firebase-config.js',{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.text()}).then(function(t){
+ var k=/apiKey["']?\s*[:=]\s*["']([^"']+)/.exec(t),p=/projectId["']?\s*[:=]\s*["']([^"']+)/.exec(t);if(!k||!p)throw 0;return{k:k[1],p:p[1]}}).catch(function(e){_cfg=null;throw e}))};
+function v(id){return(document.getElementById(id).value||'').trim()}
+function bad(id,m){var e=document.getElementById(id);e.classList.add('bad');e.focus();err.textContent=m;return false}
+f.addEventListener('input',function(e){e.target.classList.remove('bad');err.textContent=''});
+function collect(){
+ var o={};[].forEach.call(f.querySelectorAll('input[type=text],input[type=tel],input[type=email],input[type=url],input[type=number],input[type=color],select,textarea'),function(e){
+  if(e.name&&e.name!=='_honey'&&String(e.value).trim())o[e.name]=String(e.value).trim()});
+ ['Classes','Medium'].forEach(function(n){var a=[].map.call(f.querySelectorAll('input[name="'+n+'"]:checked'),function(c){return c.value});if(a.length)o[n]=a.join(', ')});
+ return o}
+function ok(){document.getElementById('rbody').hidden=true;document.getElementById('rok').hidden=false;f.scrollIntoView({behavior:'smooth',block:'center'})}
+f.addEventListener('submit',function(e){
+ e.preventDefault();err.textContent='';
+ if(f.querySelector('[name=_honey]').value)return;
+ if(v('r_owner').length<2)return bad('r_owner','Please enter the owner\'s name.');
+ if(!/^[6-9]\d{9}$/.test(v('r_mob')))return bad('r_mob','Please enter a valid 10-digit mobile number.');
+ if(v('r_inst').length<2)return bad('r_inst','Please enter the institute name.');
+ if(!v('r_city'))return bad('r_city','Please enter the city or town.');
+ if(!v('r_state'))return bad('r_state','Please select the state.');
+ var d=collect();
+ var last=+(sessionStorage.getItem('enq_t')||0);if(Date.now()-last<30000)return err.textContent='Please wait a few seconds before sending again.';
+ btn.disabled=true;btn.textContent='Sending\u2026';
+ var map={'Owner name':'ownerName','Mobile':'mobile','Institute name':'institute','City':'city','State':'state'};
+ var fields={status:{stringValue:'new'},source:{stringValue:'download-page'},createdAt:{timestampValue:new Date().toISOString()}};
+ Object.keys(map).forEach(function(k){if(d[k])fields[map[k]]={stringValue:String(d[k]).slice(0,600)}});
+ window.fbCfg().then(function(c){
+  return fetch('https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(c.p)+'/databases/(default)/documents/enquiries?key='+encodeURIComponent(c.k),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})})
+ }).then(function(r){if(!r.ok)throw 0;sessionStorage.setItem('enq_t',String(Date.now()));ok()})
+ .catch(function(){btn.disabled=false;btn.textContent='Submit enquiry';err.textContent='We could not send your enquiry right now. Please try again in a moment.'});
+});
+})();
+</script>
+<script>
+(function(){
+var sl=document.getElementById('sl');if(!sl)return;
+var ss=[].slice.call(sl.children),dots=document.getElementById('dots'),i=0,tm,hold=false;
+function $(x){return document.getElementById(x)}
+ss.forEach(function(e,k){var b=document.createElement('button');b.type='button';b.setAttribute('aria-label','Show '+e.dataset.h);b.onclick=function(){go(k);start()};dots.appendChild(b)});
+function go(k){i=k;ss.forEach(function(e,n){e.classList.toggle('on',n===k)});[].forEach.call(dots.children,function(d,n){d.classList.toggle('on',n===k)});
+ var e=ss[k];$('ptitle').textContent=e.dataset.t;$('ptag').textContent=e.dataset.p;$('ch').textContent=e.dataset.h;$('cd').textContent=e.dataset.d}
+function start(){clearInterval(tm);if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;tm=setInterval(function(){if(!document.hidden)go((i+1)%ss.length)},3600)}
+go(0);start();
+})();
+</script>
+<script>
+(function(){
+var list=document.getElementById('rlist');if(!list)return;
+var BLD='<svg viewBox="0 0 24 24"><path d="M4 20V9l8-5 8 5v11M9 20v-6h6v6"/></svg>';
+function mk(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function stars(n){var e=mk('div','stars');e.setAttribute('aria-label',n+' out of 5');for(var i=1;i<=5;i++){var x=mk('span','',i<=n?'\u2605':'\u2606');e.appendChild(x)}return e}
+function card(r){
+ var c=mk('div','rcard'+(r.pin?' pin':''));c.appendChild(stars(r.rating));c.appendChild(mk('p','','\u201c'+r.text+'\u201d'));
+ var w=mk('div','rwho');w.appendChild(mk('b','',r.name));if(r.role)w.appendChild(mk('span','role',r.role));
+ if(r.date)w.appendChild(mk('span','rdate',r.date));c.appendChild(w);
+ if(r.inst){var i=mk('div','rinst');i.innerHTML=BLD;i.appendChild(document.createTextNode(r.inst+(r.city?', '+r.city:'')));c.appendChild(i)}
+ if(r.reply){var p=mk('div','rrep');p.appendChild(mk('b','','Reply from The Vishnu Sharma'));p.appendChild(document.createTextNode(r.reply));c.appendChild(p)}
+ return c}
+function fv(x){if(!x)return'';return x.stringValue!=null?x.stringValue:x.integerValue!=null?+x.integerValue:x.doubleValue!=null?+x.doubleValue:x.booleanValue!=null?x.booleanValue:''}
+window.fbCfg().then(function(c){
+ return fetch('https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(c.p)+'/databases/(default)/documents:runQuery?key='+encodeURIComponent(c.k),{method:'POST',headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({structuredQuery:{from:[{collectionId:'reviews'}],where:{fieldFilter:{field:{fieldPath:'status'},op:'EQUAL',value:{stringValue:'approved'}}},limit:100}})})
+}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(rows){
+ var a=(rows||[]).filter(function(x){return x.document}).map(function(x){var f=x.document.fields||{},o={};Object.keys(f).forEach(function(k){o[k]=fv(f[k])});return o});
+ a=a.filter(function(r){return r.name&&r.text&&r.rating>=1&&r.rating<=5});
+ a.sort(function(x,y){return (y.pin?1:0)-(x.pin?1:0)||String(y.date||'').localeCompare(String(x.date||''))});
+ if(!a.length)throw 0;
+ a.forEach(function(r){list.appendChild(card(r))});
+ var avg=a.reduce(function(s,r){return s+ +r.rating},0)/a.length,el=document.getElementById('avg');
+ el.hidden=false;el.textContent='';el.appendChild(mk('b','',avg.toFixed(1)));el.appendChild(stars(Math.round(avg)));el.appendChild(mk('span','','from '+a.length+(a.length===1?' review':' reviews')));
+}).catch(function(){var e=mk('div','rempty','No reviews yet. Be the first to share your experience with The Vishnu Sharma.');list.appendChild(e)});
+
+// form
+var f=document.getElementById('rvf'),rate=0,sb=document.getElementById('v_stars'),err=document.getElementById('v_err'),btn=document.getElementById('v_send');
+for(var k=1;k<=5;k++)(function(k){var b=mk('button','','\u2605');b.type='button';b.setAttribute('role','radio');b.setAttribute('aria-label',k+' star'+(k>1?'s':''));b.onclick=function(){rate=k;[].forEach.call(sb.children,function(x,n){x.classList.toggle('on',n<k)});err.textContent=''};sb.appendChild(b)})(k);
+function v(id){return document.getElementById(id).value.trim()}
+f.addEventListener('input',function(){err.textContent=''});
+f.addEventListener('submit',function(e){
+ e.preventDefault();if(f.querySelector('[name=_honey]').value)return;
+ if(v('v_name').length<2)return err.textContent='Please enter your name.';
+ if(v('v_inst').length<2)return err.textContent='Please enter your institute name.';
+ if(!rate)return err.textContent='Please choose a star rating.';
+ if(v('v_text').length<15)return err.textContent='Please write at least a short sentence (15 characters).';
+ var last=+(sessionStorage.getItem('rev_t')||0);if(Date.now()-last<30000)return err.textContent='Please wait a few seconds before sending again.';
+ var d=new Date();
+ var fields={name:{stringValue:v('v_name')},role:{stringValue:v('v_role')},inst:{stringValue:v('v_inst')},rating:{integerValue:String(rate)},text:{stringValue:v('v_text')},
+  date:{stringValue:d.toISOString().slice(0,10)},status:{stringValue:'pending'},show:{booleanValue:false},pin:{booleanValue:false},source:{stringValue:'download-page'},createdAt:{timestampValue:d.toISOString()}};
+ if(v('v_city'))fields.city={stringValue:v('v_city')};
+ btn.disabled=true;btn.textContent='Sending\u2026';
+ window.fbCfg().then(function(c){
+  return fetch('https://firestore.googleapis.com/v1/projects/'+encodeURIComponent(c.p)+'/databases/(default)/documents/reviews?key='+encodeURIComponent(c.k),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})})
+ }).then(function(r){if(!r.ok)throw 0;sessionStorage.setItem('rev_t',String(Date.now()));document.getElementById('rvbody').hidden=true;document.getElementById('v_ok').hidden=false})
+ .catch(function(){btn.disabled=false;btn.textContent='Submit review';err.textContent='We could not send your review right now. Please try again in a moment.'});
+});
+})();
+</script>
+<script>
+/* v291: GitHub Pages har file ~10 minute browser cache me rakhta hai (_headers yahan kaam nahi karta), isliye upload ke baad
+   bhi purana download.html chal sakta tha. Ye check naya version milte hi page ko apne-aap taaza kar deta hai. */
+(function(){try{
+  var cur="v291",tag=document.querySelector('meta[name="page-version"]');if(tag)cur=tag.content;
+  fetch("/download.html?cb="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():""}).then(function(t){
+    var m=/name="page-version" content="([^"]+)"/.exec(t||"");if(!m||m[1]===cur)return;
+    var k="dl_fresh_"+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,"1")}catch(e){}
+    location.replace("/download.html?v="+encodeURIComponent(m[1])+"&t="+Date.now());
+  }).catch(function(){});
+}catch(e){}})();
+</script>
+</body>
+</html>

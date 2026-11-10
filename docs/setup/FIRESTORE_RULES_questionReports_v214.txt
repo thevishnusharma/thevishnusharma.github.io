@@ -1,0 +1,28 @@
+Firebase Console -> Firestore Database -> Rules mein, "match /databases/{database}/documents {" ke ANDAR,
+kisi bhi doosre "match /..." block ke bagal mein (jaise "match /studentScanReports/{docId}" ke upar) ye poora block paste karein, phir Publish.
+Baaki rules ko chhedna nahi hai. (Ye block firestore.rules file mein bhi rakh sakte hain.)
+
+    // ── v214: Question Reports (student → admin) ───────────────────
+    // Student test dauran galat question report karta hai (reason + message). Doc id = testId_qIndex_mobile,
+    // isliye ek student ek question ko ek hi baar report kar sakta hai (dobara create = update = student ke liye band).
+    // Admin sirf apne institute ke (ya purane instituteId-less) reports padh / resolve / delete kar sakta hai.
+    match /questionReports/{rid} {
+      allow create: if isSignedIn() &&
+        request.resource.data.keys().hasOnly(['testId', 'testTitle', 'instituteId', 'qIndex', 'qNumber', 'qText', 'reason', 'message', 'name', 'mobile', 'status', 'createdAt']) &&
+        request.resource.data.testId is string && request.resource.data.testId.size() > 0 && request.resource.data.testId.size() <= 120 &&
+        request.resource.data.instituteId is string && request.resource.data.instituteId.size() <= 120 &&
+        request.resource.data.testTitle is string && request.resource.data.testTitle.size() <= 200 &&
+        request.resource.data.qIndex is int && request.resource.data.qNumber is int &&
+        request.resource.data.qText is string && request.resource.data.qText.size() <= 400 &&
+        request.resource.data.reason is string && request.resource.data.reason.size() > 0 && request.resource.data.reason.size() <= 150 &&
+        request.resource.data.message is string && request.resource.data.message.size() >= 5 && request.resource.data.message.size() <= 1000 &&
+        request.resource.data.name is string && request.resource.data.name.size() <= 100 &&
+        request.resource.data.mobile is string && request.resource.data.mobile.size() >= 6 && request.resource.data.mobile.size() <= 15 &&
+        request.resource.data.status == 'open' &&
+        request.resource.data.createdAt == request.time;
+      allow read: if isAdmin() && resource.data.instituteId in [adminInstituteId(), ''];
+      allow update: if isAdmin() && resource.data.instituteId in [adminInstituteId(), ''] &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'resolvedAt']) &&
+        request.resource.data.status in ['open', 'resolved'];
+      allow delete: if isAdmin() && resource.data.instituteId in [adminInstituteId(), ''];
+    }

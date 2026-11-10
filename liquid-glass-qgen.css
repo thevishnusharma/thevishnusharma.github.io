@@ -1,0 +1,17 @@
+/* The Vishnu Sharma Question Generator — Liquid Glass (only theme) */
+:root{--bg:#e9f1ff;--card:rgba(255,255,255,.5);--card2:rgba(255,255,255,.38);--border:rgba(255,255,255,.8);--border2:rgba(255,255,255,.6);
+  --acc:#0a84ff;--acc2:#0a6cff;--acc-glow:rgba(10,132,255,.3);--txt:#0b1b3b;--txt2:#52617f;--txt3:#3a4a6d;--shadow:0 10px 34px rgba(36,60,130,.16);
+  --lg-wall:radial-gradient(58% 46% at 12% 8%,#8fc6ff 0,transparent 62%),radial-gradient(48% 42% at 92% 14%,#cdb0ff 0,transparent 62%),radial-gradient(55% 46% at 86% 92%,#ffb8d6 0,transparent 62%),radial-gradient(48% 42% at 8% 88%,#a2f0d8 0,transparent 62%),linear-gradient(160deg,#eaf3ff,#f4edff)}
+html{background:#e9f1ff}
+body{background:var(--lg-wall) fixed!important;color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter",system-ui,"Noto Sans Devanagari",sans-serif}
+.sidebar,.side-panel,.topbar,.modal,.modal-box,.panel,.card,.q-card,.draft-card{background:linear-gradient(145deg,rgba(255,255,255,.66),rgba(255,255,255,.32))!important;-webkit-backdrop-filter:blur(26px) saturate(185%);backdrop-filter:blur(26px) saturate(185%);border-color:rgba(255,255,255,.72)!important;box-shadow:0 10px 34px rgba(36,60,130,.16),inset 0 1.5px 0 rgba(255,255,255,.95)}
+.sidebar{border-radius:0 26px 26px 0}
+.sidebar-logo,.paper-header,.paper-section-header,.toast{background:linear-gradient(150deg,rgba(70,150,255,.88),rgba(88,86,235,.82))!important;color:#fff}
+.btn-primary,.btn-success,.btn-info,.btn-warning,.btn-danger,.main-tab.active,.sec-tab.active,.side-tab.active,.btn-sec-toggle{background:linear-gradient(180deg,rgba(104,176,255,.96),rgba(10,118,255,.94))!important;color:#fff!important;border:1px solid rgba(255,255,255,.6)!important;border-radius:999px!important;box-shadow:0 8px 20px rgba(10,118,255,.34),inset 0 1.5px 0 rgba(255,255,255,.75)!important}
+.btn-danger{background:linear-gradient(180deg,rgba(255,130,120,.95),rgba(255,59,48,.92))!important}
+.btn-success{background:linear-gradient(180deg,rgba(110,225,140,.96),rgba(40,190,80,.94))!important}
+.side-tab,.main-tab,.sec-tab,.menu-btn{background:linear-gradient(145deg,rgba(255,255,255,.52),rgba(255,255,255,.26))!important;color:var(--txt)!important;border:1px solid rgba(255,255,255,.8)!important;border-radius:999px!important}
+.section-tabs-wrap{background:rgba(255,255,255,.35)!important}
+input,select,textarea{background-color:rgba(255,255,255,.55)!important;color:var(--txt)!important;border:1px solid rgba(255,255,255,.85)!important;border-radius:14px!important;box-shadow:inset 0 2px 6px rgba(36,60,130,.1)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:rgba(10,132,255,.75)!important;box-shadow:0 0 0 4px rgba(10,132,255,.2)!important}
+/* the question paper itself stays white for printing */

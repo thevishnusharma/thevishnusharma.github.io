@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "count": 7695,
+  "sourceBytes": 7486127,
+  "sourceSha256": "eca72afead29429fe4c9ebaffa742c149504d325fa74f4a51648cc68070ce0a8",
+  "chunkBytes": 7486140,
+  "groups": [
+    {
+      "classId": "class_10",
+      "subject": "biology",
+      "count": 89,
+      "url": "/question-bank/chunks/class-10/01-biology.json"
+    },
+    {
+      "classId": "class_10",
+      "subject": "Biology",
+      "count": 3,
+      "url": "/question-bank/chunks/class-10/02-biology.json"
+    },
+    {
+      "classId": "class_10",
+      "subject": "Chemistry",
+      "count": 621,
+      "url": "/question-bank/chunks/class-10/03-chemistry.json"
+    },
+    {
+      "classId": "class_10",
+      "subject": "Economics",
+      "count": 456,
+      "url": "/question-bank/chunks/class-10/04-economics.json"
+    },
+    {
+      "classId": "class_10",
+      "subject": "Geography",
+      "count": 281,
+      "url": "/question-bank/chunks/class-10/05-geography.json"
+    },
+    {
+      "classId": "class_10",
+      "subject": "Hindi",
+      "count": 961,
+      "url": "/question-bank/chunks/class-10/06-hindi.json"
+    },
+    {
+      "classId": "class_10",
+      "subject": "Hindi ( padkhand)",
+      "count": 797,
+      "url": "/question-bank/chunks/class-10/07-hindi-padkhand.json"
+    },
+    {
+      "classId": "class_10",
+      "subject": "Hindi वर्णिका",
+      "count": 344,
+      "url": "/question-bank/chunks/class-10/08-hindi.json"
+    },
+    {
+      "classId": "class_10",
+      "subject": "History",
+      "count": 632,
+      "url": "/question-bank/chunks/class-10/09-history.json"
+    },
+    {
+      "classId": "class_10",
+      "subject": "Mathematics",
+      "count": 1141,
+      "url": "/question-bank/chunks/class-10/10-mathematics.json"
+    },
+    {
+      "classId": "class_10",
+      "subject": "Physics",
+      "count": 704,
+      "url": "/question-bank/chunks/class-10/11-physics.json"
+    },
+    {
+      "classId": "class_10",
+      "subject": "Sanskrit",
+      "count": 1164,
+      "url": "/question-bank/chunks/class-10/12-sanskrit.json"
+    },
+    {
+      "classId": "class_10",
+      "subject": "Science",
+      "count": 245,
+      "url": "/question-bank/chunks/class-10/13-science.json"
+    },
+    {
+      "classId": "class_10",
+      "subject": "हिंदी व्याकरण",
+      "count": 257,
+      "url": "/question-bank/chunks/class-10/14-subject.json"
+    }
+  ]
+}

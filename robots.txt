@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://thevishnusharma.github.io/sitemap.xml

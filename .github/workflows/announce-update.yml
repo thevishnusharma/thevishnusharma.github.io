@@ -1,0 +1,28 @@
+# Commit message me [notify:all] / [notify:admin] / [notify:student] likhne par push jaata hai.
+# (v259) Zip upload ke liye ye NAHI chalta — wahan auto-extract.yml khud live hone ke baad notification bhejta hai (double nahi).
+name: Announce Update
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '*.zip'
+
+jobs:
+  announce:
+    if: contains(github.event.head_commit.message, '[notify:')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Push bhejo
+        env:
+          SECRET: ${{ secrets.BROADCAST_SECRET }}
+          URL: ${{ vars.PUSH_WORKER_URL || 'https://cool-thunder-a280.vishnu1234stm.workers.dev' }}
+          MSG: ${{ github.event.head_commit.message }}
+        run: |
+          if [ -z "$SECRET" ]; then echo "BROADCAST_SECRET nahi — skip"; exit 0; fi
+          AUD=$(printf '%s' "$MSG" | grep -oE '\[notify:(all|admin|student)\]' | head -n1 | sed -E 's/\[notify:(.*)\]/\1/')
+          [ -n "$AUD" ] || { echo "valid tag nahi"; exit 0; }
+          BODY=$(printf '%s' "$MSG" | head -n1 | sed -E 's/\[notify:[a-z]+\]//g; s/"/ /g; s/\\/ /g' | cut -c1-200)
+          sleep 60
+          curl -fsS -X POST "$URL/broadcast" -H 'Content-Type: text/plain' \
+            --data "{\"secret\":\"$SECRET\",\"audience\":\"$AUD\",\"kind\":\"web\",\"title\":\"The Vishnu Sharma update\",\"body\":\"${BODY:-App me naya update aaya hai.}\"}"

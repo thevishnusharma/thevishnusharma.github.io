@@ -1,0 +1,14 @@
+// Add INSIDE your existing "match /databases/{database}/documents { ... }" block in Firestore Rules.
+// Anyone on the website may CREATE an enquiry (with limits). Only the owner can read, update or delete.
+match /enquiries/{id} {
+  allow create: if request.resource.data.keys().hasOnly([
+      'ownerName','mobile','whatsapp','email','institute','city','district','state','pin',
+      'students','teachers','classes','medium','tagline','color','link','message','contactTime',
+      'status','source','createdAt'])
+    && request.resource.data.status == 'new'
+    && request.resource.data.ownerName is string && request.resource.data.ownerName.size() <= 600
+    && request.resource.data.mobile is string && request.resource.data.mobile.matches('^[6-9][0-9]{9}$')
+    && request.resource.data.institute is string && request.resource.data.institute.size() > 1 && request.resource.data.institute.size() <= 600;
+  allow read, update, delete: if request.auth != null
+    && request.auth.token.email == 'thevishnusharmaapp@gmail.com';
+}

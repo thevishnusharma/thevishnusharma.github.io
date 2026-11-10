@@ -1,0 +1,42 @@
+rules_version = '2';
+// Firebase Console -> Storage -> Rules -> paste -> Publish
+// v168: Batch files ab institute + batch-membership ke hisaab se protected hain (Firestore se cross-service check).
+//  - Likh/delete (v241): sirf Owner YA active admin (admins/{email}.active==true, ya legacy admin email) — aur instituteId path se match. Admin-doc ke bina koi email user NAHI.
+//  - Padhna: admin (apna institute) ya student — Strict Mode ON ho to sirf us batch ka verified member; OFF ho to purane jaisa (signed-in).
+// Zaroori: Storage Rules cross-service get() ke liye Firebase Console me Rules publish karte waqt "Grant access" prompt aaye to Allow karein.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /batches/{inst}/{batch}/{file} {
+      function adminDoc() { return firestore.get(/databases/(default)/documents/admins/$(request.auth.token.email)).data; }
+      function isEmailUser() { return request.auth != null && ('email' in request.auth.token) && request.auth.token.email != null; }
+      /* v241: pehle `!exists(admins/email)` => KOI BHI email-login likh sakta tha, aur disabled (active:false) admin bhi.
+         Ab Firestore ke isAdmin() jaisa: Owner ya (active admin-doc / legacy admin email) AUR institute match. */
+      function hasAdminDoc() { return firestore.exists(/databases/(default)/documents/admins/$(request.auth.token.email)); }
+      function isOwnerUser() {
+        return isEmailUser() && (request.auth.token.get('snapRole', '') == 'owner' || request.auth.token.email == "thevishnusharmaapp@gmail.com");
+      }
+      function isDocAdmin() { return isEmailUser() && hasAdminDoc() && adminDoc().get('active', false) == true; }
+      function isLegacyAdmin() {
+        return isEmailUser() && request.auth.token.email in ["thevishnusharmaapp@gmail.com"] &&
+          (!hasAdminDoc() || adminDoc().get('active', true) != false);
+      }
+      function instMatches() { return hasAdminDoc() && adminDoc().get('instituteId', '') == inst; }   /* v288: strict — admin-doc + instituteId match zaroori */
+      function isInstAdmin() { return isOwnerUser() || ((isDocAdmin() || isLegacyAdmin()) && instMatches()); }
+      function strict() {
+        return firestore.exists(/databases/(default)/documents/institutes/$(inst)/batchSettings/security) &&
+          firestore.get(/databases/(default)/documents/institutes/$(inst)/batchSettings/security).data.get('strict', false) == true;
+      }
+      function sessionMobile() {
+        return firestore.exists(/databases/(default)/documents/studentSessions/$(request.auth.uid))
+          ? firestore.get(/databases/(default)/documents/studentSessions/$(request.auth.uid)).data.mobile : null;
+      }
+      function isMember() {
+        return sessionMobile() != null &&
+          firestore.exists(/databases/(default)/documents/institutes/$(inst)/batches/$(batch)/members/$(sessionMobile()));
+      }
+      allow read: if request.auth != null && (!strict() || (isEmailUser() && isInstAdmin()) || isMember());
+      allow create, update: if isInstAdmin() && request.resource.size < 50 * 1024 * 1024;
+      allow delete: if isInstAdmin();
+    }
+  }
+}

@@ -1,0 +1,16 @@
+Owner APK ke liye SIRF ye 8 files GitHub par upload karni hain (baaki 16 files abhi zaroori nahi):
+
+ZAROORI (6):
+  .github/workflows/build-owner-apk.yml   <- "Add file > Create new file" se, naam me poora path likho
+  scripts/build-www.js
+  scripts/android-prepare.js
+  scripts/patch-google-services.js
+  owner-push.js
+  owner-app.html
+
+BEHTAR (2) — Owner Panel ke naye features ke liye:
+  owner-panel.js
+  app-config.js   (isme Google Client ID wali line `googleClientId` jaisi pehle se hai to wahi rehne dena)
+
+Upload ke baad: GitHub > Actions > "Build Owner APK" > Run workflow.
+Push alerts ke liye Firebase me package com.snaptestpro.owner register karna hoga (SETUP_GUIDE_HINDI.md ka Part G3).

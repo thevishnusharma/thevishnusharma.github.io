@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="description" content="The Vishnu Sharma — institutes ke liye: features, 2 minute demo aur pehle din ki checklist">
+  <title>Institute ke liye — The Vishnu Sharma</title>
+  <style>
+    :root{color-scheme:light;font:16px/1.65 system-ui,-apple-system,Segoe UI,sans-serif;color:#172033;background:#f4f6fb}body{margin:0}.wrap{max-width:850px;margin:24px auto;padding:0 16px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:clamp(20px,5vw,40px);box-shadow:0 8px 28px #1e293b0c}h1,h2{line-height:1.25;color:#172554}h1{margin-top:0}h2{margin-top:28px;font-size:1.2rem}a{color:#1d4ed8}nav,footer{display:flex;gap:16px;flex-wrap:wrap;margin:16px 0}.notice{padding:14px;border-left:4px solid #d97706;background:#fffbeb;border-radius:8px}.muted{color:#475569}
+  
+  </style>
+</head>
+<body><main class="wrap"><nav><a href="/">The Vishnu Sharma home</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></nav><article class="card">
+  <h1>Institute ke liye The Vishnu Sharma</h1>
+  <p class="muted">Ye page institute owner aur demo dene wale ke liye hai. Students ke liye yahan kuch nahi.</p>
+  <p class="notice"><strong>Note:</strong> Is page par diye gaye features repo mein maujood code par based hain. Naye features (Result Tools, Fee Due, Daily Challenge, anti-cheat record) ko institute ke phone par pehle khud check karein, phir kisi ko dikhayein. Kuch features (jaise OMR scan) ke liye alag setup lagta hai.</p>
+
+  <h2>The Vishnu Sharma kya karta hai</h2>
+  <ul>
+    <li><strong>Practice aur exam tests:</strong> question bank se test banayein, time aur marks set karein, publish karein. Students offline bhi test de sakte hain; data baad mein sync hota hai.</li>
+    <li><strong>OMR answer-sheet scan:</strong> OMR sheet se marks nikalne ka flow (scanner setup ke saath).</li>
+    <li><strong>Results, rank aur leaderboard:</strong> test ke baad rank, scores aur leaderboard.</li>
+    <li><strong>Batch, attendance aur CSV import:</strong> batch banayein, students CSV se jodein, batch-wise attendance rakhein.</li>
+    <li><strong>Notifications:</strong> admin se students ko notification; app band ho to bhi milti hai.</li>
+    <li><strong>Result Tools (naya):</strong> top-3 topper card image (download aur share), parent ke liye WhatsApp message (copy ya khud bhejna; auto-send nahi), class analytics (average, sabse galat sawaal, chapter-wise kamzori, inactive students).</li>
+    <li><strong>Fee Due (naya):</strong> batch ki fee ka pending list, due date, per-student WhatsApp reminder, cash "mil gaya" entry, aur batch notification (ek due date par ek baar).</li>
+    <li><strong>Daily Challenge (naya):</strong> students ke liye roz 5 sawaal aur 10 galti ka revision.</li>
+    <li><strong>Institute ka apna APK:</strong> alag naam aur logo wali Android app (owner panel se).</li>
+  </ul>
+
+  <h2>Kya The Vishnu Sharma abhi nahi karta</h2>
+  <ul>
+    <li>Cloud Functions nahi hain, isliye notification aur fee reminder admin ke button dabane se jaate hain, apne aap nahi.</li>
+    <li>Anti-cheat sirf record karta hai; koi test band nahi hota aur koi "proof" nahi banta.</li>
+    <li>Daily challenge ki streak phone par hi rehti hai.</li>
+    <li>Parent report mein attendance abhi nahi hai.</li>
+    <li>Online fee payment (UPI gateway) abhi nahi jud raha; fee cash ya bahar se jama hoti hai aur admin entry karta hai.</li>
+  </ul>
+
+  <h2>2 minute demo script</h2>
+  <p class="muted">Ek admin account aur ek student account pehle se taiyar rakhein. Phone aur laptop dono khule hon to behtar.</p>
+  <ol>
+    <li><strong>0:00–0:20 — Parichay.</strong> "Ye aapke institute ka apna app hai, students ke phone par. Aaj hum 2 minute mein dekhenge ki test se lekar fee tak kya hota hai." Admin login karein.</li>
+    <li><strong>0:20–0:50 — Batch aur fee.</strong> Batch kholein, ek batch ki fee aur due date dikhayein. Students CSV se jodne ka ek line mein bataayein. Attendance tab ek nazar mein.</li>
+    <li><strong>0:50–1:10 — Test aur student.</strong> Question bank se ek test publish dikhayein. Student phone par "Aaj ka Challenge" card dikhayein; 1-2 sawaal dekar result dikhayein.</li>
+    <li><strong>1:10–1:30 — Result Tools.</strong> Records → Result Tools. Topper card download karke dikhayein. Parent tab par WhatsApp message dikhayein (sirf dikhayein, bhejein tabhi jab parent ki ijazat ho). Analytics ki ek list (sabse galat sawaal) dikhayein.</li>
+    <li><strong>1:30–1:50 — Fee Due.</strong> Batch Admin → Fee Due: pending list, ek reminder link, "Mil gaya" ka button, aur batch notification ka confirm.</li>
+    <li><strong>1:50–2:00 — Band karte hue.</strong> Privacy aur Terms ka link dikhayein. Institute ka APK ya home-screen install ka tareeka batayein. Agla kadam: pehle din ki checklist.</li>
+  </ol>
+  <p class="muted">Demo mein test data hi use karein. Kisi asli student ka number ya marks projector par na dikhayein.</p>
+
+  <h2>Pehle din ki checklist (institute owner)</h2>
+  <ol>
+    <li><strong>Contact details badlein.</strong> Aaj app-config mein support WhatsApp, email aur hours developer ke hain. Apne institute ke numbers daalein, phir hi students ko app dein.</li>
+    <li><strong>Institute ka naam aur logo.</strong> Brand settings check karein; APK chahiye to Owner Panel se request karein.</li>
+    <li><strong>Privacy aur Terms.</strong> Dono pages ka institute appendix apni details se bharein aur qualified CA ya lawyer se check karwayein. Ye legal advice nahi hai.</li>
+    <li><strong>Guardian ki sahmati.</strong> 18 se kam students ke liye parent ki sahmati ka tareeka tay karein (registration form mein confirmation hai, par institute ki apni prakriya bhi zaroori ho sakti hai).</li>
+    <li><strong>Test batch.</strong> Khud ko ek test student banakar ek batch mein jodein. Ek test publish karke apne phone se dein. Result, rank aur topper card check karein.</li>
+    <li><strong>Fee.</strong> Test batch par fee aur due date daalein. Pending list dekhein. Ek cash entry karke check karein.</li>
+    <li><strong>Notification.</strong> Pehle khud ko notification bhejein; phone par aaye to hi students ko bhejein.</li>
+    <li><strong>Parent message.</strong> Ek student par parent report banaye; WhatsApp par sahi number khulta hai ya nahi, dekhein. Galat number ho to pehle theek karein.</li>
+    <li><strong>Phone par install.</strong> Browser se app kholein, home screen par add karein, aur ek baar offline test karke dekhein.</li>
+    <li><strong>Backup.</strong> Pehle hafte ke important results ka screenshot ya export apne paas rakhein.</li>
+    <li><strong>Students ko batayein.</strong> Ek chhota sa message taiyar karein: login kaise karna hai, aur kisi galti par kisse poochna hai.</li>
+  </ol>
+  <footer><a href="/privacy.html">Privacy Policy</a><a href="/terms.html">Terms &amp; Conditions</a><a href="/">Home</a></footer>
+</article></main></body></html>
