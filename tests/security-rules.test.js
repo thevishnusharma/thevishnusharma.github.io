@@ -253,7 +253,7 @@ async function t(name, fn) { try { await fn(); passed++; console.log("  ✅", na
   const wr = (ctx, path) => stor(ctx).ref(path).putString("x");
   const noDoc = env.authenticatedContext("noadmindoc", { email: "nobody@x.com" });
   const disabledAdmin = env.authenticatedContext("udis", { email: "claims-admin@x.com" });      /* admins/claims-admin@x.com => active:false (upar set) */
-  const legacyAdmin = env.authenticatedContext("uleg", { email: "thevishnusharmaapp@gmail.com" });  /* hardcoded legacy admin, doc nahi */
+  const legacyAdmin = env.authenticatedContext("uleg", { email: "old-legacy-admin@example.com" });  /* purana alag legacy admin (ab sirf ek owner email hai), doc nahi */
   const ownerSt = env.authenticatedContext("uown", { email: "claims-owner@x.com", snapRole: "owner" });
   const adminBs = env.authenticatedContext("ub", { email: "adminB@x.com" });
   await t("Storage: admin-doc ke bina email user NAHI likh sakta", () => assertFails(wr(noDoc, `batches/${A}/b1/n1.pdf`)));
