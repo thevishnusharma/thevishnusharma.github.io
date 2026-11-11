@@ -24,7 +24,7 @@ const val = f => f == null ? undefined : (f.stringValue !== undefined ? f.string
 
   const name = (manualName || d.name || 'The Vishnu Sharma').replace(/[<>&"'\\]/g, '').trim().slice(0, 40) || 'The Vishnu Sharma';
   const slug = id.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 40) || 'inst';
-  const pkg = 'com.snaptestpro.i' + slug;
+  const pkg = 'com.thevishnusharma.i' + slug;
   let hasIcon = false;
   const m = /^data:image\/[a-z+]+;base64,(.+)$/i.exec(d.logoDataUrl || '');
   if (m) { fs.writeFileSync(path.join(ROOT, 'institute-icon.img'), Buffer.from(m[1], 'base64')); hasIcon = true; }

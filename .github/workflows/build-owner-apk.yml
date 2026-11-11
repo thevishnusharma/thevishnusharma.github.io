@@ -1,4 +1,4 @@
-# Owner ka alag app (com.snaptestpro.owner). Sirf Owner Panel ki files (OWNER_APP=1).
+# Owner ka alag app (com.thevishnusharma.owner). Sirf Owner Panel ki files (OWNER_APP=1).
 # Chalane ke liye: Actions -> "Build Owner APK" -> Run workflow.
 name: Build Owner APK
 
@@ -14,7 +14,7 @@ jobs:
     timeout-minutes: 45
     env:
       OWNER_APP: "1"
-      APP_ID: com.snaptestpro.owner
+      APP_ID: com.thevishnusharma.owner
       APP_NAME: The Vishnu Sharma Owner
       # Live mode: app seedha website kholti hai (owner-app.html) -> website update = owner app update, APK dobara nahi banana padega
       APP_URL: ${{ format('{0}owner-app.html', vars.APP_URL || 'https://thevishnusharma.github.io/') }}
