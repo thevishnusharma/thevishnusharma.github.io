@@ -13,7 +13,7 @@
  * sub-collections, doc.onSnapshot, transactions, update() me "a.b" jaise dotted keys.
  *
  * Config example (app-config.js):
- *   ownBackend: { enabled: true, url: "https://snaptestpro-backend.onrender.com",
+ *   ownBackend: { enabled: true, url: "https://thevishnusharma-backend.onrender.com",
  *                 collections: ["questionBank", "deletedQuestions"] }
  */
 (function (W) {

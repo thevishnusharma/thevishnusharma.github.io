@@ -9,7 +9,7 @@ window.SNAP_CONFIG = {
   // HYBRID MODE: kuch collections free apne backend par. enabled:false = sab kuch Firebase par (kill-switch). enabled:true = chalu.
   ownBackend: {
     enabled: true,
-    url: "https://snaptestpro-backend.onrender.com",
+    url: "https://thevishnusharma-backend.onrender.com",
     collections: ["questionBank", "deletedQuestions", "seedExclusions", "draftQuestions", "pdfDrafts"]
   },
   bankAutoFix: false,  // v226 READS FIX: true karne par admin login par question-bank ki auto class-tag / chapter-merge / ID-migration chalti hai (har question par 2 reads+write+delete — bahut mehngi). Default false. Ek baar chalane ke liye console me: runBankAutoFixNow()

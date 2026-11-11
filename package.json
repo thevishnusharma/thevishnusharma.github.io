@@ -1,6 +1,6 @@
 {
   "name": "snaptestpro-app",
-  "version": "1.4.90",
+  "version": "1.4.91",
   "private": true,
   "description": "The Vishnu Sharma - web (Firebase Hosting) + Android app (Capacitor, built on GitHub Actions)",
   "scripts": {

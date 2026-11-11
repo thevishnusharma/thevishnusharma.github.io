@@ -152,7 +152,7 @@
   }
 
   function init() {
-    $('url').value = (cfg.url || 'https://snaptestpro-backend.onrender.com'); renderColls(null);
+    $('url').value = (cfg.url || 'https://thevishnusharma-backend.onrender.com'); renderColls(null);
     $('btnCheck').onclick = runCheck; $('btnCopy').onclick = runCopy;
     $('btnLogin').onclick = function () {
       auth().signInWithEmailAndPassword($('em').value.trim(), $('pw').value).then(function () { return refreshUser().then(runCheck); })
