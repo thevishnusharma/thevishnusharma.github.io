@@ -837,3 +837,26 @@ window.__bankHealCheck=async function(){
   }catch(e){console.warn("[bank] heal fail",e&&e.message)}finally{window.__bankHealBusy=!1}
 };
 setTimeout(()=>window.__bankHealCheck&&window.__bankHealCheck(),9000);setTimeout(()=>window.__bankHealCheck&&window.__bankHealCheck(),30000);
+
+/* v307: Question Bank sync watchdog.
+   Admin login ke waqt bank sync kabhi-kabhi shuru hi nahi hota tha (us pal Firebase db/login tayyar nahi hota)
+   aur dobara koshish koi karta nahi tha -> "Questions load ho rahe hain..." hamesha. Ab:
+   1) login ke baad har 1 sec me check (max ~60 sec): sync shuru nahi hua to apne aap shuru karta hai.
+   2) Question Bank / Generator tab kholne par bhi turant check.
+   Sirf apne backend (questionBank routed) par chalta hai -> Firebase reads 0. Kill-switch: SNAP_CONFIG.bankWatchdog=false */
+(function(){
+  try{
+    if(window.__bankWatchdog)return;window.__bankWatchdog=1;
+    if(window.SNAP_CONFIG&&window.SNAP_CONFIG.bankWatchdog===!1)return;
+    const need=()=>{try{return!_bankSyncStarted&&!!getDB()&&!!(window.__bankIsAdmin&&window.__bankIsAdmin())&&!!(window.__bankOwnRouted&&window.__bankOwnRouted())}catch(_e){return!1}};
+    const kick=()=>{try{if(!need())return!1;window.__bankFullOk=!0;window.__bankForce=!0;syncBank();return!0}catch(_e){return!1}};
+    window.__bankEnsureSync=kick;
+    let tries=0;
+    const iv=setInterval(()=>{tries++;if(_bankSyncStarted||tries>60){clearInterval(iv);return}kick()},1000);
+    const o=window.showAdminTab;
+    if(typeof o==="function"&&!o.__bankEns){
+      const w=function(e){const r=o.apply(this,arguments);try{if(e==="bank"||e==="generator")setTimeout(kick,50)}catch(_e){}return r};
+      Object.keys(o).forEach(k=>{try{w[k]=o[k]}catch(_e){}});w.__bankEns=1;window.showAdminTab=w;
+    }
+  }catch(_e){console.warn("[bank-watchdog] install fail",_e)}
+})();
