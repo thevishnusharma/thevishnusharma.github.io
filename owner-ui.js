@@ -18,11 +18,10 @@
   var cur = "home";
   window.ouiTab = function (t) {
     cur = t;
-    ["home", "inst", "alerts", "reads", "set"].forEach(function (k) { var v = $("oa-v-" + k); if (v) v.classList.toggle("hidden", k !== t); });
+    ["home", "inst", "alerts", "set"].forEach(function (k) { var v = $("oa-v-" + k); if (v) v.classList.toggle("hidden", k !== t); });
     document.querySelectorAll(".oa-tab button").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-t") === t); });
     var f = $("oa-fab"); if (f) f.classList.toggle("hidden", !(t === "home" || t === "inst"));
     if (t === "set") { var e = $("oa-set-email"), em = $("owner-logged-in-as"); if (e && em) e.textContent = em.textContent; }
-    if (t === "reads" && window.ouiReadsOpen) window.ouiReadsOpen();
     window.scrollTo(0, 0);
   };
   window.ouiShowFilter = function (f) { _ownerDashFilter = f; window.ouiTab("inst"); markFilters(); ownerDashApplyFilter(); };

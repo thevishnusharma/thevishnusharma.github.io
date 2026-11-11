@@ -9,7 +9,7 @@ fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
 // v179: OWNER_APP=1 -> sirf Owner app ki files (owner-app.html -> index.html). Student/Admin ka code shamil nahi hota.
 if (process.env.OWNER_APP === '1') {
-  const need = ['owner-app.html', 'styles.css', 'liquid-glass.css', 'smooth-ui.css', 'safe-html.js', 'perf-lite.js', 'firebase-config.js', 'app-config.js', 'owner-panel.js', 'owner-ui.js', 'owner-wizard.js', 'owner-demo.js', 'owner-push.js', 'owner-reads.js', 'owner-enquiries.js', 'owner-live.js', 'read-tracker.js', 'app-bridge.js',
+  const need = ['owner-app.html', 'styles.css', 'liquid-glass.css', 'smooth-ui.css', 'safe-html.js', 'perf-lite.js', 'firebase-config.js', 'app-config.js', 'owner-panel.js', 'owner-ui.js', 'owner-wizard.js', 'owner-demo.js', 'owner-push.js', 'owner-enquiries.js', 'owner-live.js', 'read-tracker.js', 'app-bridge.js',
     'manifest-owner.webmanifest', 'icon-192-owner.png', 'icon-512-owner.png', 'icon-192-maskable-owner.png', 'icon-512-maskable-owner.png'];
   for (const f of need) {
     if (!fs.existsSync(path.join(ROOT, f))) { console.error('Owner app ki file nahi mili:', f); process.exit(1); }

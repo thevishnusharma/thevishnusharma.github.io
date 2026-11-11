@@ -1,3 +1,4 @@
 GitHub repo se ye file DELETE karo (zip me delete nahi ho sakta):
   own-live.js
   read-meter.js   (v236: dashboard ka 📊 Read-Meter hata diya; file ab kahin use nahi hoti)
+  owner-reads.js  (v307: Owner app ka Reads Monitor tab hata diya; file ab kahin use nahi hoti)
