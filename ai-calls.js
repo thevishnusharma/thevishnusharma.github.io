@@ -3,6 +3,7 @@
   "use strict";
   var OPT_OUT = "savya_ai_calls_optout_v1", PREF_AT = "savya_ai_calls_pref_at_v1";
   var callAudio = null, audioPromise = null, ringTimer = 0, ringContext = null, current = null, turns = [], acceptedAt = 0, listenedSeconds = 0, playbackAt = 0, busy = false, callEpoch = 0, reportChain = Promise.resolve();
+  var micStream = null, micCtx = null, liveOn = false, liveToken = 0, replyAudioUrl = null, replyAudioEl = null;
   var $ = function (id) { return document.getElementById(id); };
   function cfg() { return window.SNAP_CONFIG || {}; }
   function worker() { return String(cfg().workerUrl || "").replace(/\/+$/, ""); }
@@ -78,22 +79,23 @@
   function studentUI() {
     if ($("ai-call-screen")) return;
     var o = document.createElement("div"); o.id = "ai-call-screen";
-    o.innerHTML = '<div class="aic-card"><div class="aic-mark">☎</div><div class="aic-kicker">SAVYASACHI SIR · AI VOICE</div><h2 id="aic-title">Incoming call</h2><p id="aic-sub">Aapke liye ek audio message</p><div class="aic-wave" id="aic-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><p id="aic-state" class="aic-state">Call aa rahi hai…</p><audio id="aic-audio" preload="auto"></audio><div class="aic-controls" id="aic-ring-controls"><button type="button" class="aic-btn decline" id="aic-decline">Decline</button><button type="button" class="aic-btn accept" id="aic-accept">Accept</button></div><div class="aic-controls" id="aic-active-controls" hidden><button type="button" class="aic-btn talk" id="aic-talk">🎙️ Baat karein</button><button type="button" class="aic-btn decline" id="aic-end">Call end</button></div><div id="aic-chat" hidden><div id="aic-chat-status" class="aic-chat-status"></div><div class="aic-chat-row"><input id="aic-input" maxlength="320" placeholder="Apna sawaal type karein…"><button type="button" id="aic-send">Bhejein</button></div><button type="button" id="aic-speak" class="aic-speak">🎤 Bolkar sawaal poochhein</button><div id="aic-chat-log" class="aic-chat-log"></div></div><p class="aic-privacy">Yeh app ke andar AI audio message hai. Koi phone call nahi hoti.</p></div>';
+    o.innerHTML = '<div class="aic-card"><div class="aic-mark">☎</div><div class="aic-kicker">SAVYASACHI SIR · AI VOICE</div><h2 id="aic-title">Incoming call</h2><p id="aic-sub">Aapke liye ek audio message</p><div class="aic-wave" id="aic-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><p id="aic-state" class="aic-state">Call aa rahi hai…</p><audio id="aic-audio" preload="auto"></audio><div class="aic-controls" id="aic-ring-controls"><button type="button" class="aic-btn decline" id="aic-decline">Decline</button><button type="button" class="aic-btn accept" id="aic-accept">Accept</button></div><div class="aic-controls" id="aic-active-controls" hidden><button type="button" class="aic-btn talk" id="aic-talk">🎙️ Baat karein</button><button type="button" class="aic-btn talk" id="aic-type">⌨️ Type</button><button type="button" class="aic-btn decline" id="aic-end">Call end</button></div><div id="aic-chat" hidden><div id="aic-chat-status" class="aic-chat-status"></div><div class="aic-chat-row"><input id="aic-input" maxlength="320" placeholder="Apna sawaal type karein…"><button type="button" id="aic-send">Bhejein</button></div><button type="button" id="aic-speak" class="aic-speak">🎤 Bolkar sawaal poochhein</button><div id="aic-chat-log" class="aic-chat-log"></div></div><p class="aic-privacy">Yeh app ke andar AI audio message hai. Koi phone call nahi hoti.</p></div>';
     document.body.appendChild(o);
     $("aic-decline").onclick = function () { stopRing(); report("declined"); closeStudent(); };
     $("aic-accept").onclick = acceptCall;
     $("aic-end").onclick = function () { report("completed").finally(closeStudent); };
-    $("aic-talk").onclick = showTalk;
-    $("aic-send").onclick = sendReply;
+    $("aic-talk").onclick = function () { startLive(true); };
+    $("aic-type").onclick = showTalk;
+    $("aic-send").onclick = function () { sendReply(); };
     $("aic-input").onkeydown = function (e) { if (e.key === "Enter") sendReply(); };
-    $("aic-speak").onclick = listenQuestion;
+    $("aic-speak").onclick = function () { startLive(true); };
     $("aic-audio").onplay = function () { playbackAt = Date.now(); $("aic-wave").classList.add("playing"); };
     $("aic-audio").onpause = function () { if (playbackAt) { listenedSeconds += (Date.now() - playbackAt) / 1000; playbackAt = 0; } $("aic-wave").classList.remove("playing"); };
-    $("aic-audio").onended = function () { if (playbackAt) { listenedSeconds += (Date.now() - playbackAt) / 1000; playbackAt = 0; } $("aic-wave").classList.remove("playing"); setStatus("aic-state", "Message khatam. Aap sawaal pooch sakte hain ya call end karein."); };
+    $("aic-audio").onended = function () { if (playbackAt) { listenedSeconds += (Date.now() - playbackAt) / 1000; playbackAt = 0; } $("aic-wave").classList.remove("playing"); setStatus("aic-state", "Message khatam. Ab aap bol sakte hain…"); startLive(false); };
     o.addEventListener("click", function (e) { if (e.target === o && !acceptedAt) { stopRing(); report("declined"); closeStudent(); } });
   }
   function closeStudent() {
-    callEpoch++;
+    callEpoch++; stopLive(true);
     stopRing(); try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {}
     var audio = $("aic-audio"); if (audio) { audio.pause(); audio.removeAttribute("src"); }
     if (callAudio) { try { URL.revokeObjectURL(callAudio); } catch (e) {} callAudio = null; } audioPromise = null;
@@ -144,11 +146,13 @@
     var ok = await deviceSpeak(current.script, true);
     if (!ok) setStatus("aic-state", "Audio nahi chal paaya. Screen par message dekhne ke liye Talk dabayein.");
     else setStatus("aic-state", "Message chal raha hai…");
+    startLive(false);
   }
   async function acceptCall() {
     if (!current || busy) return; busy = true; stopRing(); acceptedAt = Date.now();
     $("aic-ring-controls").hidden = true; $("aic-active-controls").hidden = false; setStatus("aic-state", "Connect ho raha hai…");
     report("accepted");
+    unlockReplyAudio(); prepareMic();
     if (!current) { busy = false; return; }
     try {
       if (!callAudio && audioPromise) await Promise.race([audioPromise, new Promise(function (resolve) { setTimeout(resolve, 5000); })]);
@@ -174,7 +178,7 @@
       turns.push({ role: "assistant", text: j.reply }); addChat("assistant", j.reply); setStatus("aic-chat-status", "AI ka jawab");
       var a = $("aic-audio"); if (a) a.pause(); await deviceSpeak(j.reply);
     } catch (e) { setStatus("aic-chat-status", e.message || "Jawab nahi mila."); }
-    busy = false;
+    busy = false; startLive(false);
   }
   function listenQuestion() {
     var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -187,6 +191,117 @@
       rec.onend = function () { if ($("aic-chat-status").textContent === "Sun raha hoon… ab boliye") setStatus("aic-chat-status", "Sawaal type karein ya phir se bolein."); };
       rec.start();
     } catch (e) { toast("Voice input start nahi hua; sawaal type karein."); }
+  }
+
+  /* ---------- Live voice call: boliye -> AI sunta hai -> AI bolta hai -> mic apne aap dobara chalu ---------- */
+  function unlockReplyAudio() {
+    try {
+      if (!replyAudioEl) { replyAudioEl = new Audio(); replyAudioEl.preload = "auto"; }
+      replyAudioEl.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
+      var pr = replyAudioEl.play(); if (pr && pr.catch) pr.catch(function () {});
+    } catch (e) {}
+  }
+  async function prepareMic() {
+    if (micStream && micStream.active) return micStream;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("Is phone/app me mic available nahi hai.");
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+    return micStream;
+  }
+  function wavFromFloat(chunks, inRate) {
+    var len = 0; chunks.forEach(function (c) { len += c.length; });
+    var all = new Float32Array(len), o = 0; chunks.forEach(function (c) { all.set(c, o); o += c.length; });
+    var outRate = 16000, ratio = inRate / outRate, n = Math.floor(all.length / ratio), pcm = new Int16Array(n);
+    for (var i = 0; i < n; i++) { var a = Math.floor(i * ratio), b = Math.min(all.length, Math.floor((i + 1) * ratio)), sum = 0, k = 0; for (var x = a; x < b; x++) { sum += all[x]; k++; } var v = k ? sum / k : 0; v = Math.max(-1, Math.min(1, v)); pcm[i] = v < 0 ? v * 0x8000 : v * 0x7fff; }
+    var buf = new ArrayBuffer(44 + pcm.length * 2), dv = new DataView(buf);
+    function w(off, str) { for (var q = 0; q < str.length; q++) dv.setUint8(off + q, str.charCodeAt(q)); }
+    w(0, "RIFF"); dv.setUint32(4, 36 + pcm.length * 2, true); w(8, "WAVE"); w(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true); dv.setUint32(24, outRate, true); dv.setUint32(28, outRate * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true); w(36, "data"); dv.setUint32(40, pcm.length * 2, true);
+    for (var m = 0; m < pcm.length; m++) dv.setInt16(44 + m * 2, pcm[m], true);
+    var bytes = new Uint8Array(buf), bin = "", step = 0x8000;
+    for (var z = 0; z < bytes.length; z += step) bin += String.fromCharCode.apply(null, bytes.subarray(z, z + step));
+    return btoa(bin);
+  }
+  /* Records one utterance with simple silence detection. Resolves {wav} or {silent:true}. */
+  function recordUtterance(token) {
+    return new Promise(function (resolve, reject) {
+      prepareMic().then(function (stream) {
+        var AC = window.AudioContext || window.webkitAudioContext; if (!AC) { reject(new Error("Is phone me audio support nahi.")); return; }
+        if (!micCtx || micCtx.state === "closed") micCtx = new AC();
+        if (micCtx.state === "suspended") micCtx.resume().catch(function () {});
+        var src = micCtx.createMediaStreamSource(stream), proc = micCtx.createScriptProcessor(4096, 1, 1), mute = micCtx.createGain(); mute.gain.value = 0;
+        var rate = micCtx.sampleRate, chunks = [], pre = [], started = false, floor = 0, calib = 0, lastVoice = 0, t0 = Date.now(), done = false, startedAt = 0;
+        function finish(res) { if (done) return; done = true; try { proc.onaudioprocess = null; src.disconnect(); proc.disconnect(); mute.disconnect(); } catch (e) {} resolve(res); }
+        proc.onaudioprocess = function (ev) {
+          if (token !== liveToken || !liveOn) { finish({ cancelled: true }); return; }
+          var d = ev.inputBuffer.getChannelData(0), copy = new Float32Array(d.length), sum = 0;
+          for (var i = 0; i < d.length; i++) { copy[i] = d[i]; sum += d[i] * d[i]; }
+          var rms = Math.sqrt(sum / d.length), now = Date.now();
+          if (calib < 5) { floor = Math.max(floor, rms); calib++; pre.push(copy); return; }
+          var thr = Math.max(0.018, floor * 2.6);
+          if (!started) {
+            pre.push(copy); if (pre.length > 6) pre.shift();
+            if (rms > thr) { started = true; startedAt = now; lastVoice = now; chunks = pre.slice(); setStatus("aic-state", "Sun raha hoon…"); }
+            else if (now - t0 > 9000) finish({ silent: true });
+          } else {
+            chunks.push(copy); if (rms > thr) lastVoice = now;
+            if (now - lastVoice > 1200 || now - startedAt > 16000) { finish(now - startedAt < 500 ? { silent: true } : { wav: wavFromFloat(chunks, rate) }); }
+          }
+        };
+        src.connect(proc); proc.connect(mute); mute.connect(micCtx.destination);
+      }).catch(reject);
+    });
+  }
+  function b64Blob(b64, type) { var raw = atob(b64), u = new Uint8Array(raw.length); for (var i = 0; i < raw.length; i++) u[i] = raw.charCodeAt(i); return new Blob([u], { type: type }); }
+  function playReply(b64, textValue) {
+    return new Promise(function (resolve) {
+      var wave = $("aic-wave");
+      if (!b64) { if (wave) wave.classList.add("playing"); deviceSpeak(textValue).then(function (ok) { if (wave) wave.classList.remove("playing"); resolve(ok); }); return; }
+      try {
+        if (replyAudioUrl) { URL.revokeObjectURL(replyAudioUrl); replyAudioUrl = null; }
+        replyAudioUrl = URL.createObjectURL(b64Blob(b64, "audio/mpeg"));
+        if (!replyAudioEl) replyAudioEl = new Audio();
+        var el = replyAudioEl, fin = function (ok) { el.onended = el.onerror = null; if (wave) wave.classList.remove("playing"); resolve(ok); };
+        el.onended = function () { fin(true); }; el.onerror = function () { deviceSpeak(textValue).then(function (ok) { fin(ok); }); };
+        el.src = replyAudioUrl; if (wave) wave.classList.add("playing");
+        var pr = el.play(); if (pr && pr.catch) pr.catch(function () { deviceSpeak(textValue).then(function (ok) { fin(ok); }); });
+      } catch (e) { deviceSpeak(textValue).then(resolve); }
+    });
+  }
+  function stopLive(release) {
+    liveOn = false; liveToken++;
+    try { if (replyAudioEl) { replyAudioEl.pause(); } } catch (e) {}
+    if (release) {
+      try { if (micStream) micStream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} micStream = null;
+      try { if (micCtx && micCtx.state !== "closed") micCtx.close(); } catch (e) {} micCtx = null;
+      if (replyAudioUrl) { try { URL.revokeObjectURL(replyAudioUrl); } catch (e) {} replyAudioUrl = null; }
+    }
+  }
+  async function startLive(manual) {
+    if (!current || !acceptedAt) return;
+    if (liveOn && !manual) return;
+    if (manual && liveOn) { stopLive(false); await new Promise(function (r) { setTimeout(r, 150); }); }
+    var epoch = callEpoch, token = ++liveToken; liveOn = true;
+    var silentRounds = 0;
+    await new Promise(function (r) { setTimeout(r, 450); });
+    while (liveOn && token === liveToken && epoch === callEpoch && current) {
+      var rec;
+      try { setStatus("aic-state", "🎙️ Aap boliye…"); rec = await recordUtterance(token); }
+      catch (e) { liveOn = false; setStatus("aic-state", (e && e.name === "NotAllowedError") ? "Mic ki permission nahi mili. Settings me mic allow karein ya Type dabayein." : (e && e.message) || "Mic start nahi hua."); showTalk(); return; }
+      if (token !== liveToken || epoch !== callEpoch || !current) return;
+      if (rec.cancelled) return;
+      if (rec.silent) { if (++silentRounds >= 3) { liveOn = false; setStatus("aic-state", "Kuch sunai nahi diya. Baat karne ke liye '🎙️ Baat karein' dabayein."); return; } continue; }
+      silentRounds = 0; setStatus("aic-state", "Samajh raha hoon…"); $("aic-wave").classList.add("playing");
+      var j;
+      try { j = await api("/ai-call/voice", { callId: current.callId, audio: rec.wav, messages: turns }); }
+      catch (e) { $("aic-wave").classList.remove("playing"); liveOn = false; setStatus("aic-state", (e && e.message) || "Jawab nahi mila."); return; }
+      if (token !== liveToken || epoch !== callEpoch || !current) return;
+      if (j.heard) { turns.push({ role: "student", text: j.heard }); addChat("student", j.heard); }
+      turns.push({ role: "assistant", text: j.reply }); addChat("assistant", j.reply);
+      $("aic-chat").hidden = false;
+      setStatus("aic-state", "Savyasachi Sir bol rahe hain…");
+      var spoken = await playReply(j.audio, j.reply);
+      if (!spoken) setStatus("aic-state", "Awaaz nahi chali" + (j.voiceError ? " (" + j.voiceError + ")" : "") + ". Jawab neeche likha hai.");
+      await new Promise(function (r) { setTimeout(r, 400); });
+    }
   }
   function card() {
     if ($("ai-call-card")) return;
@@ -222,7 +337,7 @@
     try {
       var j = await api("/ai-call/prepare", { instituteId: inst(), source: source, title: text("aia-title"), language: $("aia-language").value });
       draftId = j.draftId; $("aia-script").value = j.script; $("aia-preview").hidden = false;
-      var voiceNote = $("aia-voice-note"); voiceNote.textContent = j.audioAvailable ? "Natural Hindi cloud voice ready. Is preview ko sun kar approve karein." : "Cloud voice abhi set nahi hai. Call phone ki installed Hindi voice se chalegi.";
+      var voiceNote = $("aia-voice-note"); voiceNote.textContent = j.audioAvailable ? "Natural Hindi cloud voice ready. Is preview ko sun kar approve karein." : "Cloud voice nahi bani" + (j.voiceError ? " (" + j.voiceError + ")" : "") + ". Google Cloud me Text-to-Speech API enable karein.";
       var a = $("aia-preview-audio"); a.hidden = !j.audioAvailable; a.removeAttribute("src");
       if (j.audioAvailable) { var raw = atob(j.audioPreview), bytes = new Uint8Array(raw.length); for (var i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i); a.src = URL.createObjectURL(new Blob([bytes], { type: "audio/mpeg" })); }
       setStatus("aia-status", "Script ready. Facts check karke bhejein.");
