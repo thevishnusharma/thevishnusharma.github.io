@@ -1409,6 +1409,7 @@ async function fsDeleteAiCallResponses(env, mobile, instituteId) {
   do {
     const qs = 'pageSize=1000' + (pageToken ? '&pageToken=' + encodeURIComponent(pageToken) : '');
     const r = await aiCallRest(env, 'institutes/' + encodeURIComponent(instituteId) + '/aiCalls?' + qs);
+    if (r.status === 404) return removed;
     if (!r.ok) throw new HttpErr(502, 'AI Call history cleanup nahi hui (' + r.status + ')');
     const data = await r.json(), paths = [];
     (data.documents || []).forEach((call) => {
@@ -1422,10 +1423,10 @@ async function fsDeleteAiCallResponses(env, mobile, instituteId) {
   return removed;
 }
 async function deleteStudentData(env, mobile, instituteId) {
-  const removed = { records: 0, scanReports: 0, sessions: 0, batchMemberships: 0, aiCallResponses: 0 };
+  const removed = { records: 0, scanReports: 0, sessions: 0, batchMemberships: 0 };
   removed.records = await fsDeleteMobileCollection(env, 'studentRecords', mobile);
   removed.scanReports = await fsDeleteMobileCollection(env, 'studentScanReports', mobile);
-  removed.aiCallResponses = await fsDeleteAiCallResponses(env, mobile, instituteId);
+  await fsDeleteAiCallResponses(env, mobile, instituteId);
   removed.sessions = await fsDeleteMobileCollection(env, 'studentSessions', mobile);
   removed.batchMemberships = await fsDeleteBatchMemberships(env, mobile, instituteId);
   await fsDeleteDocument(env, 'studentMistakes/' + mobile);
