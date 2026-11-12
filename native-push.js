@@ -7,7 +7,7 @@
   // ⬇️ Cloudflare Worker deploy karne ke baad uska URL yahan daalein (PUSH_SETUP_FREE_REALTIME.md dekhein)
   var PUSH_WORKER_URL = "https://vishnupush.thevishnusharmaapp.workers.dev";
 
-  var OPT_OUT = "savya_push_optout_v1", SUB_KEY = "snap_fcm_topic_v1", ASKED = "snap_fcm_asked_v1";
+  var OPT_OUT = "savya_push_optout_v1", AI_OPT_OUT = "savya_ai_calls_optout_v1", SUB_KEY = "snap_fcm_topic_v1", ASKED = "snap_fcm_asked_v1";
   function getCap() {
     var w = []; try { if (window.top) w.push(window.top); } catch (e) {}
     try { if (window.parent && window.parent !== window.top) w.push(window.parent); } catch (e) {}
@@ -23,6 +23,8 @@
   function batchTopic(i, b) { var re = /[^a-zA-Z0-9\-_.~%]/g; return "bat_" + String(i).replace(re, "_") + "_" + String(b).replace(re, "_"); }
   function appTopicFor(id) { return "app_inst_" + String(id).replace(/[^a-zA-Z0-9\-_.~%]/g, "_"); }   // sirf apne institute ka app update
   function topicFor(id) { return "inst_" + String(id).replace(/[^a-zA-Z0-9\-_.~%]/g, "_"); }
+  function aiCallTopicFor(id) { return "ai_inst_" + String(id).replace(/[^a-zA-Z0-9\-_.~%]/g, "_"); }
+  function aiCallBatchTopicFor(id, b) { return "ai_bat_" + String(id).replace(/[^a-zA-Z0-9\-_.~%]/g, "_") + "_" + String(b).replace(/[^a-zA-Z0-9\-_.~%]/g, "_"); }
   function native(method, opts) { var C = getCap(); return C ? C.nativePromise("FirebaseMessaging", method, opts || {}) : Promise.reject(new Error("no plugin")); }
 
   /* ---------- Admin: Worker ko bulao ---------- */
@@ -48,7 +50,7 @@
       }).catch(function (e) { console.warn("[SnapPush] push error", e); if (navigator.onLine === false) { pqAdd(String(notifId)); return false; } toast("❌ Worker tak nahi pahunch paaye: " + ((e && e.message) || e)); return false; });
     } catch (e) { return Promise.resolve(false); }
   }
-  window.SnapPush = { send: send };
+  window.SnapPush = { send: send, sync: sync };
   window.addEventListener("snap-synced", function () { setTimeout(pqFlush, 600); });     // offline badlav online save hone ke BAAD hi push (worker doc dekhta hai)
   setTimeout(pqFlush, 6000);
 
@@ -60,12 +62,20 @@
     if (busy) return; busy = true;
     try {
       var s = typeof getStudentSession === "function" ? getStudentSession() : null;
+      if (s && window.SnapAICall && typeof window.SnapAICall.syncPreference === "function") await window.SnapAICall.syncPreference();
       if (s && !s.instituteId && !noInst) { noInst = true; toast("⚠️ Push: aapke account me institute ID nahi mila"); }
       var admin = false;
       try { var a = typeof getAuth === "function" ? getAuth() : null; admin = !!(a && a.currentUser && a.currentUser.email && typeof getCurrentAdminInstituteId === "function" && getCurrentAdminInstituteId()); } catch (e) {}
       var wants = [];
       if (!localStorage.getItem(OPT_OUT)) {
-        if (s && s.instituteId) { wants.push(topicFor(s.instituteId)); wants.push(appTopicFor(s.instituteId)); try { (window.SnapV169 ? window.SnapV169.mineList() : []).forEach(function (b) { wants.push(batchTopic(s.instituteId, b)); }); } catch (e) {} }   // institute notices + app update (students)
+        if (s && s.instituteId) {
+          wants.push(topicFor(s.instituteId)); wants.push(appTopicFor(s.instituteId));
+          try { (window.SnapV169 ? window.SnapV169.mineList() : []).forEach(function (b) { wants.push(batchTopic(s.instituteId, b)); }); } catch (e) {}
+          if (!localStorage.getItem(AI_OPT_OUT)) {
+            wants.push(aiCallTopicFor(s.instituteId));
+            try { (window.SnapV169 ? window.SnapV169.mineList() : []).forEach(function (b) { wants.push(aiCallBatchTopicFor(s.instituteId, b)); }); } catch (e) {}
+          }
+        }   // institute notices + app update + opted-in AI calls
         /* v179: owner_alerts ab sirf alag Owner APK me subscribe hota hai (owner-push.js) — main app me nahi */
         if (admin) { try { var ai = getCurrentAdminInstituteId(); if (ai) wants.push(appTopicFor(ai)); } catch (e) {} }                                                        // app update (admin)
       }
@@ -88,6 +98,7 @@
   /* Heads-up (pop-up) notification channel — notification ab sirf tray me chupke nahi, screen par bhi dikhti hai.
      Purane app me channel na ho to Android khud default channel par bhej deta hai (kuch toot-ta nahi). */
   setTimeout(function () { native("createChannel", { id: "snap_updates", name: "Tests & Updates", description: "Naya test, result aur app update", importance: 4, visibility: 1, vibration: true, lights: true }).catch(function () {}); }, 1500);
+  setTimeout(function () { native("createChannel", { id: "snap_ai_calls", name: "AI Voice Calls", description: "App ke andar call-jaisa audio sandesh", importance: 4, visibility: 1, vibration: true, lights: true }).catch(function () {}); }, 1800);
 
   /* ---------- App KHULA ho tab bhi notification dikhana (Android foreground me system notification nahi dikhata) ---------- */
   var seenMsg = {};
@@ -108,6 +119,7 @@
         else if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) navigator.serviceWorker.getRegistration().then(function (r) { r && r.update(); });
         return;
       }
+      if (d.type === "ai_call") { if (window.SnapAICall && window.SnapAICall.openIncoming) window.SnapAICall.openIncoming(d); return; }
       if (typeof getStudentSession === "function" && getStudentSession() && typeof window.snShowPage === "function") { refreshBell(); window.snShowPage("notifs", "home"); }
     } catch (e) {}
   }
@@ -125,6 +137,12 @@
   function onForeground(ev) {
     var n = (ev && ev.notification) || {}, d = n.data || {}, key = d.notifId || ((n.title || "") + "|" + (n.body || ""));
     var now = Date.now(); if (seenMsg[key] && now - seenMsg[key] < 20000) return; seenMsg[key] = now;
+    if (d.type === "ai_call") {
+      if (examBusy()) { banner(n.title || "AI Call", n.body || "Aapke liye ek audio message aaya hai.", d); return; }
+      if (window.SnapAICall && window.SnapAICall.openIncoming) window.SnapAICall.openIncoming(d);
+      else banner(n.title || "AI Call", n.body || "Aapke liye ek audio message aaya hai.", d);
+      return;
+    }
     if (d.type === "app_update") { if (d.kind === "apk") { window.SnapAppUpdate && SnapAppUpdate.check({}); } else if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) navigator.serviceWorker.getRegistration().then(function (r) { r && r.update(); }); }
     else { refreshBell(); try { window.dispatchEvent(new CustomEvent("snap-push-in")); } catch (e) {} }
     if (examBusy()) return;                                                       // exam ke beech banner nahi (bell me aa jaata hai)

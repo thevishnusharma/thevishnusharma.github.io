@@ -153,6 +153,7 @@
       var on = pnOn();
       done("Notifications", "Naye test aur updates ke alert",
         '<div class="ssp-card ssp-ctr" style="padding:20px 15px"><div class="ssp-bell">' + ico("bell") + '</div><div id="ssp-pn-t" style="font-size:1rem;font-weight:800;margin-top:14px">' + (on ? "Notifications ON hain" : "Notifications OFF hain") + '</div><p>Naya test, result ya app update aate hi aapke phone par alert aayega — app band ho tab bhi.</p><span class="ssp-pill' + (on ? "" : " r") + '" id="ssp-pn-p"><i></i>' + (on ? "Chalu hai" : "Band hai") + '</span><div data-borrow="push-notify-toggle-btn,push-notify-status"></div></div>' +
+        '<div class="ssp-card"><div class="ssp-srow"><div class="ssp-tx"><b>AI voice calls</b><small>App ke andar audio message. Koi phone call nahi.</small></div><label class="ssp-sw"><input type="checkbox" id="ssp-ai-call-toggle"><i></i></label></div><p id="ssp-ai-call-status">AI call notifications aap kabhi bhi band kar sakte hain.</p></div>' +
         '<div class="ssp-card"><h4>' + ico("info") + ' Aapko kya milega</h4><div style="height:10px"></div>' + kv("Naya test", "Publish hote hi", "book", 1) + kv("Exam result", "Result publish hote hi", "pulse") + kv("App update", "Naya version aane par", "dl") + "</div>" +
         '<div class="ssp-note">' + ico("alert") + '<div>Alert na aaye to phone Settings → Apps → The Vishnu Sharma → Notifications → Allow karein.</div></div>');
     },
@@ -194,6 +195,13 @@
       if (pg.style.display === "none") return;
       pg.querySelector(".ssp-top b").textContent = title; pg.querySelector(".ssp-top small").textContent = sub || ""; pg.querySelector(".ssp-body").innerHTML = html;
       Array.prototype.forEach.call(pg.querySelectorAll("[data-borrow]"), borrow);
+      if (key === "notif") {
+        var aiToggle = $("ssp-ai-call-toggle");
+        if (aiToggle) {
+          aiToggle.onchange = function () { var enabled = !!aiToggle.checked; if (window.SnapAICall) window.SnapAICall.saveSetting(enabled); var st = $("ssp-ai-call-status"); if (st) st.textContent = enabled ? "AI voice calls chalu hain." : "AI voice calls band kar di gayi."; };
+          window.SnapAICall && window.SnapAICall.refreshSettingsUI && window.SnapAICall.refreshSettingsUI();
+        }
+      }
       if (key === "notif" && window.MutationObserver) { var bt = $("push-notify-toggle-btn"); if (bt) { pnObs = new MutationObserver(function () { var on = pnOn(), t = $("ssp-pn-t"), p = $("ssp-pn-p"); if (t) t.textContent = on ? "Notifications ON hain" : "Notifications OFF hain"; if (p) { p.className = "ssp-pill" + (on ? "" : " r"); p.innerHTML = "<i></i>" + (on ? "Chalu hai" : "Band hai"); } var s = $("ssp-pn-sub"); if (s) s.textContent = "Naye test ka alert • " + (on ? "ON" : "OFF"); }); pnObs.observe(bt, { childList: true, characterData: true, subtree: true }); } }
     });
   }

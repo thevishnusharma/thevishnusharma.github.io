@@ -1,0 +1,34 @@
+#ai-admin-modal,#ai-call-screen{position:fixed;inset:0;z-index:2147483000;display:none;align-items:center;justify-content:center;padding:14px;box-sizing:border-box;font-family:Inter,"Segoe UI",system-ui,sans-serif}
+#ai-admin-modal{background:rgba(8,13,35,.72);backdrop-filter:blur(8px)}
+#ai-admin-modal.open,#ai-call-screen.open{display:flex}
+.aia-panel{background:#fff;color:#111827;width:min(620px,100%);max-height:92vh;overflow:auto;border-radius:24px;padding:19px;box-sizing:border-box;box-shadow:0 24px 70px #05081675}
+.aia-panel header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.aia-panel header small{font-size:.65rem;font-weight:800;letter-spacing:.15em;color:#6366f1}
+.aia-panel h2{margin:3px 0 0;font-size:1.35rem}.aia-panel header button{border:0;background:#f1f5f9;color:#334155;border-radius:12px;width:40px;height:40px;font-size:1.6rem;cursor:pointer}
+.aia-note{margin:10px 0 16px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:13px;padding:10px 12px;font-size:.78rem;line-height:1.45}
+.aia-label{display:block;font-weight:750;font-size:.82rem;margin:12px 0 6px;color:#334155}
+.aia-panel input,.aia-panel textarea,.aia-panel select{display:block;width:100%;box-sizing:border-box;border:1px solid #dbe3ef;border-radius:12px;padding:11px 12px;background:#fff;font:inherit;font-size:.9rem;color:#0f172a;outline:none}
+.aia-panel textarea{resize:vertical;line-height:1.5}.aia-panel input:focus,.aia-panel textarea:focus,.aia-panel select:focus{border-color:#6366f1;box-shadow:0 0 0 3px #6366f122}
+.aia-row{display:grid;grid-template-columns:1fr 1.4fr;gap:12px}.aia-row .aia-label{min-width:0}
+.aia-primary,.aia-secondary{width:100%;border:0;border-radius:13px;padding:13px 16px;margin-top:12px;font-weight:800;font-size:.9rem;cursor:pointer}
+.aia-primary{background:linear-gradient(135deg,#4338ca,#7c3aed);color:#fff;box-shadow:0 7px 16px #4f46e533}.aia-secondary{background:#eef2ff;color:#3730a3}
+.aia-primary:disabled{opacity:.58;cursor:wait}.aia-help{margin:7px 0;color:#64748b;font-size:.74rem;line-height:1.45}
+#aia-preview-audio{display:block;width:100%;margin:10px 0}#aia-preview-audio[hidden]{display:none}
+#aia-status{min-height:20px;margin:10px 0;color:#4338ca;font-size:.82rem;font-weight:700}
+.aia-panel h3{font-size:.9rem;margin:18px 0 8px}.aia-history{display:grid;gap:7px}.aia-history-row{border:1px solid #e5e7eb;border-radius:13px;padding:10px 12px;display:grid;gap:4px}.aia-history-row b{font-size:.82rem}.aia-history-row small{font-size:.7rem;color:#64748b}.aia-history-actions{display:flex;justify-content:flex-end;gap:8px}.aia-history-actions button{background:#eef2ff;color:#3730a3;border:0;border-radius:9px;padding:7px 11px;font-weight:750;cursor:pointer}
+#ai-call-screen{background:radial-gradient(ellipse at top,#4338ca,#11152f 70%);color:#fff;z-index:2147483500;overflow:auto}
+.aic-card{width:min(420px,100%);max-height:94vh;overflow:auto;box-sizing:border-box;padding:25px 20px 18px;border:1px solid #ffffff22;border-radius:30px;text-align:center;background:linear-gradient(160deg,#25225aee,#111827f5);box-shadow:0 24px 90px #020617a8}
+.aic-mark{width:78px;height:78px;border-radius:50%;margin:0 auto 15px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:linear-gradient(145deg,#fb923c,#dc2626);box-shadow:0 0 0 9px #ffffff12,0 0 0 18px #ffffff08;animation:aic-pulse 1.8s infinite}
+@keyframes aic-pulse{50%{box-shadow:0 0 0 13px #ffffff10,0 0 0 25px #ffffff05;transform:scale(1.025)}}
+.aic-kicker{font-size:.64rem;font-weight:800;letter-spacing:.16em;color:#c4b5fd}.aic-card h2{margin:8px 0 3px;font-size:1.3rem}.aic-card p{color:#d1d5db;font-size:.85rem;line-height:1.45}.aic-state{min-height:22px;font-weight:650}
+.aic-wave{height:36px;display:flex;justify-content:center;align-items:center;gap:4px;margin:18px auto 10px}.aic-wave i{width:4px;height:8px;background:#a78bfa;border-radius:9px}.aic-wave.playing i{animation:aic-wave .65s ease-in-out infinite alternate}.aic-wave.playing i:nth-child(2n){animation-delay:.16s}.aic-wave.playing i:nth-child(3n){animation-delay:.32s}
+@keyframes aic-wave{to{height:30px;background:#fbbf24}}
+.aic-controls{display:flex;gap:15px;justify-content:center;margin:18px 0 12px}.aic-controls[hidden]{display:none}
+.aic-btn{min-width:126px;border:0;border-radius:999px;padding:13px 18px;color:#fff;font-size:.9rem;font-weight:800;cursor:pointer}.aic-btn.accept{background:#16a34a;box-shadow:0 8px 22px #16a34a44}.aic-btn.decline{background:#dc2626;box-shadow:0 8px 22px #dc262644}.aic-btn.talk{background:#4f46e5}
+#aic-chat{margin:13px 0 0;text-align:left}#aic-chat[hidden]{display:none}.aic-chat-status{text-align:center;min-height:18px;font-size:.76rem;color:#c4b5fd;margin:6px}
+.aic-chat-row{display:flex;gap:7px}.aic-chat-row input{min-width:0;flex:1;border:1px solid #ffffff2b;border-radius:11px;padding:10px;background:#0f172a;color:#fff;font:inherit}.aic-chat-row button,.aic-speak{border:0;border-radius:11px;padding:10px 13px;background:#7c3aed;color:#fff;font-weight:750;cursor:pointer}.aic-speak{width:100%;margin-top:8px;background:#312e81}
+.aic-chat-log{max-height:110px;overflow:auto;display:grid;gap:6px;margin-top:8px}.aic-chat-line{padding:7px 9px;border-radius:10px;font-size:.78rem;line-height:1.4;max-width:90%;white-space:pre-wrap}.aic-chat-line.student{justify-self:end;background:#4338ca}.aic-chat-line.assistant{justify-self:start;background:#374151}
+.aic-privacy{font-size:.68rem!important;color:#9ca3af!important;margin:14px 0 0!important}
+@media(max-width:480px){.aia-panel{padding:15px;border-radius:19px}.aia-row{grid-template-columns:1fr}.aic-card{padding:22px 16px 15px}.aic-controls{gap:10px}.aic-btn{min-width:0;flex:1}}
+.aia-report-list{display:block;white-space:pre-line;line-height:1.55;margin-top:6px!important;padding-top:7px;border-top:1px solid #e5e7eb}
+.aia-auto{margin-top:18px;border:1px solid #e0e7ff;background:#f8faff;border-radius:15px;padding:12px}.aia-auto>b{font-size:.86rem;display:block;margin-bottom:7px}.aia-auto label{display:flex;align-items:flex-start;gap:10px;padding:9px 2px;border-top:1px solid #e6eaf2;cursor:pointer}.aia-auto label>input{width:auto;margin:3px 0 0;accent-color:#4f46e5}.aia-auto span{display:grid;gap:3px}.aia-auto strong{font-size:.78rem}.aia-auto small{font-size:.7rem;color:#64748b;line-height:1.4}

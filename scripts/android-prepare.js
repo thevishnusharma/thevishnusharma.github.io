@@ -3,12 +3,13 @@ const fs = require('fs'), path = require('path');
 const ROOT = path.join(__dirname, '..'), A = path.join(ROOT, 'android', 'app');
 if (!fs.existsSync(A)) { console.error('android/ nahi mila — pehle `npx cap add android` chalayein'); process.exit(1); }
 
-// 1) Manifest: camera (OMR scan) + mic nahi; camera hardware optional
+// 1) Manifest: camera (OMR scan) + mic permission (sirf AI Call me user voice input dabaye tab); hardware optional
 const mf = path.join(A, 'src/main/AndroidManifest.xml');
 let m = fs.readFileSync(mf, 'utf8');
-const perms = ['android.permission.INTERNET', 'android.permission.ACCESS_NETWORK_STATE', 'android.permission.CAMERA', 'android.permission.POST_NOTIFICATIONS'];
+const perms = ['android.permission.INTERNET', 'android.permission.ACCESS_NETWORK_STATE', 'android.permission.CAMERA', 'android.permission.RECORD_AUDIO', 'android.permission.POST_NOTIFICATIONS'];
 const feats = ['<uses-feature android:name="android.hardware.camera" android:required="false" />',
-               '<uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />'];
+               '<uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />',
+               '<uses-feature android:name="android.hardware.microphone" android:required="false" />'];
 let add = '';
 perms.forEach(p => { if (!m.includes(p)) add += `    <uses-permission android:name="${p}" />\n`; });
 feats.forEach(f => { if (!m.includes(f.slice(0, 60))) add += `    ${f}\n`; });

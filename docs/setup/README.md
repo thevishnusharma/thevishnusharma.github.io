@@ -10,6 +10,10 @@ This folder keeps operator guides. The older `FINAL_GUIDE.md` and numbered setup
 - Cloudflare Worker source: `push-worker/worker.js`.
 - Firebase rules: `firestore.rules` and `storage.rules`.
 
+## New feature guides
+
+- AI in-app voice calls: [`AI_CALLS_SETUP.md`](AI_CALLS_SETUP.md).
+
 The root copies of the build scripts and Worker were removed after repository-wide reference checks. Deploy changes to Cloudflare separately; repository edits do not deploy the Worker.
 
 ## Local checks

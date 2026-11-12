@@ -48,6 +48,7 @@
   // 1b) Exam Manager me exam "Publish" hote hi students ko notification (exam-manager.js yahi function bulata hai)
   window.SnapNotifyAuto = {
     examPublished: function (id, ex) {
+      try { window.SnapAICall && window.SnapAICall.autoResultPublished && window.SnapAICall.autoResultPublished(id, ex || {}); } catch (e) {}
       try {
         var c = col(); if (!c || !id) return;
         var nm = (ex && ex.examName) || "Exam", cl = ex && ex.className ? " (" + ex.className + ")" : "";
