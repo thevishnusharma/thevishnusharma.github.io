@@ -67,6 +67,14 @@ jobs:
       - name: Android project banao
         run: npx cap add android
 
+      - name: Mic permission (AI voice call)
+        run: |
+          M=android/app/src/main/AndroidManifest.xml
+          for P in android.permission.RECORD_AUDIO android.permission.MODIFY_AUDIO_SETTINGS; do
+            grep -q "$P" "$M" || sed -i "s|<application|<uses-permission android:name=\"$P\" />\n    <application|" "$M"
+          done
+          grep -n "RECORD_AUDIO" "$M"
+
       - name: Firebase (push) config
         env:
           GS_B64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
