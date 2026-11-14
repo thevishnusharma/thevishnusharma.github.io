@@ -41,7 +41,7 @@
       document.title = b.name + " — Online Tests & Classes";
     }
     var sub = q(".site-sub"); if (sub && b.name) sub.textContent = b.tagline || (on2() ? "" : "Powered by The Vishnu Sharma");
-    if (b.logoDataUrl) { var li = q(".logo-img"); if (li) li.src = b.logoDataUrl; }
+    if (b.name) { try { legacyLogo(b); setIcons(b); } catch (e) {} }
     applyManifest(b);
     try { deep(b); } catch (e) {}
     try { paintHeader(); } catch (e) {}
@@ -51,6 +51,31 @@
      Kill-switch: SNAP_CONFIG.branding2 = false -> sab purana. User ka diya text hamesha textContent / escH se jata hai. */
   function on2() { return on() && !(window.SNAP_CONFIG && window.SNAP_CONFIG.branding2 === false); }
   function okLogo(u) { return /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(u || ""); }
+  /* v311: institute ke andar kabhi bhi default "The Vishnu Sharma" logo nahi — institute ka logo, ya logo na ho to naam ka pehla akshar (brand rang me) */
+  function monoIcon(b, sz) {
+    try {
+      var c = document.createElement("canvas"); c.width = c.height = sz; var g = c.getContext("2d");
+      g.fillStyle = okColor(b && b.brandColor) ? b.brandColor : "#1d4ed8"; g.fillRect(0, 0, sz, sz);
+      g.fillStyle = "#ffffff"; g.font = "800 " + Math.round(sz * 0.55) + "px system-ui,sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+      g.fillText(String((b && b.name) || "?").trim().charAt(0).toUpperCase(), sz / 2, sz / 2 + sz * 0.03);
+      return c.toDataURL("image/png");
+    } catch (e) { return ""; }
+  }
+  function brandIcon(b, sz) { return okLogo(b && b.logoDataUrl) ? b.logoDataUrl : monoIcon(b, sz || 192); }
+  function setIcons(b) {
+    var u = brandIcon(b, 192); if (!u) return;
+    var t = u.slice(5, u.indexOf(";"));
+    document.querySelectorAll('link[rel="icon"],link[rel="shortcut icon"],link[rel="apple-touch-icon"]').forEach(function (l) { l.removeAttribute("sizes"); l.type = t; l.href = u; });
+  }
+  function legacyLogo(b) {
+    var li = document.querySelector(".logo-img"); if (!li || !li.parentNode) return;
+    var m = li.parentNode.querySelector(".snap-mono");
+    if (okLogo(b.logoDataUrl)) { li.src = b.logoDataUrl; li.style.display = ""; if (m) m.remove(); return; }
+    li.style.display = "none"; li.removeAttribute("src");
+    if (!m) { m = document.createElement("div"); m.className = "snap-mono"; li.parentNode.insertBefore(m, li); }
+    m.textContent = String(b.name || "?").trim().charAt(0).toUpperCase();
+    m.style.cssText = "width:46px;height:46px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:22px;background:" + (okColor(b.brandColor) ? b.brandColor : "#1d4ed8");
+  }
   function escH(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function curB() { if (!on2() || !cur) return null; var x = jget(PFX + cur); return x && x.name ? x : null; }
   /* WhatsApp / plain text ke liye institute ka naam (markdown ke * _ ~ hata kar); institute na ho to fb */
@@ -142,14 +167,15 @@
       var fin = function (icons) {
         if (icons) man.icons = icons;
         else if (Array.isArray(man.icons)) man.icons = man.icons.map(function (i) { return Object.assign({}, i, { src: new URL(i.src, location.href).href }); });
-        if (Array.isArray(man.shortcuts)) man.shortcuts = man.shortcuts.map(function (s) { var c = Object.assign({}, s); if (c.url) c.url = new URL(c.url, location.href).href; if (c.icons) c.icons = c.icons.map(function (i) { return Object.assign({}, i, { src: new URL(i.src, location.href).href }); }); return c; });
+        if (Array.isArray(man.shortcuts)) man.shortcuts = man.shortcuts.map(function (s) { var c = Object.assign({}, s); if (c.url) c.url = new URL(c.url, location.href).href; delete c.icons; return c; });
         try {
           var u = URL.createObjectURL(new Blob([JSON.stringify(man)], { type: "application/manifest+json" })), l = document.querySelector('link[rel="manifest"]');
           if (!l) { l = document.createElement("link"); l.rel = "manifest"; document.head.appendChild(l); }
           l.href = u;
         } catch (e) {}
       };
-      if (!b.logoDataUrl) return fin(null);
+      delete man.screenshots;
+      if (!okLogo(b.logoDataUrl)) { var mi = [192, 512].map(function (sz) { return { src: monoIcon(b, sz), sizes: sz + "x" + sz, type: "image/png", purpose: "any" }; }); return fin(mi[0].src ? mi : []); }
       var im = new Image(); im.onload = function () {
         try {
           var out = [192, 512].map(function (sz) {
@@ -205,6 +231,7 @@
 
   window.SnapBrand = { refresh: refresh, load: load, cached: function (id) { return jget(PFX + id); } };
   window.SnapBrand.ident = ident; window.SnapBrand.logoHtml = logoHtml; window.SnapBrand.paintHeader = paintHeader; window.SnapBrand.esc = escH;
+  window.SnapBrand.pushIcon = function () { var d = ident(); return d.brand ? brandIcon(jget(PFX + cur), 192) || undefined : "/icon-192.png"; };
   window.SnapBrand.plain = plain; window.SnapBrand.rsf = rsf; window.SnapBrand.printBar = printBar; window.SnapBrand.mark = { on: markOn, text: MARK_TXT, html: markHtml };
   window.SnapQuota = { check: check, add: function (id, b) { return bump(id, b, 1); }, sub: function (id, b) { return bump(id, -Math.abs(b || 0), -1); } };
 

@@ -61,6 +61,7 @@
   <meta name="twitter:image" content="https://thevishnusharma.github.io/icon-512.png" />
 
   <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="stylesheet" href="practice-multi.css?v=1" />
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="icon" href="icon-192.png" type="image/png" />
 
@@ -169,7 +170,7 @@
   <!-- HEADER -->
   <header class="site-header">
     <div class="logo-area">
-      <img src="snaptestpro-logo.png" alt="The Vishnu Sharma" class="logo-img" />
+      <img src="vishnu-logo.png" alt="The Vishnu Sharma" class="logo-img" />
       <div>
         <h1 class="site-title">The Vishnu Sharma</h1>
         <div class="site-sub">Smart Tests • Better Preparation • Better Results</div>
@@ -563,7 +564,8 @@
       </div>
 
       <!-- ── PRACTICE MODE (unlimited, no timer pressure, doesn't count towards ranking) ── -->
-      <div class="card hidden" id="practice-mode-card">
+      <div class="card hidden pm-card" id="practice-mode-card">
+        <div class="pm-legacy" hidden>
         <h3 class="section-title">🎯 Practice Mode</h3>
         <p class="muted-text">Bina time-pressure ke practice karein — turant sahi/galat pata chalega. Rank/marks count nahi hote.</p>
         <div class="field-row">
@@ -583,6 +585,8 @@
           <input id="practice-question-count" type="number" min="1" value="10" />
         </div>
         <button type="button" id="practice-start-btn" class="btn-primary">▶️ Practice Shuru Karein</button>
+      </div>
+        <div id="pm-root"></div>
       </div>
 
       <!-- ── MY PROGRESS (score trend across all tests) ── -->
@@ -2318,7 +2322,8 @@ B"></textarea>
 <script defer src="drive-upload.js?v=1"></script>
 <script defer src="lock-config.js?v=1"></script>
 <script defer src="app-lock.js?v=1"></script>
-<script defer src="branding.js?v=2"></script>
+<script defer src="branding.js?v=3"></script>
+<script defer src="practice-multi.js?v=1"></script>
 <script defer src="pdf-viewer.js?v=1"></script>
 <script defer src="id-card.js"></script>
 <script defer src="admit-card.js?v=2"></script>
