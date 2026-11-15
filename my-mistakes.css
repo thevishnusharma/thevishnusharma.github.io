@@ -1,0 +1,32 @@
+/* My Mistakes — Notebook design v1 */
+.card.mm-card{background:transparent;border:0;box-shadow:none;padding:0;backdrop-filter:none;-webkit-backdrop-filter:none}
+.mm-card .mm-legacy{display:none!important}
+.mm{color:#0f172a;font-variant-numeric:tabular-nums}
+.mm-hero{background:linear-gradient(135deg,#0f1b3d,#1d3a8a);color:#fff;border-radius:22px;padding:20px 22px;display:flex;align-items:center;gap:18px;margin-bottom:14px;box-shadow:0 12px 32px rgba(29,58,138,.28)}
+.mm-hero .tx{flex:1}.mm-hero small{opacity:.7;font-size:12.5px}.mm-hero h2{font-size:20px;font-weight:700;letter-spacing:-.02em;margin:2px 0 10px;color:#fff;border:0;padding:0}
+.mm-hb{background:#fff;color:#0f1b3d;border:0;border-radius:11px;padding:10px 18px;font-weight:700;font-size:13.5px;cursor:pointer;box-shadow:none}.mm-hb:disabled{opacity:.5;cursor:not-allowed}
+.mm-rg{position:relative;width:78px;height:78px;flex:none}.mm-rg svg{transform:rotate(-90deg)}.mm-rg b{position:absolute;inset:0;display:grid;place-items:center;font-size:17px;color:#fff}
+.mm-ins{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}.mm-ins div{background:rgba(255,255,255,.94);border:1px solid #e6e9f2;border-radius:16px;padding:12px 14px}.mm-ins small{color:#64748b;font-size:12px}.mm-ins b{display:block;font-size:20px;letter-spacing:-.02em}
+.mm-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:none}.mm-tabs::-webkit-scrollbar{display:none}
+.mm-tab{flex:none;border:1px solid #e6e9f2;background:#fff;border-radius:999px;padding:8px 15px;font-weight:600;font-size:13px;color:#64748b;cursor:pointer;box-shadow:none}.mm-tab.on{background:#0f172a;color:#fff;border-color:#0f172a}.mm-tab em{font-style:normal;opacity:.7;margin-left:5px;font-weight:500}
+.mm-gr{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.mm-cc{background:rgba(255,255,255,.96);border:1px solid #e6e9f2;border-radius:18px;padding:16px;cursor:pointer;box-shadow:0 6px 20px rgba(31,38,135,.06);position:relative}.mm-cc:hover{box-shadow:0 10px 26px rgba(31,38,135,.12)}
+.mm-cc .sj{font-size:11.5px;font-weight:600;color:var(--blue,#2563eb);background:#eef3ff;padding:3px 9px;border-radius:6px;display:inline-block;margin-top:8px}
+.mm-cc h3{font-size:14px;font-weight:700;line-height:1.35;margin:8px 0 4px;min-height:38px;color:#0f172a;border:0;padding:0}.mm-cc p{font-size:12.5px;color:#64748b;margin:0}
+.mm-rp{position:absolute;top:12px;right:12px}.mm-tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;background:#fdecee;color:#c62835}
+.mm-ring{position:relative;flex:none}.mm-ring svg{transform:rotate(-90deg)}.mm-ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:11.5px}
+.mm-empty{grid-column:1/-1;background:#fff;border:1px solid #e6e9f2;border-radius:18px;padding:34px;text-align:center;color:#64748b}
+.mm-sh{position:fixed;inset:0;background:#0f172a8c;display:none;z-index:3000;align-items:center;justify-content:center;padding:20px}.mm-sh.on{display:flex}
+.mm-sp{background:#f7f8fd;border-radius:22px;width:min(640px,100%);max-height:88vh;display:flex;flex-direction:column;overflow:hidden;color:#0f172a}
+.mm-sph{background:#fff;padding:16px 18px;border-bottom:1px solid #e6e9f2;display:flex;align-items:center;gap:12px}.mm-sph .t{flex:1}.mm-sph h3{font-size:16px;margin:0;border:0;padding:0;color:#0f172a}.mm-sph small{color:#64748b}
+.mm-cx{border:0;background:#eef0f6;width:32px;height:32px;border-radius:50%;font-size:18px;line-height:1;cursor:pointer;box-shadow:none;color:#0f172a}
+.mm-spt{display:flex;gap:6px;padding:10px 18px 0;background:#fff}.mm-spt button{border:0;background:none;padding:8px 12px;font-weight:600;color:#64748b;border-bottom:2px solid transparent;cursor:pointer;box-shadow:none;border-radius:0}.mm-spt button.on{color:#0f172a;border-color:var(--blue,#2563eb)}
+.mm-spb{overflow:auto;padding:14px 18px;flex:1}.mm-spf{background:#fff;border-top:1px solid #e6e9f2;padding:12px 18px;display:flex;gap:8px}
+.mm-btn{border:0;border-radius:12px;padding:11px 16px;font-weight:700;background:var(--blue,#2563eb);color:#fff;flex:1;cursor:pointer;box-shadow:none}.mm-btn.o{background:#fff;color:#0f172a;border:1px solid #e6e9f2}.mm-btn.s{flex:none;padding:8px 14px;font-size:13px}.mm-btn.ok{background:#0f8a5f}.mm-btn:disabled{opacity:.5;cursor:not-allowed}
+.mm-q{background:#fff;border:1px solid #e6e9f2;border-radius:16px;padding:14px 16px;margin-bottom:12px}.mm-meta{font-size:12px;color:#64748b;margin-bottom:6px;display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap}
+.mm-q p{font-weight:600;line-height:1.55;margin:0 0 10px}.mm-ans{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mm-ans div{padding:9px 12px;border-radius:10px;font-size:13px;border:1px solid}.mm-ans small{display:block;font-size:11px;font-weight:700}
+.mm-xx{background:#fdecee;border-color:#f2c9cd;color:#80191f}.mm-oo{background:#e6f6ee;border-color:#bfe2cf;color:#0a5a3d}.mm-ex{font-size:13px;color:#475569;margin-top:10px;padding-left:12px;border-left:3px solid #f0c24b}
+.mm-why{margin:12px 0 10px}.mm-why small{display:block;color:#64748b;font-size:12px;margin-bottom:6px}.mm-why .c{display:inline-block;border:1px solid #e6e9f2;background:#fff;border-radius:999px;padding:5px 11px;font-size:12px;margin:0 6px 6px 0;cursor:pointer;box-shadow:none;color:#0f172a}.mm-why .c.on{background:#0f172a;border-color:#0f172a;color:#fff}
+.mm-op{display:block;width:100%;text-align:left;border:1.5px solid #e6e9f2;background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;box-shadow:none;color:#0f172a}.mm-op.good{background:#e6f6ee;border-color:#79c5a1}.mm-op.bad{background:#fdecee;border-color:#e7939b}.mm-op.dim{opacity:.55}
+.mm-prog{height:6px;background:#e3e7f3;border-radius:6px;overflow:hidden;margin-bottom:10px}.mm-prog i{display:block;height:100%;background:var(--blue,#2563eb)}
+@media(max-width:700px){.mm-gr{grid-template-columns:1fr 1fr;gap:10px}.mm-cc{padding:13px}.mm-cc h3{font-size:13px;min-height:35px}.mm-hero{padding:16px;gap:12px}.mm-hero h2{font-size:17px}.mm-rg{width:64px;height:64px}.mm-ins b{font-size:17px}.mm-ins div{padding:10px}.mm-sh{align-items:flex-end;padding:0}.mm-sp{border-radius:22px 22px 0 0;max-height:92vh}.mm-ans{grid-template-columns:1fr}}

@@ -62,6 +62,7 @@
 
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="stylesheet" href="practice-multi.css?v=1" />
+  <link rel="stylesheet" href="my-mistakes.css?v=1" />
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="icon" href="icon-192.png" type="image/png" />
 
@@ -598,12 +599,14 @@
       </div>
 
       <!-- ── MY MISTAKES (auto-collected wrong answers, revise anytime) ── -->
-      <div class="card hidden" id="my-mistakes-card">
+      <div class="card hidden mm-card" id="my-mistakes-card">
+        <div class="mm-legacy" hidden>
         <h3 class="section-title">❌ My Mistakes</h3>
         <p class="muted-text">Test mein galat hue questions yahan apne aap save hote hain — revise karke "Maine sikh liya" dabayein.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
           <button type="button" id="refresh-mistakes-btn" class="btn-secondary">🔄 Refresh</button>
           <button type="button" id="practice-mistakes-btn" class="btn-primary" style="background:linear-gradient(135deg,#f59e0b,#d97706);">🔁 Inhe Practice Karein</button>
+        </div>
         </div>
         <div id="my-mistakes-list"></div>
       </div>
@@ -2324,6 +2327,7 @@ B"></textarea>
 <script defer src="app-lock.js?v=1"></script>
 <script defer src="branding.js?v=3"></script>
 <script defer src="practice-multi.js?v=1"></script>
+<script defer src="my-mistakes.js?v=1"></script>
 <script defer src="pdf-viewer.js?v=1"></script>
 <script defer src="id-card.js"></script>
 <script defer src="admit-card.js?v=2"></script>
