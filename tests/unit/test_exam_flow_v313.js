@@ -1,0 +1,22 @@
+// v313: naye files ka sanity test — syntax, index/sw me wiring, aur pure helpers.
+const assert = require('assert'), fs = require('fs'), path = require('path'), vm = require('vm');
+const root = path.join(__dirname, '..', '..');
+const rd = f => fs.readFileSync(path.join(root, f), 'utf8');
+const html = rd('index.html'), sw = rd('sw.js');
+['exam-flow-v2.js', 'admin-parts-v2.js'].forEach(f => assert.ok(html.includes(f) && sw.includes(f), f + ' index.html/sw.js me judi honi chahiye'));
+assert.ok(html.includes('exam-flow-v2.css') && sw.includes('exam-flow-v2.css'));
+assert.ok(rd('script.js').includes('subject:s.subject||""'), 'editTest sections me subject');
+assert.strictEqual((rd('script.js').match(/subject:\w+\.subject\|\|null/g) || []).length, 5, 'save paths me subject');
+const win = { addEventListener() {}, matchMedia: null, APP_CONFIG: {} };
+const doc = { readyState: 'complete', addEventListener() {}, querySelector: () => null, querySelectorAll: () => [], body: {}, documentElement: { style: {} } };
+const ctx = { window: win, document: doc, console, setTimeout() {}, clearInterval() {}, clearTimeout() {}, history: {}, location: {}, localStorage: { getItem() { return null; }, setItem() {} }, getNeg: t => t.neg || 0, getQuestionMarks: (t, q) => q.m || 2, getTestGrandTotalMarks: () => 8, getTestSectionTitles: t => ['A', 'B'], fmtNum: n => String(n) };
+win.window = win; vm.createContext(ctx); Object.assign(ctx, { window: Object.assign(win, ctx) });
+vm.runInContext(rd('exam-flow-v2.js'), ctx);
+const P = (ctx.window.__xfPure);
+assert.ok(P, 'pure helpers expose hone chahiye');
+const i = P.info({ minutes: 20, neg: 0.5, questions: [{ section: 'A' }, { section: 'A' }, { section: 'B' }, { section: 'B' }], sections: [{ title: 'A', subject: 'English' }] });
+assert.strictEqual(i.n, 4); assert.strictEqual(i.rows.length, 2); assert.strictEqual(i.rows[0].subject, 'English'); assert.strictEqual(i.each, 2);
+const s = P.stats({ details: [{ status: 'Correct' }, { status: 'Wrong' }, { status: 'Not answered' }] });
+assert.deepStrictEqual([s.c, s.w, s.sk, s.acc], [1, 1, 1, 50]);
+assert.strictEqual(P.mmss(125), '02:05');
+console.log('ok');

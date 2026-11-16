@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-16 — v313: Start flow, 3-button test card, Analysis attempts, Parts
+
+- Test card par Re-attempt / Solution / Analysis; start se pehle Instructions-Symbols-Language flow; Analysis me Attempt dropdown; exam me section tabs + swipe; admin me multiple Parts (subject ke saath). Details: `NOTES_v313.md`.
+
 ## 2026-10-17 — v222 Phase 4B: institute APK native splash + rang
 
 - Naya `scripts/android-brand.js`: institute APK me native splash (brand rang par logo card, har `splash.png` size me), Android 12+ ka splash rang + icon, status bar / app rang (`colorPrimary/Dark`).
