@@ -115,7 +115,9 @@ jobs:
         run: |
           F=$(find android/app/build/outputs/apk -name '*.apk' | grep -v unaligned | head -n1)
           [ -n "$F" ] || { echo "APK nahi bana"; exit 1; }
-          OUT="${{ steps.inst.outputs.slug }}.apk"
+          NAME=$(printf '%s' "${{ steps.inst.outputs.app_name }}" | sed -E 's/[^A-Za-z0-9 ._-]//g; s/ +/-/g; s/^[-.]+//; s/[-.]+$//' | cut -c1-80)
+          [ -n "$NAME" ] || NAME="${{ steps.inst.outputs.slug }}"
+          OUT="${NAME}.apk"
           cp "$F" "$OUT"
           echo "file=$OUT" >> "$GITHUB_OUTPUT"
 

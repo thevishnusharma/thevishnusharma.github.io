@@ -1117,7 +1117,7 @@ async function handleApk(request, env, ctx, pathname) {
   if (!up.ok && up.status !== 206) throw new HttpErr(up.status === 404 ? 404 : 502, 'APK GitHub par nahi mila (' + up.status + '): ' + m[1] + '/' + m[2]);
   const h = new Headers();
   h.set('Content-Type', 'application/vnd.android.package-archive');
-  h.set('Content-Disposition', 'attachment; filename="' + m[2] + '"');
+  h.set('Content-Disposition', 'attachment; filename="' + (m[1].indexOf('inst-') === 0 ? m[2].replace(/\.apk$/i, '').replace(/-+/g, ' ') + '.apk' : m[2]) + '"');
   h.set('Cache-Control', 'public, max-age=3600');
   h.set('Accept-Ranges', 'bytes');
   ['Content-Length', 'Content-Range'].forEach((k) => { const v = up.headers.get(k); if (v) h.set(k, v); });

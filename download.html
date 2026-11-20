@@ -421,7 +421,7 @@ body{font-size:17px}
   }
   function startApk(it,btn){
     if(busy)return;busy=true;btn.textContent="Preparing\u2026";
-    var name=(it.apk.split("/").pop()||"app.apk").split("?")[0];
+    var name=(String(it.name||"").replace(/[\\\/:*?"<>|]+/g,"").replace(/\s+/g," ").trim()||(it.apk.split("/").pop()||"app").replace(/\.apk$/i,"").split("?")[0])+".apk";
     fastUrl(it.apk).then(function(u){
       if(u.indexOf(WORKER)===0&&(!isAndroid()||isRealChrome())&&window.Blob&&window.URL&&URL.createObjectURL){
         blobDownload(u,name,btn,function(){openApkInChrome(it.apk)});
