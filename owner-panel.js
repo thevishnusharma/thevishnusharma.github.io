@@ -229,7 +229,7 @@ function ownerExportCsv(){
   const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"',rows=[["Naam","ID","Active","Plan","Expiry","Students","Student limit","Storage MB","Storage limit MB","Files"]];
   Object.values(_ownerInstitutesCache).sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(a=>rows.push([a.name||"",a.id,a.active===false?"No":"Yes",a.plan||"Free",a.planExpiresAt>0?new Date(a.planExpiresAt+19800000).toISOString().slice(0,10):"",a.studentCount||0,a.studentLimit||0,Math.round((a.storageUsedBytes||0)/1048576),a.storageLimitMB||0,a.storageFiles||0]));
   const b=new Blob(["\ufeff"+rows.map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv"}),u=URL.createObjectURL(b),a=document.createElement("a");
-  a.href=u;a.download="snaptestpro-institutes-"+new Date().toISOString().slice(0,10)+".csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);
+  a.href=u;a.download="the-vishnu-sharma-institutes-"+new Date().toISOString().slice(0,10)+".csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);
 }
 /* ownerRenderList ke baad dashboard + filter apne aap */
 (function(){const _o=ownerRenderList;ownerRenderList=function(){const r=_o.apply(this,arguments);try{ownerRenderDashboard()}catch(e){console.warn("[owner dash]",e)}return r}})();

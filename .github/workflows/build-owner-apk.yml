@@ -41,6 +41,8 @@ jobs:
         run: node scripts/build-www.js
 
       - name: Android project banao
+        env:
+          APP_NAME: The Vishnu Sharma Owner
         run: npx cap add android
 
       - name: Firebase (push) config
@@ -79,15 +81,15 @@ jobs:
         run: |
           F=$(find android/app/build/outputs/apk -name '*.apk' | grep -v unaligned | head -n1)
           [ -n "$F" ] || { echo "APK nahi bana"; exit 1; }
-          cp "$F" SnapTestOwner.apk
-          echo "file=SnapTestOwner.apk" >> "$GITHUB_OUTPUT"
+          cp "$F" The-Vishnu-Sharma-Owner.apk
+          echo "file=The-Vishnu-Sharma-Owner.apk" >> "$GITHUB_OUTPUT"
 
       - name: Release me daalo (signed APK ho tabhi)
         if: env.HAS_KEYSTORE == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "owner-b${{ steps.ver.outputs.code }}" SnapTestOwner.apk \
+          gh release create "owner-b${{ steps.ver.outputs.code }}" The-Vishnu-Sharma-Owner.apk \
             --title "The Vishnu Sharma Owner (b${{ steps.ver.outputs.code }})" \
             --notes "Owner app" --latest=false
 
@@ -107,5 +109,5 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: owner-apk
-          path: SnapTestOwner.apk
+          path: The-Vishnu-Sharma-Owner.apk
           retention-days: 14

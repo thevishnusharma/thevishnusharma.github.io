@@ -1,7 +1,7 @@
 /* SnapDrive (v173) — card-free file storage: file device se seedhe ADMIN ke apne Google Drive me upload,
    upload hote hi "anyone with link" ban jaata hai aur link apne aap mil jaata hai (hath se link banana nahi padta).
    - Storage institute ke apne Google account (15 GB free) me gina jaata hai — aapka storage / bandwidth kharcha zero.
-   - Drive me folder banta hai:  SnapTest Pro / <instituteId>  (sirf wahi files jo app ne banayi, scope = drive.file).
+   - Drive me folder banta hai:  The Vishnu Sharma / <instituteId>  (sirf wahi files jo app ne banayi, scope = drive.file).
    - Setup: SNAP_CONFIG.googleClientId (app-config.js) me Google OAuth Web Client ID daalni hai (DRIVE_SETUP_HINDI.md dekhein).
    - Kill-switch: SNAP_CONFIG.driveUpload = false.  Client ID khaali ho to ready() = false aur app purane tareeke par chalta hai. */
 (function () {
@@ -64,6 +64,17 @@
     }).then(function (id) { return (folders[key] = id); });
   }
 
+  /* Root folder: naya naam "The Vishnu Sharma"; purana "SnapTest Pro" folder ho to wahi use hota hai (purani files gayab na hon) */
+  function findFolder(name) {
+    var q = "name='" + name + "' and mimeType='application/vnd.google-apps.folder' and trashed=false and 'root' in parents";
+    return api("GET", "https://www.googleapis.com/drive/v3/files?fields=files(id)&q=" + enc(q)).then(function (j) { return j.files && j.files.length ? j.files[0].id : null; });
+  }
+  function rootFolder() {
+    if (folders["__root"]) return Promise.resolve(folders["__root"]);
+    return findFolder("The Vishnu Sharma").then(function (id) { return id || findFolder("SnapTest Pro"); })
+      .then(function (id) { return id || folder("The Vishnu Sharma"); }).then(function (id) { return (folders["__root"] = id); });
+  }
+
   function put(url, blob, headers, onProg) {
     return new Promise(function (res, rej) {
       var x = new XMLHttpRequest(); x.open("PUT", url, true);
@@ -83,7 +94,7 @@
   function upload(file, o, prog) {
     o = o || {}; var name = file.name || "file", type = file.type || "application/octet-stream", size = file.size, fid;
     if (!size) return Promise.reject(new Error("File khaali hai"));
-    return folder("SnapTest Pro").then(function (root) { return folder(String(o.inst || "general"), root); }).then(function (parent) {
+    return rootFolder().then(function (root) { return folder(String(o.inst || "general"), root); }).then(function (parent) {
       return getToken().then(function (t) {
         return fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id", {
           method: "POST",
@@ -140,14 +151,14 @@
     if (!C().googleClientId) return Promise.reject(new Error("Google Client ID abhi set nahi hai (Owner ko batayein)"));
     tok = null;                                       /* naya account chunne ka mauka */
     return getToken(true).then(function () { return api("GET", "https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)"); })
-      .then(function (j) { return folder("SnapTest Pro").then(function (r) { return folder(String(inst), r); }).then(function () { return saveStatus(inst, true, j && j.user && j.user.emailAddress); }); });
+      .then(function (j) { return rootFolder().then(function (r) { return folder(String(inst), r); }).then(function () { return saveStatus(inst, true, j && j.user && j.user.emailAddress); }); });
   }
   function disconnect(inst) {
     var t = tok; tok = null; tokExp = 0; folders = {};
     try { if (t && window.google && google.accounts && google.accounts.oauth2) google.accounts.oauth2.revoke(t, function () {}); } catch (e) {}
     return saveStatus(inst, false, "");
   }
-  function folderUrl(inst) { return getToken().then(function () { return folder("SnapTest Pro"); }).then(function (r) { return folder(String(inst), r); }).then(function (id) { return "https://drive.google.com/drive/folders/" + id; }); }
+  function folderUrl(inst) { return getToken().then(function () { return rootFolder(); }).then(function (r) { return folder(String(inst), r); }).then(function (id) { return "https://drive.google.com/drive/folders/" + id; }); }
   /* upload tabhi band jab Owner ne SNAP_CONFIG.driveRequired=true kiya ho AUR status pata ho ki Drive jura nahi. Default: kabhi block nahi. */
   function blocked(inst) { return C().driveRequired === true && !!C().googleClientId && !!st[inst] && st[inst].connected !== true; }
 

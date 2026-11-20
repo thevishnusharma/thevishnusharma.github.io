@@ -106,13 +106,13 @@ jobs:
         run: |
           F=$(find android/app/build/outputs/apk -name '*.apk' | grep -v unaligned | head -n1)
           [ -n "$F" ] || { echo "APK nahi bana"; exit 1; }
-          cp "$F" SnapTestPro.apk
+          cp "$F" The-Vishnu-Sharma.apk
 
       - name: APK artifact (backup)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: snaptestpro-apk
-          path: SnapTestPro.apk
+          name: the-vishnu-sharma-apk
+          path: The-Vishnu-Sharma.apk
           retention-days: 14
 
       - name: Keystore secrets nahi — publish nahi karenge
@@ -127,11 +127,11 @@ jobs:
           NOTES: ${{ inputs.notes }}
           FORCE: ${{ inputs.force }}
         run: |
-          gh release create "app-b$CODE" SnapTestPro.apk --title "The Vishnu Sharma b$CODE" --notes "$NOTES"
+          gh release create "app-b$CODE" The-Vishnu-Sharma.apk --title "The Vishnu Sharma b$CODE" --notes "$NOTES"
           node -e "
             const fs=require('fs');
             const o={apk:{build:+process.env.CODE,name:'1.0.'+process.env.CODE,
-              url:'https://github.com/'+process.env.GITHUB_REPOSITORY+'/releases/download/app-b'+process.env.CODE+'/SnapTestPro.apk',
+              url:'https://github.com/'+process.env.GITHUB_REPOSITORY+'/releases/download/app-b'+process.env.CODE+'/The-Vishnu-Sharma.apk',
               notes:process.env.NOTES||'App ka naya version aaya hai.',force:process.env.FORCE==='true'}};
             fs.writeFileSync('app-version.json',JSON.stringify(o,null,2)+'\n');"
           git config user.name "github-actions"
