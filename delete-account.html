@@ -15,10 +15,10 @@
   <p class="muted">Students can permanently delete their account and linked app data here. Last updated: 15 October 2026.</p>
   <p>This request deletes the student profile and credential documents, linked test results, scan reports, mistake data, login sessions, profile photo stored in the profile, and batch membership records from the app database. It cannot recall exports already downloaded by an institute or provider backups before their normal expiry. See the <a href="/privacy.html">Privacy Policy</a>.</p>
   <p class="notice"><strong>Before continuing:</strong> Deletion is permanent. Enter the registered mobile number and account password to verify ownership. Do not send your password to an institute or support contact. If you no longer have access to the account, contact the institute admin using the support information they provided.</p>
-  <form id="delete-form">
-    <label for="mobile">Registered 10-digit mobile number</label><input id="mobile" name="mobile" type="tel" inputmode="numeric" autocomplete="tel" maxlength="10" required>
+  <form id="delete-form" autocomplete="off">
+    <label for="mobile">Registered 10-digit mobile number</label><input id="mobile" name="mobile" type="tel" inputmode="numeric" autocomplete="off" maxlength="10" required>
     <label for="confirm-mobile">Type the same mobile number again</label><input id="confirm-mobile" name="confirm-mobile" type="tel" inputmode="numeric" autocomplete="off" maxlength="10" required>
-    <label for="password">Account password</label><input id="password" name="password" type="password" autocomplete="current-password" required>
+    <label for="password">Account password</label><input id="password" name="password" type="password" autocomplete="new-password" required>
     <button id="submit" type="submit">Permanently delete account and data</button>
   </form>
   <p id="status" role="status" aria-live="polite"></p>
