@@ -218,8 +218,9 @@
       var one = !attempted;
       var badge = by.resume ? ["In Progress", "xf-b-amber"] : by.locked ? ["Locked", "xf-b-grey"] : attempted ? ["Completed", "xf-b-violet"] : ["Active", "xf-b-green"];
       card.className = "xf-tk";
-      card.innerHTML = '<div class="xf-tk-top"><span class="xf-tk-ic">' + svg(P.pad) + '</span><h3></h3><span class="xf-badge ' + badge[1] + '">' + badge[0] + '</span></div>' +
-        '<div class="xf-tk-s"><span>' + svg(P.help) + "<b>" + esc(q) + "</b> Qs</span><span>" + svg(P.cup) + "<b>" + esc(m) + "</b> Marks</span><span>" + svg(P.clock) + "<b>" + esc(mn) + "</b> Min</span></div>" +
+      card.innerHTML = '<div class="xf-tk-top"><span class="xf-tk-ic">' + svg(P.pad) + '</span><div class="xf-tk-id"><h3></h3>' +
+        '<div class="xf-tk-s"><span><b>' + esc(q) + "</b> Qs</span><span><b>" + esc(m) + "</b> Marks</span><span><b>" + esc(mn) + "</b> Min</span></div></div>" +
+        '<span class="xf-badge ' + badge[1] + '">' + badge[0] + '</span></div>' +
         '<div class="xf-tk-x"></div><div class="xf-tk-a' + (one ? " xf-one" : "") + '"></div>';
       $(".xf-tk-top h3", card).textContent = title;
       var x = $(".xf-tk-x", card); extra.forEach(function (n2) { x.appendChild(n2); }); if (!extra.length) x.remove();
