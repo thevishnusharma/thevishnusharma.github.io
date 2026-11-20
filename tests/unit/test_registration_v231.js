@@ -22,7 +22,9 @@ T('pehli baar publish: rolls ek poori permutation 1..N, har student ko alag', ()
   assert.ok(a.list.every(e => e.roll.length === 3));
 });
 T('shuffle: institute-wise cluster nahi (naam ke order se roll alag, institute roll-order me mix)', () => {
-  const d = P.addDraft([], people(150)).list, a = P.assignRolls(d, { rollDigits: 3 });
+  // fixed seed (42): crypto rng par ~3% baar 8+ ki run aa jaati thi (3 institutes, 150 students) -> CI flaky. Ab deterministic.
+  let seed = 42; const rng = () => { seed = (seed * 48271) % 2147483647; return (seed - 1) / 2147483646; };
+  const d = P.addDraft([], people(150)).list, a = P.assignRolls(d, { rollDigits: 3, rng });
   // naam-order me roll sequence 1..N jaisa nahi hona chahiye
   const inOrder = d.map(e => parseInt(a.list.find(x => x.mobile === e.mobile).roll, 10));
   const sorted = inOrder.slice().sort((x, y) => x - y);
