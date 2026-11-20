@@ -127,9 +127,21 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="inst-${{ steps.inst.outputs.slug }}-b${{ steps.ver.outputs.code }}"
+          # Download page par institute ka asli logo dikhane ke liye: chhota PNG release notes me (data URL)
+          printf 'Institute: %s\n' "${{ inputs.institute_id }}" > release-notes.txt
+          node -e "
+            const fs=require('fs');
+            (async()=>{try{
+              if(!fs.existsSync('institute-icon.img'))return;
+              const sharp=require('sharp');
+              const b=await sharp('institute-icon.img').resize(96,96,{fit:'cover'}).png({palette:true,compressionLevel:9}).toBuffer();
+              const u='data:image/png;base64,'+b.toString('base64');
+              if(u.length<60000)fs.appendFileSync('release-notes.txt','Logo: '+u+'\n');
+            }catch(e){console.warn('logo notes skip:',e.message)}})();
+          "
           gh release create "$TAG" "${{ steps.apk.outputs.file }}" \
             --title "${{ steps.inst.outputs.app_name }} (b${{ steps.ver.outputs.code }})" \
-            --notes "Institute: ${{ inputs.institute_id }}" --latest=false
+            --notes-file release-notes.txt --latest=false
 
       - name: Purane APK releases delete (sirf naya rakho)
         if: env.HAS_KEYSTORE == 'true'

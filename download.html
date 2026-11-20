@@ -63,6 +63,7 @@ h2{font-size:clamp(1.8rem,4.2vw,2.7rem);margin-bottom:12px}h2 em{color:var(--gol
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px}
 .inst{transition:transform .2s,border-color .2s}.inst:hover{transform:translateY(-3px);border-color:var(--gold)}
+.av.has-logo{background:none;padding:0;overflow:hidden}.av img{width:100%;height:100%;object-fit:cover;border-radius:15px;display:block}
 .av{width:48px;height:48px;border-radius:15px;background:linear-gradient(135deg,var(--gold2),var(--gold));color:#140e00;display:grid;place-items:center;font:700 1.35rem "Playfair Display",serif;margin-bottom:14px}
 .card h3{font-size:1.2rem;margin-bottom:3px;overflow-wrap:anywhere}.card .v{color:var(--mut);font-size:.8rem;margin-bottom:16px}.card .row{display:flex;gap:8px;flex-wrap:wrap}
 .msg{color:var(--mut);padding:10px 0}
@@ -433,7 +434,7 @@ body{font-size:17px}
     var s=q.value.trim().toLowerCase(),n=0;list.textContent="";
     items.forEach(function(it){
       if(s&&it.name.toLowerCase().indexOf(s)<0)return;n++;
-      var c=mk("div","card inst");var av=mk("div","av",(it.name.trim().charAt(0)||"?").toUpperCase());c.appendChild(av);c.appendChild(mk("h3","",it.name));c.appendChild(mk("div","v",it.ver));
+      var c=mk("div","card inst");var av=mk("div","av",it.logo?null:(it.name.trim().charAt(0)||"?").toUpperCase());if(it.logo){av.className="av has-logo";var li=document.createElement("img");li.alt="";li.src=it.logo;li.addEventListener("error",function(){av.className="av";av.textContent=(it.name.trim().charAt(0)||"?").toUpperCase()});av.appendChild(li)}c.appendChild(av);c.appendChild(mk("h3","",it.name));c.appendChild(mk("div","v",it.ver));
       var r=mk("div","row"),a=mk("a","btn gold sm","Download APK");a.href=it.apk;a.rel="noopener";a.addEventListener("click",function(ev){ev.preventDefault();startApk(it,a)});r.appendChild(a);
       c.appendChild(r);list.appendChild(c);
     });
@@ -450,7 +451,7 @@ body{font-size:17px}
       var a=(r.assets||[]).filter(function(x){return /\.apk$/i.test(x.name||"")})[0];if(!a)return;
       seen[m[1]]=1;
       var id=((/Institute:\s*(\S+)/.exec(r.body||""))||[])[1]||"";
-      items.push({name:String(r.name||m[1]).replace(/\s*\(b\d+\)\s*$/,"")||m[1],ver:"Version b"+m[2],apk:a.browser_download_url,id:/^[A-Za-z0-9_-]{1,100}$/.test(id)?id:""});
+      items.push({name:String(r.name||m[1]).replace(/\s*\(b\d+\)\s*$/,"")||m[1],ver:"Version b"+m[2],apk:a.browser_download_url,id:/^[A-Za-z0-9_-]{1,100}$/.test(id)?id:"",logo:((/Logo:\s*(data:image\/png;base64,[A-Za-z0-9+\/=]{20,})/.exec(r.body||""))||[])[1]||""});
     });
     items.sort(function(a,b){return a.name.localeCompare(b.name)});render();
   })
