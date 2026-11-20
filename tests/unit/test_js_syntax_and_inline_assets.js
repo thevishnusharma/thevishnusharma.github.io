@@ -5,7 +5,7 @@ const path = require('path');
 
 const root = path.join(__dirname, '..', '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const htmlWithoutComments = html.replace(/<!--[\s\S]*?-->/g, '');
+const htmlWithoutComments = html.replace(/<!--[\s\S]*?-->/g, '').replace(/<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script\s*>/gi, ''); // JSON-LD = inert data, not executable
 assert.strictEqual((htmlWithoutComments.match(/<script\b(?![^>]*\bsrc\s*=)[^>]*>[\s\S]*?<\/script\s*>/gi) || []).length, 0, 'index.html has no inline scripts');
 assert.strictEqual((htmlWithoutComments.match(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi) || []).length, 0, 'index.html has no inline style blocks');
 
