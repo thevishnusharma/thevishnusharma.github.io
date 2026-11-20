@@ -225,7 +225,6 @@
       var x = $(".xf-tk-x", card); extra.forEach(function (n2) { x.appendChild(n2); }); if (!extra.length) x.remove();
       var a = $(".xf-tk-a", card);
       order.forEach(function (b) { a.appendChild(b); });
-      if (order.length > 3) a.style.gridTemplateColumns = "repeat(2,1fr)";
     });
   }
   function hookCards() {
