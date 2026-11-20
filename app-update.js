@@ -3,7 +3,7 @@
    1) GitHub Actions jab naya signed APK banata hai to GitHub Release me daalta hai aur repo ki app-version.json me
       naya build number + download link likh deta hai.
    2) App khulte hi (aur wapas aane par) ye file app-version.json padhti hai (GitHub raw se — service worker cache se nahi).
-   3) Agar naya build mila to "Naya APK aaya hai" dialog aata hai -> Download -> Android installer -> Install. */
+   3) Agar naya build mila to "New APK available" dialog aata hai -> Download -> Android installer -> Install. */
 (function () {
   "use strict";
   var VERSION_URL = "https://raw.githubusercontent.com/thevishnusharma/thevishnusharma.github.io/main/app-version.json";
@@ -71,10 +71,10 @@
     var notes = state.notes ? '<div style="margin-top:10px;background:#f1f5f9;border-radius:12px;padding:10px 12px;font-size:.8rem;color:#334155;line-height:1.5;text-align:left;white-space:pre-line;max-height:120px;overflow:auto">' + esc(state.notes) + "</div>" : "";
     ov.innerHTML = '<div style="background:#fff;color:#0f172a;border-radius:22px;max-width:360px;width:100%;padding:22px 20px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.4)">' +
       '<div style="width:64px;height:64px;border-radius:20px;margin:0 auto 12px;background:linear-gradient(135deg,#fbbf24,#ea580c);display:flex;align-items:center;justify-content:center;color:#fff"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M6 11l6 6 6-6M4 21h16"/></svg></div>' +
-      '<div style="font-size:1.1rem;font-weight:800">Naya APK aaya hai</div>' +
+      '<div style="font-size:1.1rem;font-weight:800">New APK available</div>' +
       '<div style="font-size:.82rem;color:#64748b;margin-top:6px;line-height:1.5">' + (state.name ? "Version <b>" + esc(state.name) + "</b> taiyaar hai. " : "") + (state.force ? "Ye zaroori update hai — app chalane ke liye install karna hoga." : "Behtar app ke liye abhi update kar lein.") + "</div>" + notes +
       '<button id="sau-go" style="margin-top:16px;width:100%;border:0;border-radius:14px;padding:13px;font-weight:700;font-size:.95rem;color:#fff;cursor:pointer;background:linear-gradient(135deg,#f97316,#c2410c);box-shadow:0 6px 14px rgba(234,88,12,.35)">Download &amp; Update karein</button>' +
-      (state.force ? "" : '<button id="sau-later" style="margin-top:8px;width:100%;border:0;border-radius:14px;padding:11px;font-weight:700;font-size:.85rem;color:#475569;background:#f1f5f9;cursor:pointer">Baad mein</button>') +
+      (state.force ? "" : '<button id="sau-later" style="margin-top:8px;width:100%;border:0;border-radius:14px;padding:11px;font-weight:700;font-size:.85rem;color:#475569;background:#f1f5f9;cursor:pointer">Later</button>') +
       '<div style="font-size:.7rem;color:#94a3b8;margin-top:12px;line-height:1.5">Download hone ke baad file par tap karke <b>Install</b> dabayein. Pehli baar Android "is source se install" ki permission maang sakta hai — Allow kar dein. Aapka data aur login bana rahega.</div></div>';
     document.body.appendChild(ov);
     ov.querySelector("#sau-go").onclick = function () { openDownload(); };

@@ -61,7 +61,7 @@
   // hain jab unke apne engagement-heuristics poore ho jaayein — kabhi
   // turant, kabhi kuch second baad. Isi wajah se pehle turant fallback
   // ("address bar dekhein") dikh jaata tha, jabki thoda ruk kar asli
-  // native "⬇️ Install Karein" popup mil sakta tha. Ab in Chromium-type
+  // native "⬇️ Install" popup mil sakta tha. Ab in Chromium-type
   // browsers ke liye chand second ka wait diya jaata hai — waiting ke
   // dauraan neutral loading text dikhta hai, fallback sirf tab dikhta
   // hai jab sach mein native event nahi milta (ya iOS/Firefox jaise
@@ -90,7 +90,7 @@
     if (deferredInstallPrompt) {
       // Chromium browser: asli native install prompt available hai
       textEl.textContent = 'Ek tap mein apne home screen / desktop par app install karein — offline bhi chalegi, aur test dene mein easy hoga.';
-      actionBtn.textContent = '⬇️ Install Karein';
+      actionBtn.textContent = '⬇️ Install';
       actionBtn.disabled = false;
       actionBtn.onclick = function () {
         if (!deferredInstallPrompt) { modal.classList.add('hidden'); return; }
@@ -104,7 +104,7 @@
       // Chrome/Edge/etc — native prompt event abhi tak nahi mila, par mil
       // sakta hai. Neutral loading state dikhao aur thoda wait karo.
       textEl.textContent = 'App taiyaar ho raha hai — ek pal rukein… ⏳';
-      actionBtn.textContent = '⬇️ Install Karein';
+      actionBtn.textContent = '⬇️ Install';
       actionBtn.disabled = true;
       actionBtn.onclick = null;
       _installWaitTimer = setTimeout(function () {

@@ -112,7 +112,7 @@ import { getLegacyAuth, getLegacyStudentSession, setLegacyQuestionBank } from '.
     if (!count || count <= 0) return;
     ev.preventDefault(); ev.stopImmediatePropagation();
     var subject = document.getElementById("practice-subject-filter") && document.getElementById("practice-subject-filter").value || "all", label = button.textContent;
-    button.disabled = true; button.textContent = "⏳ Question bank load ho raha hai...";
+    button.disabled = true; button.textContent = "⏳ Loading question bank...";
     (subject === "all" ? loadAll() : loadSubject(subject)).then(function () {
       button.disabled = false; button.textContent = label;
       if (typeof button.onclick === "function") button.onclick.call(button, new Event("click"));

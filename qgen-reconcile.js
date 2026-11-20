@@ -62,7 +62,7 @@
         }
       }
       var onlyAdmin = gone.length; // v253: inhe hataya NAHI jata
-      console.warn('[Bank] milan: admin list me ' + pb.length + ', generator me ' + mine.size + ' tha. Jode: ' + added + ', sirf admin list me (backend me nahi): ' + onlyAdmin + ', class se chhupe: ' + hidden + ', check nahi hue: ' + unknown + (missing.length > list.length ? ', baaki ' + (missing.length - list.length) : ''));
+      console.warn('[Bank] milan: admin list me ' + pb.length + ', generator me ' + mine.size + ' tha. Jode: ' + added + ', sirf admin list me (backend me nahi): ' + onlyAdmin + ', class se chhupe: ' + hidden + ', check nahi hue: ' + unknown + (missing.length > list.length ? ', pending ' + (missing.length - list.length) : ''));
       W.__qgOnlyAdminIds = gone.slice();
       if (added) say('🔄 ' + added + ' question generator me jode' + (onlyAdmin ? ' · ' + onlyAdmin + ' question sirf Question Bank list me hain, backend me nahi (recover-bank.html kholo)' : ''));
       else if (onlyAdmin) say('⚠️ ' + onlyAdmin + ' question sirf Question Bank list me hain, backend me nahi — recover-bank.html kholkar backend me daalo');

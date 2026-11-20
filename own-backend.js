@@ -1,7 +1,7 @@
 /* own-backend.js — HYBRID MODE adapter (The Vishnu Sharma)
  *
  * Kya karta hai: firebase.firestore() ke upar ek patla parda (Proxy) lagata hai. Sirf wahi collections jo
- * SNAP_CONFIG.ownBackend.collections me likhi hain apne free backend par jati hain; baaki sab Firebase par
+ * SNAP_CONFIG.ownBackend.collections me likhi hain apne free backend par jati hain; pending sab Firebase par
  * jaisa ka taisa. Login Firebase Auth hi rehta hai (uska ID token backend ko bheja jata hai).
  *
  * KILL SWITCH: SNAP_CONFIG.ownBackend.enabled = false  (ya collections: [])  -> sab wapas pure Firebase par.

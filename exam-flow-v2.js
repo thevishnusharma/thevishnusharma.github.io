@@ -19,7 +19,10 @@
     redo: '<path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 4v7h-7"/>',
     book: '<path d="M4 5a2 2 0 012-2h6v17H6a2 2 0 00-2 2z"/><path d="M20 5a2 2 0 00-2-2h-6v17h6a2 2 0 012 2z"/>',
     chart: '<path d="M5 20V10M12 20V4M19 20v-7"/>', clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-    lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>', doc: '<path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4"/>'
+    lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>', doc: '<path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4"/>',
+    pad: '<rect x="4" y="4" width="13" height="17" rx="2.5"/><path d="M8 4V3h5v1"/><path d="M7.5 10l1.4 1.4 2.4-2.6M7.5 16h2M13 11h2"/><path d="M21 6.5l-6 6-.8 2.8 2.8-.8 6-6a1.6 1.6 0 00-2-2z"/>',
+    help: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 114 2c-.9.6-1.6 1-1.6 2.1M12 16.8v.1"/>',
+    cup: '<path d="M8 4h8v5a4 4 0 01-8 0z"/><path d="M8 6H5a3 3 0 003 4M16 6h3a3 3 0 01-3 4M12 13v4M9 20h6M10 17h4"/>'
   };
   function T() { try { return typeof tests !== "undefined" ? tests : (window.tests || {}); } catch (e) { return window.tests || {}; } }
   function sess() { try { return typeof getStudentSession === "function" ? getStudentSession() : null; } catch (e) { return null; } }
@@ -201,24 +204,26 @@
       var attempted = !!(by.solution || by.analysis);
       function mk(b, label, icon, cls) { b.className = "xf-ak " + (cls || ""); b.innerHTML = '<span class="xf-ic">' + svg(icon) + "</span>" + label; return b; }
       var order = [];
-      if (by.resume) { by.resume.className = "xf-go xf-amber"; by.resume.innerHTML = "⏳ Resume"; order.push(by.resume); }
+      if (by.resume) { by.resume.className = "xf-go xf-amber"; by.resume.innerHTML = "Resume"; order.push(by.resume); }
       if (attempted) {
         var rb = document.createElement("button"); rb.type = "button"; rb.setAttribute("data-action", "reattemptfull"); rb.setAttribute("data-test", id);
-        mk(rb, "Re-attempt", P.redo); rb.onclick = function () { try { startTestWithId(id); } catch (e) { console.warn(e); } };
+        rb.className = "xf-ak xf-re"; rb.textContent = "Re-attempt"; rb.onclick = function () { try { startTestWithId(id); } catch (e) { console.warn(e); } };
         order.push(rb);
-        if (by.solution) order.push(mk(by.solution, "Solution", P.book));
-        if (by.analysis) order.push(mk(by.analysis, "Analysis", P.chart, "xf-hi"));
-        if (by.omr) order.push(mk(by.omr, "OMR", P.doc));
+        if (by.solution) { by.solution.className = "xf-ak xf-so"; by.solution.innerHTML = svg(P.book) + "Solution"; order.push(by.solution); }
+        if (by.analysis) { by.analysis.className = "xf-ak xf-hi"; by.analysis.innerHTML = svg(P.chart) + "Analysis"; order.push(by.analysis); }
+        if (by.omr) { by.omr.className = "xf-ak xf-so"; by.omr.innerHTML = svg(P.doc) + "OMR"; order.push(by.omr); }
       }
-      if (by.start) { by.start.className = "xf-go"; by.start.innerHTML = "▶ Start test"; order.push(by.start); }
-      if (by.locked) { by.locked.className = "xf-go xf-amber"; by.locked.innerHTML = "🔒 Locked"; order.push(by.locked); }
-      var n = order.length, one = n === 1 || (!attempted);
+      if (by.start) { by.start.className = "xf-go"; by.start.innerHTML = "Start Test"; order.push(by.start); }
+      if (by.locked) { by.locked.className = "xf-go xf-amber"; by.locked.innerHTML = svg(P.lock) + "Locked"; order.push(by.locked); }
+      var one = !attempted;
+      var badge = by.resume ? ["In Progress", "xf-b-amber"] : by.locked ? ["Locked", "xf-b-grey"] : attempted ? ["Completed", "xf-b-violet"] : ["Active", "xf-b-green"];
       card.className = "xf-tk";
-      card.innerHTML = '<div class="xf-tk-h"><i class="xf-tgt"></i><div><h3></h3></div></div><div class="xf-tk-s"><div><b>' + esc(q) + "</b><small>Sawal</small></div><div><b>" + esc(m) + "</b><small>Marks</small></div><div><b>" + esc(mn) + "</b><small>Minute</small></div></div><div class=\"xf-tk-x\"></div><div class=\"xf-tk-a" + (one ? " xf-one" : "") + '"></div>';
-      $(".xf-tk-h h3", card).textContent = title;
+      card.innerHTML = '<div class="xf-tk-top"><span class="xf-tk-ic">' + svg(P.pad) + '</span><h3></h3><span class="xf-badge ' + badge[1] + '">' + badge[0] + '</span></div>' +
+        '<div class="xf-tk-s"><span>' + svg(P.help) + "<b>" + esc(q) + "</b> Qs</span><span>" + svg(P.cup) + "<b>" + esc(m) + "</b> Marks</span><span>" + svg(P.clock) + "<b>" + esc(mn) + "</b> Min</span></div>" +
+        '<div class="xf-tk-x"></div><div class="xf-tk-a' + (one ? " xf-one" : "") + '"></div>';
+      $(".xf-tk-top h3", card).textContent = title;
       var x = $(".xf-tk-x", card); extra.forEach(function (n2) { x.appendChild(n2); }); if (!extra.length) x.remove();
       var a = $(".xf-tk-a", card);
-      if (n === 2 && attempted) a.style.gridTemplateColumns = "repeat(2,1fr)";
       order.forEach(function (b) { a.appendChild(b); });
       if (order.length > 3) a.style.gridTemplateColumns = "repeat(2,1fr)";
     });
@@ -290,23 +295,23 @@
     var S = standing(rec);
     var sel = n > 1 ? '<label class="xf-sel"><select data-xa="sel" aria-label="Attempt">' + A.attempts.map(function (r, i) { return '<option value="' + i + '"' + (i === A.sel ? " selected" : "") + ">Attempt " + (i + 1) + "</option>"; }).join("") + "</select></label>" : '<span class="xf-one-pill">Attempt 1</span>';
     var date = typeof formatResultDate === "function" ? formatResultDate(rec.submittedIso) : "";
-    var rankTxt = S.ready && S.total > 1 ? " · " + S.total + " students mein rank <b>" + S.rank + "</b>" : "";
-    var msg = p >= 80 ? ["g", "Bahut badhiya!", "Is attempt mein aapka score bahut achha raha. Weak chapters dekh kar aur sudhaar kar sakte hain."]
-      : p >= 50 ? ["", "Achha attempt", "Neeche weak chapters dekhein aur Re-attempt karke score badhayein."]
-        : ["r", "Abhi aur mehnat chahiye", "Solution dekhein, weak chapters par kaam karein aur dobara attempt karein."];
+    var rankTxt = S.ready && S.total > 1 ? " · " + S.total + " students · rank <b>" + S.rank + "</b>" : "";
+    var msg = p >= 80 ? ["g", "Excellent work!", "You scored very well in this attempt. Review your weak chapters to improve further."]
+      : p >= 50 ? ["", "Good attempt", "Review your weak chapters below and re-attempt to improve your score."]
+        : ["r", "Needs more practice", "Go through the solutions, work on weak chapters and attempt again."];
     var h = '<div class="xf-bar"><button type="button" class="xf-ic-btn" data-xa="close" aria-label="Back">' + svg(P.back) + '</button><span class="xf-bt">Analysis</span><span class="xf-sp"></span>' + sel + "</div><div class=\"xf-ana\">";
     h += '<section class="xf-hx"><div class="xf-hl"><small>' + esc((rec.testTitle || (t && t.title) || "Test")) + (date ? " · " + esc(date) : "") + '</small><div class="xf-big">' + num(sc) + "<span>/" + num(max) + "</span></div><p>Attempt " + (A.sel + 1) + rankTxt + '</p></div><div class="xf-ring" style="--p:' + p.toFixed(0) + '"><div><b>' + Math.round(p) + "%</b></div></div></section>";
-    h += '<section class="xf-st"><div><b>' + st.att + "<em>/" + st.total + "</em></b><small>Attempted</small></div><div><b style=\"color:#0e8a43\">" + st.c + "</b><small>Sahi</small></div><div><b style=\"color:#d63a3f\">" + st.w + "</b><small>Galat</small></div><div><b>" + st.sk + "</b><small>Skipped</small></div><div><b>" + st.acc + "<em>%</em></b><small>Accuracy</small></div><div><b>" + (rec.durationSeconds != null ? mmss(rec.durationSeconds) : "—") + "</b><small>Time" + (t && t.minutes ? " / " + t.minutes + ":00" : "") + "</small></div></section>";
-    h += '<section class="xf-msg ' + msg[0] + '"><b>' + msg[1] + "</b><p>" + msg[2] + (S.pct != null ? " Aap " + S.pct + "% students se aage hain." : "") + "</p></section>";
+    h += '<section class="xf-st"><div><b>' + st.att + "<em>/" + st.total + "</em></b><small>Attempted</small></div><div><b style=\"color:#0e8a43\">" + st.c + "</b><small>Correct</small></div><div><b style=\"color:#d63a3f\">" + st.w + "</b><small>Wrong</small></div><div><b>" + st.sk + "</b><small>Skipped</small></div><div><b>" + st.acc + "<em>%</em></b><small>Accuracy</small></div><div><b>" + (rec.durationSeconds != null ? mmss(rec.durationSeconds) : "—") + "</b><small>Time" + (t && t.minutes ? " / " + t.minutes + ":00" : "") + "</small></div></section>";
+    h += '<section class="xf-msg ' + msg[0] + '"><b>' + msg[1] + "</b><p>" + msg[2] + (S.pct != null ? " You are ahead of " + S.pct + "% of students." : "") + "</p></section>";
     if (n > 1) {
-      h += '<section class="xf-sx"><h2>Attempts mein sudhaar</h2><div class="xf-tr">' + A.attempts.map(function (r, i) { var m2 = max || r.maxScore || 1; return '<div class="' + (i === A.sel ? "on" : "") + '"><em>' + num(r.score || 0) + '</em><i style="height:' + Math.max(3, Math.min(100, (r.score || 0) / m2 * 100)) + '%"></i><small>Attempt ' + (i + 1) + "</small></div>"; }).join("") + "</div></section>";
+      h += '<section class="xf-sx"><h2>Improvement across attempts</h2><div class="xf-tr">' + A.attempts.map(function (r, i) { var m2 = max || r.maxScore || 1; return '<div class="' + (i === A.sel ? "on" : "") + '"><em>' + num(r.score || 0) + '</em><i style="height:' + Math.max(3, Math.min(100, (r.score || 0) / m2 * 100)) + '%"></i><small>Attempt ' + (i + 1) + "</small></div>"; }).join("") + "</div></section>";
     }
     var g = {}; st.d.forEach(function (x) { var k = x.section || x.subject || "General"; var o = g[k] || (g[k] = { m: 0, max: 0, c: 0, w: 0, s: 0 }); o.m += Number(x.marksAwarded) || 0; o.max += Number(x.marksPerQuestion) || 0; x.status === "Correct" ? o.c++ : x.status === "Wrong" ? o.w++ : o.s++; });
     var gk = Object.keys(g);
     if (gk.length) {
       h += '<section class="xf-sx"><h2>' + (gk.length > 1 ? "Section ke hisaab se" : "Performance") + "</h2>" + gk.map(function (k) {
         var o = g[k], pc = o.max > 0 ? Math.max(0, Math.min(100, o.m / o.max * 100)) : 0;
-        return '<div class="xf-sr"><div class="xf-sn"><b>' + esc(k) + "</b><small>" + o.c + " sahi · " + o.w + " galat · " + o.s + ' skip</small></div><div class="xf-bar2"><i style="width:' + pc + '%"></i></div><div class="xf-sm"><b>' + num(o.m) + "</b>/" + num(o.max) + "</div></div>";
+        return '<div class="xf-sr"><div class="xf-sn"><b>' + esc(k) + "</b><small>" + o.c + " correct · " + o.w + " wrong · " + o.s + ' skip</small></div><div class="xf-bar2"><i style="width:' + pc + '%"></i></div><div class="xf-sm"><b>' + num(o.m) + "</b>/" + num(o.max) + "</div></div>";
       }).join("") + "</section>";
     }
     var ch = {}; st.d.forEach(function (x) { var k = x.chapter || x.subject; if (!k) return; var o = ch[k] || (ch[k] = { c: 0, t: 0 }); o.t++; if (x.status === "Correct") o.c++; });
@@ -324,7 +329,7 @@
     }
     if (S.ready && S.total > 1) {
       var mx = Math.max(max, S.top || 0, sc, 1), bar = function (v, cls) { return '<div class="xf-w"><em>' + num(Math.round(v * 10) / 10) + '</em><i class="' + cls + '" style="height:' + Math.max(2, v / mx * 100) + '%"></i></div>'; };
-      h += '<section class="xf-sx"><h2>Aap, average aur topper</h2><div class="xf-ch"><div>' + bar(sc, "xf-c0") + "<small>Aap</small></div><div>" + bar(S.avg || 0, "xf-c1") + "<small>Average</small></div><div>" + bar(S.top || 0, "xf-c2") + "<small>Topper</small></div></div></section>";
+      h += '<section class="xf-sx"><h2>You, average and topper</h2><div class="xf-ch"><div>' + bar(sc, "xf-c0") + "<small>Aap</small></div><div>" + bar(S.avg || 0, "xf-c1") + "<small>Average</small></div><div>" + bar(S.top || 0, "xf-c2") + "<small>Topper</small></div></div></section>";
     }
     h += '</div><div class="xf-fx"><div><button type="button" class="xf-btn o" data-xa="re">Re-attempt</button>' + (st.d.length ? '<button type="button" class="xf-btn" data-xa="sol">Solution</button>' : "") + "</div></div>";
     return h;

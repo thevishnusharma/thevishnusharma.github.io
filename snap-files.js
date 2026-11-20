@@ -52,7 +52,7 @@
     });
   }
 
-  /* phone ki bhari JPEG photo ko halka chhota (quality bachi rehti hai) — PDF / PNG / baaki files jyon ki tyon */
+  /* phone ki bhari JPEG photo ko halka chhota (quality bachi rehti hai) — PDF / PNG / pending files jyon ki tyon */
   function maybeShrink(file) {
     if (file.type !== "image/jpeg" || file.size < 3 * 1024 * 1024 || typeof createImageBitmap !== "function") return Promise.resolve(file);
     return createImageBitmap(file).then(function (bm) {

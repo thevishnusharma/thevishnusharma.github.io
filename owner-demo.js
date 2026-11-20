@@ -102,7 +102,7 @@
       /* 4) institute doc */
       .then(function () { return inst.delete(); })
       .then(function () { msg("✅ Demo hat gaya. (Agar demo ke liye admin jora tha to Owner Panel me uska admin record alag se hata dein.)"); })
-      .catch(function (e) { msg(""); alert("Reset nahi hua: " + (e && (e.message || e.code) || e)); });
+      .catch(function (e) { msg(""); alert("Reset failed: " + (e && (e.message || e.code) || e)); });
     function purge(col) {
       var n = 0;
       return (function loop() {

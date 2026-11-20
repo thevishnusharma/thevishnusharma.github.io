@@ -1,6 +1,6 @@
 /* v163 — Offline mode: saved data se app chalti hai, offline badlav internet aate hi apne aap online save hote hain.
    Firestore offline persistence (firebase-config.js) pehle se chalu hai: offline likhe data phone me queue hota hai aur internet aate hi upload hota hai.
-   Ye file sirf USER KO BATATI hai: offline pill, "data abhi online save nahi hua" notice, "N baaki" count, "sab online save ho gaya" confirmation.
+   Ye file sirf USER KO BATATI hai: offline pill, "data not synced yet" notice, "N pending" count, "everything is synced" confirmation.
    Online hone par koi write badla nahi jaata (wahi original promise lautta hai); sirf offline hone par save button atka na rahe isliye promise jaldi resolve hota hai. */
 (function () {
   "use strict";
@@ -34,9 +34,9 @@
   function paint() {
     if (!showUi()) { try { if (pill && pill.isConnected) pill.style.display = "none"; } catch (e) {} emit(); return; }
     var p = ensurePill(), n = pending, has = n > 0 || unknown, cnt = n > 0 ? n + " " : "";
-    if (offline()) { p.style.cssText += ";display:flex;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa"; p.innerHTML = ICON.off + "<span>Offline — saved data se chal raha hai" + (has ? " • " + cnt + "baaki" : "") + "</span>"; }
-    else if (has && hadOffline) { p.style.cssText += ";display:flex;background:#fffbeb;color:#b45309;border:1px solid #fde68a"; p.innerHTML = ICON.wait + "<span>" + cnt + "badlav online save ho rahe hain…</span>"; }
-    else if (flashOk) { p.style.cssText += ";display:flex;background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0"; p.innerHTML = ICON.ok + "<span>Sab online save ho gaya</span>"; }
+    if (offline()) { p.style.cssText += ";display:flex;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa"; p.innerHTML = ICON.off + "<span>Offline — using saved data" + (has ? " • " + cnt + "pending" : "") + "</span>"; }
+    else if (has && hadOffline) { p.style.cssText += ";display:flex;background:#fffbeb;color:#b45309;border:1px solid #fde68a"; p.innerHTML = ICON.wait + "<span>" + cnt + "changes syncing…</span>"; }
+    else if (flashOk) { p.style.cssText += ";display:flex;background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0"; p.innerHTML = ICON.ok + "<span>Everything is synced</span>"; }
     else p.style.display = "none";
     emit();
   }
@@ -52,13 +52,13 @@
   }
   function notice(slow) {
     var now = Date.now(); if (now - lastNotice < 9000) return; lastNotice = now;
-    toast("<b>Data abhi online save nahi hua</b><br>" + (slow ? "Network kamzor hai — data aapke phone me safe hai." : "Aapka data phone me safe hai.") + " Internet aate hi apne aap online upload ho jaayega.");
+    toast("<b>Data not synced yet</b><br>" + (slow ? "The network is weak — your data is safe on your phone." : "Your data is safe on your phone.") + " It will upload automatically once you are back online.");
   }
 
   /* ---------- Write tracking ---------- */
   function finishedOk() {
     if (!hadOffline) return; hadOffline = false; flashOk = true; paint();
-    toast("<b>Sab online save ho gaya</b><br>Offline kiye badlav safalta se upload ho gaye.", true, 5000);
+    toast("<b>Everything is synced</b><br>Your offline changes were uploaded successfully.", true, 5000);
     clearTimeout(flashT); flashT = setTimeout(function () { flashOk = false; paint(); }, 4500);
   }
   function settle(failed) { pending = Math.max(0, pending - 1); paint(); if (pending === 0 && !unknown && !offline()) { if (failed) { hadOffline = false; paint(); } else finishedOk(); } if (pending === 0) fireSynced(); }
@@ -71,7 +71,7 @@
     p.then(function () { clearTimeout(slow); settle(); }, function (e) {
       clearTimeout(slow); var wasOff = hadOffline; settle(true);
       try { window.SnapAlert && window.SnapAlert.report("save", "Write reject: " + String((e && (e.code || e.message)) || "error"), {}, "error"); } catch (x) {}
-      if (wasOff) toast("<b>Ek offline badlav server ne accept nahi kiya</b><br>" + String((e && (e.code || e.message)) || "error").slice(0, 80));
+      if (wasOff) toast("<b>The server did not accept one offline change</b><br>" + String((e && (e.code || e.message)) || "error").slice(0, 80));
     });
   }
   function guard(p) { track(p); return offline() ? Promise.resolve() : p; }
@@ -123,19 +123,19 @@
 
   S.syncNow = function () {
     var d = db();
-    if (offline()) { toast("<b>Internet nahi hai</b><br>Internet connect hote hi data apne aap sync ho jaayega."); return Promise.resolve(false); }
-    if (!d || typeof d.waitForPendingWrites !== "function") { toast("Sync abhi available nahi hai", true); return Promise.resolve(false); }
-    toast("Sync check ho raha hai…", true, 2500);
+    if (offline()) { toast("<b>No internet connection</b><br>Your data will sync automatically once you are online."); return Promise.resolve(false); }
+    if (!d || typeof d.waitForPendingWrites !== "function") { toast("Sync is not available right now", true); return Promise.resolve(false); }
+    toast("Checking sync…", true, 2500);
     try { d.enableNetwork && d.enableNetwork().catch(function () {}); } catch (e) {}
     return Promise.race([d.waitForPendingWrites().then(function () { return true; }), new Promise(function (r) { setTimeout(function () { r(false); }, 9000); })]).then(function (ok) {
-      if (ok) { toast("<b>Sab online save hai</b><br>Koi badlav baaki nahi.", true, 4000); unknown = false; pending = Math.max(0, pending); paint(); fireSynced(); }
-      else toast("Abhi kuch badlav baaki hain — network aate hi apne aap online ho jaayenge.");
+      if (ok) { toast("<b>Everything is synced</b><br>No pending changes.", true, 4000); unknown = false; pending = Math.max(0, pending); paint(); fireSynced(); }
+      else toast("Some changes are pending — they will sync automatically when the network returns.");
       return ok;
     });
   };
 
   /* ---------- Events ---------- */
-  window.addEventListener("offline", function () { paint(); toast("<b>Internet chala gaya</b><br>App saved data se chalti rahegi. Aap jo badlaenge wo phone me save hoga aur internet aate hi online ho jaayega."); });
+  window.addEventListener("offline", function () { paint(); toast("<b>You are offline</b><br>The app will keep working from saved data. Changes you make are stored on your phone and synced when you are back online."); });
   window.addEventListener("online", function () { paint(); lastProbe = 0; setTimeout(probe, 800); setTimeout(function () { lastProbe = 0; probe(); }, 4000); });
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") { paint(); probe(); } });
 

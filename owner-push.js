@@ -28,7 +28,7 @@
       if (want === have) return;
       if (want) {
         var p = await native("checkPermissions"); if (p.receive !== "granted") p = await native("requestPermissions");
-        if (p.receive !== "granted") { if (lastErr !== "perm") { lastErr = "perm"; toast("⚠️ Notification permission nahi mili — phone Settings me Allow karein"); } return; }
+        if (p.receive !== "granted") { if (lastErr !== "perm") { lastErr = "perm"; toast("⚠️ Notification permission denied — allow it in phone Settings"); } return; }
         await native("subscribeToTopic", { topic: TOPIC }); localStorage.setItem(SUB, "1"); lastErr = ""; toast("🔔 Owner alerts chalu ho gaye");
       } else { try { await native("unsubscribeFromTopic", { topic: TOPIC }); } catch (e) {} localStorage.removeItem(SUB); }
     } catch (e) { var m = String((e && (e.message || e.errorMessage)) || e); if (lastErr !== m) { lastErr = m; toast("❌ Push setup error: " + m.slice(0, 120)); } }

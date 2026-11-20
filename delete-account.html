@@ -31,7 +31,7 @@ document.getElementById("delete-form").addEventListener("submit", async function
   var typed = document.getElementById("confirm-mobile").value.replace(/\D/g, "").slice(-10);
   var password = document.getElementById("password").value;
   var status = document.getElementById("status"), button = document.getElementById("submit");
-  if (!/^\d{10}$/.test(mobile) || typed !== mobile || !password) { status.textContent = "Mobile number aur password dobara check karein."; return; }
+  if (!/^\d{10}$/.test(mobile) || typed !== mobile || !password) { status.textContent = "Please re-check your mobile number and password."; return; }
   if (!window.confirm("Account aur linked data permanently delete hoga. Ye undo nahi ho sakta. Kya aap continue karna chahte hain?")) return;
   button.disabled = true; button.textContent = "Deletion request process ho rahi hai…"; status.textContent = "Ownership verify ho rahi hai. Is page ko band na karein.";
   try {

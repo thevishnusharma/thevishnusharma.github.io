@@ -146,7 +146,7 @@
     var extra = Math.min(mathN, lines) * MATH_EXTRA;
     return { lines: lines, math: mathN > 0, h: lines * LH + extra };
   }
-  function sp(math, after) {               // math wali line: AT_LEAST (clip na ho), baaki EXACT
+  function sp(math, after) {               // math wali line: AT_LEAST (clip na ho), pending EXACT
     return { line: LH, lineRule: math ? docx.LineRuleType.AT_LEAST : docx.LineRuleType.EXACT, before: 0, after: after || 0 };
   }
 

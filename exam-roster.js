@@ -269,7 +269,7 @@
       if (row) row.style.display = "none"; if (!on()) return;
       api.regOptions().then(function (arr) {
         if (!arr.length) return; if (row) row.style.display = "";
-        arr.forEach(function (r) { var o = h("option", { value: r.id, text: r.name + " • " + r.count + " students" + (r.published ? "" : " (publish baaki)") }); if (!r.published) o.disabled = true; sel.appendChild(o); });
+        arr.forEach(function (r) { var o = h("option", { value: r.id, text: r.name + " • " + r.count + " students" + (r.published ? "" : " (publish pending)") }); if (!r.published) o.disabled = true; sel.appendChild(o); });
       });
     },
     /* Registration ke published students + rolls ko exam ke roster me copy karo. Promise<bool> */
@@ -344,7 +344,7 @@
       })(R.list.slice(i, i + 400));
       return chain.then(function () { return X().patch(P.id, { admitPublished: true, admitPublishedAt: Date.now(), instituteName: inst || ex.instituteName || "" }); });
     }).then(function () { note("🚀 " + R.list.length + " students ka Admit Card publish ho gaya. Student app → Admit Card me dikhega."); renderAll(); })
-      .catch(function (e) { note("❌ Publish nahi hua: " + (e.code || e.message || e)); });
+      .catch(function (e) { note("❌ Could not publish: " + (e.code || e.message || e)); });
   }
   function printAll() {
     var ex = ctxEx(), R = C[P.id]; if (!R || !R.list.length) { note("⚠️ Roster khaali hai."); return; }
@@ -487,7 +487,7 @@
   function fillLinkSel() {
     var sel = document.getElementById("ros-link-sel"); if (!sel) return; sel.textContent = "";
     sel.appendChild(h("option", { value: "", text: "— Registration chunein —" }));
-    P.regs.forEach(function (r) { var o = h("option", { value: r.id, text: r.name + " • " + r.count + " students" + (r.published ? " • roll digits " + r.rollDigits : " (publish baaki)") }); if (!r.published) o.disabled = true; sel.appendChild(o); });
+    P.regs.forEach(function (r) { var o = h("option", { value: r.id, text: r.name + " • " + r.count + " students" + (r.published ? " • roll digits " + r.rollDigits : " (publish pending)") }); if (!r.published) o.disabled = true; sel.appendChild(o); });
   }
   function linkFromPanel(forceId) {
     var ex = ctxEx(), sel = document.getElementById("ros-link-sel"), rid = typeof forceId === "string" ? forceId : (sel && sel.value), R = C[P.id];
@@ -521,7 +521,7 @@
       ], true, "ros-sec-link"),
       sec("👥 1. Students chunein (Roll No + Set auto)", [
         h("div", { class: "ros-ctl" }, [scope, search]),
-        h("label", { class: "ros-chk" }, [prof, h("span", { text: "Student profile ka Roll Number use karein (jahan numeric aur unique ho), baaki auto" })]),
+        h("label", { class: "ros-chk" }, [prof, h("span", { text: "Student profile ka Roll Number use karein (jahan numeric aur unique ho), pending auto" })]),
         h("div", { id: "ros-picker", class: "ros-picker" }),
         h("div", { class: "ros-btnrow" }, [
           h("button", { type: "button", class: "btn-secondary", text: "Sab chunein", onclick: function () { document.querySelectorAll("#ros-picker input:not(:disabled)").forEach(function (c) { if (!c.checked) c.click(); }); } }),

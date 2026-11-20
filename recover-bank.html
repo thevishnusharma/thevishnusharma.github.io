@@ -110,7 +110,7 @@ $('restore').onclick=async function(){
   this.disabled=true; var ok=0,bad=0;
   for(var i=0;i<ids.length;i+=5){ await Promise.all(ids.slice(i,i+5).map(function(id){
     return api('POST','/api/collections/'+COLL+'/documents',{docId:id,data:clean(byId[id].data),merge:true}).then(function(){ok++},function(e){bad++;log('❌ '+id+': '+e.message)})})); if(i%50===0)log('… '+ok+' ho gaye')}
-  log('✅ Poora: '+ok+' jude, '+bad+' fail. Ab app kholo — 2 baar refresh karo; Question Bank me aa jaayenge.');
+  log('✅ Complete: '+ok+' jude, '+bad+' fail. Ab app kholo — 2 baar refresh karo; Question Bank me aa jaayenge.');
   this.disabled=false};
 function ready(){var u=user(); if(u&&!u.isAnonymous&&u.email){$('who').textContent='✅ Login: '+u.email+' · Backend: '+BACK;$('loginBox').style.display='none';$('scan').disabled=false;$('fbscan').disabled=false;if(!window.__scanned){window.__scanned=1;$('scan').click()}return true}
   $('who').textContent='❌ Admin login nahi hai.';$('loginBox').style.display='block';return false}

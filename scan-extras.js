@@ -132,7 +132,7 @@
   function paintOffline() {
     ensureToolbar(); var c = el("snapx-off"); if (!c) return;
     var off = root.navigator && navigator.onLine === false, p = root.OfflineSync && root.OfflineSync.state ? Number(root.OfflineSync.state.pending) || 0 : 0;
-    if (off) { c.hidden = false; c.style.cssText += ";background:#fff7ed;color:#c2410c;border:1px solid #fed7aa"; c.textContent = "📴 Offline — scan chalta rahega, result phone mein save hoga" + (p ? " (" + p + " upload baaki)" : "") + ". Net aate hi apne aap upload hoga."; hadPending = true; }
+    if (off) { c.hidden = false; c.style.cssText += ";background:#fff7ed;color:#c2410c;border:1px solid #fed7aa"; c.textContent = "📴 Offline — scan chalta rahega, result phone mein save hoga" + (p ? " (" + p + " upload pending)" : "") + ". Net aate hi apne aap upload hoga."; hadPending = true; }
     else if (p > 0) { c.hidden = false; c.style.cssText += ";background:#fffbeb;color:#b45309;border:1px solid #fde68a"; c.textContent = "⏳ " + p + " result upload ho rahe hain..."; hadPending = true; }
     else if (hadPending) { hadPending = false; c.hidden = false; c.style.cssText += ";background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0"; c.textContent = "✅ Sab result upload ho gaye."; setTimeout(function () { if (!hadPending) c.hidden = true; }, 4000); }
     else c.hidden = true;

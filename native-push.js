@@ -39,15 +39,15 @@
   }
   function send(notifId, payload) {
     try {
-      if (notifId && navigator.onLine === false) { pqAdd(String(notifId)); toast("📴 Offline — push internet aate hi apne aap chala jaayega"); return Promise.resolve(false); }
+      if (notifId && navigator.onLine === false) { pqAdd(String(notifId)); toast("📴 Offline — the push will be sent automatically when you are online"); return Promise.resolve(false); }
       var a = typeof getAuth === "function" ? getAuth() : null, u = a && a.currentUser;
       var inst = typeof getCurrentAdminInstituteId === "function" ? getCurrentAdminInstituteId() : null;
-      if (!u || !inst || !notifId || /YOUR-SUBDOMAIN/.test(PUSH_WORKER_URL)) { toast("⚠️ Push nahi gaya: " + (!u ? "admin email login nahi hai" : !inst ? "institute id nahi mila" : "Worker URL set nahi")); return Promise.resolve(false); }
+      if (!u || !inst || !notifId || /YOUR-SUBDOMAIN/.test(PUSH_WORKER_URL)) { toast("⚠️ Push not sent: " + (!u ? "not logged in with admin email" : !inst ? "institute ID not found" : "Worker URL not set")); return Promise.resolve(false); }
       return u.getIdToken().then(function (t) {
         return fetch(PUSH_WORKER_URL, { method: "POST", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(Object.assign({ idToken: t, instituteId: inst, notifId: String(notifId) }, payload && payload.title ? { title: String(payload.title), body: String(payload.body || ""), type: String(payload.type || "admin"), batchId: payload.batchId ? String(payload.batchId) : undefined } : {})) });
       }).then(function (r) { return r.json(); }).then(function (j) {
-        if (!j.ok) { console.warn("[SnapPush] push fail:", j.error); toast("❌ Push fail: " + j.error); } else toast("📲 Push bhej diya gaya"); return !!j.ok;
-      }).catch(function (e) { console.warn("[SnapPush] push error", e); if (navigator.onLine === false) { pqAdd(String(notifId)); return false; } toast("❌ Worker tak nahi pahunch paaye: " + ((e && e.message) || e)); return false; });
+        if (!j.ok) { console.warn("[SnapPush] push fail:", j.error); toast("❌ Push fail: " + j.error); } else toast("📲 Push sent"); return !!j.ok;
+      }).catch(function (e) { console.warn("[SnapPush] push error", e); if (navigator.onLine === false) { pqAdd(String(notifId)); return false; } toast("❌ Could not reach the worker: " + ((e && e.message) || e)); return false; });
     } catch (e) { return Promise.resolve(false); }
   }
   window.SnapPush = { send: send, sync: sync };
@@ -63,7 +63,7 @@
     try {
       var s = typeof getStudentSession === "function" ? getStudentSession() : null;
       if (s && window.SnapAICall && typeof window.SnapAICall.syncPreference === "function") await window.SnapAICall.syncPreference();
-      if (s && !s.instituteId && !noInst) { noInst = true; toast("⚠️ Push: aapke account me institute ID nahi mila"); }
+      if (s && !s.instituteId && !noInst) { noInst = true; toast("⚠️ Push: institute ID not found for your account"); }
       var admin = false;
       try { var a = typeof getAuth === "function" ? getAuth() : null; admin = !!(a && a.currentUser && a.currentUser.email && typeof getCurrentAdminInstituteId === "function" && getCurrentAdminInstituteId()); } catch (e) {}
       var wants = [];
@@ -86,10 +86,10 @@
       if (add.length) {
         var p = await native("checkPermissions");
         if (p.receive !== "granted") { p = await native("requestPermissions"); }
-        if (p.receive !== "granted") { localStorage.setItem(SUB_KEY, JSON.stringify(have)); if (lastErr !== "perm") { lastErr = "perm"; toast("⚠️ Notification permission nahi mili — phone Settings me Allow karein"); } return; }
+        if (p.receive !== "granted") { localStorage.setItem(SUB_KEY, JSON.stringify(have)); if (lastErr !== "perm") { lastErr = "perm"; toast("⚠️ Notification permission denied — allow it in phone Settings"); } return; }
         var first = !have.length;
         for (var j = 0; j < add.length; j++) { await native("subscribeToTopic", { topic: add[j] }); have.push(add[j]); }
-        lastErr = ""; if (first) toast("🔔 Push chalu ho gaya");
+        lastErr = ""; if (first) toast("🔔 Push notifications enabled");
       }
       localStorage.setItem(SUB_KEY, JSON.stringify(have));
     } catch (e) { var m = String((e && (e.message || e.errorMessage)) || e); console.warn("[SnapPush] sync", m); if (lastErr !== m) { lastErr = m; toast("❌ Push setup error: " + m.slice(0, 120)); } }
@@ -97,7 +97,7 @@
   }
   /* Heads-up (pop-up) notification channel — notification ab sirf tray me chupke nahi, screen par bhi dikhti hai.
      Purane app me channel na ho to Android khud default channel par bhej deta hai (kuch toot-ta nahi). */
-  setTimeout(function () { native("createChannel", { id: "snap_updates", name: "Tests & Updates", description: "Naya test, result aur app update", importance: 4, visibility: 1, vibration: true, lights: true }).catch(function () {}); }, 1500);
+  setTimeout(function () { native("createChannel", { id: "snap_updates", name: "Tests & Updates", description: "New tests, results and app updates", importance: 4, visibility: 1, vibration: true, lights: true }).catch(function () {}); }, 1500);
   setTimeout(function () { native("createChannel", { id: "snap_ai_calls", name: "AI Voice Calls", description: "App ke andar call-jaisa audio sandesh", importance: 4, visibility: 1, vibration: true, lights: true }).catch(function () {}); }, 1800);
 
   /* ---------- App KHULA ho tab bhi notification dikhana (Android foreground me system notification nahi dikhata) ---------- */
@@ -138,9 +138,9 @@
     var n = (ev && ev.notification) || {}, d = n.data || {}, key = d.notifId || ((n.title || "") + "|" + (n.body || ""));
     var now = Date.now(); if (seenMsg[key] && now - seenMsg[key] < 20000) return; seenMsg[key] = now;
     if (d.type === "ai_call") {
-      if (examBusy()) { banner(n.title || "AI Call", n.body || "Aapke liye ek audio message aaya hai.", d); return; }
+      if (examBusy()) { banner(n.title || "AI Call", n.body || "You have a new audio message.", d); return; }
       if (window.SnapAICall && window.SnapAICall.openIncoming) window.SnapAICall.openIncoming(d);
-      else banner(n.title || "AI Call", n.body || "Aapke liye ek audio message aaya hai.", d);
+      else banner(n.title || "AI Call", n.body || "You have a new audio message.", d);
       return;
     }
     if (d.type === "app_update") { if (d.kind === "apk") { window.SnapAppUpdate && SnapAppUpdate.check({}); } else if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) navigator.serviceWorker.getRegistration().then(function (r) { r && r.update(); }); }

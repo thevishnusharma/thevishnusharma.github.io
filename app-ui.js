@@ -95,7 +95,7 @@
       var p = pct(), tl = [
         T("🧾", "#e8e7ff", "Mera Result", "View your result", "my-result-detail-card"), T("📈", "#d9f7f3", "My Progress", "Track your growth", "my-progress-card"),
         T("❌", "#ffe4e4", "My Mistakes", "Learn from mistakes", "my-mistakes-card"), T("🏆", "#fff0cc", "My Rank", "See your position", "student-results-card")];
-      return '<div class="ph"><button data-a="menu">' + svg("menu") + '</button><b>Analysis</b></div><div class="sn-perf"><div><b>Overall Performance</b><p>' + (p === null ? "Test dene ke baad yahan aapka score dikhega." : "Keep it up! Your performance is improving.") + '</p></div><div class="sn-ring" style="--p:' + (p || 0) * 3.6 + 'deg"><span>' + (p === null ? "–" : p + "%") + '</span></div></div><div class="sn-tiles">' +
+      return '<div class="ph"><button data-a="menu">' + svg("menu") + '</button><b>Analysis</b></div><div class="sn-perf"><div><b>Overall Performance</b><p>' + (p === null ? "Your score will appear here after you take a test." : "Keep it up! Your performance is improving.") + '</p></div><div class="sn-ring" style="--p:' + (p || 0) * 3.6 + 'deg"><span>' + (p === null ? "–" : p + "%") + '</span></div></div><div class="sn-tiles">' +
         tl.map(function (x) { return '<button class="sn-tile" data-id="' + x.act + '"><div class="i" style="background:' + x.bg + '">' + E(x.ic) + "</div><b>" + x.t + "</b><small>" + x.s + "</small></button>"; }).join("") + "</div>" +
         '<button class="sn-row sn-gold" data-id="my-result-detail-card"><div class="i" style="background:#fff">' + E("🏆") + '</div><div>Better Analysis = Better Learning</div></button>';
     },
@@ -108,19 +108,19 @@
       try { localStorage.setItem(SEEN, String(mx)); } catch (e) {} nDot();
       return '<div class="ph"><button type="button" data-a="back">' + svg("back") + '</button><b>Notifications</b>' + (a.length ? '<button type="button" data-a="clear" style="color:#ef4444">' + svg("trash") + "</button>" : "") + "</div>" +
         (a.length ? a.map(function (n) { return '<button type="button" class="sn-row" data-id="student-form-fields-anchor"><div class="i" style="background:#fff0cc">' + E("🏆") + "</div><div>" + esc(n.t) + "<small>" + esc(n.b) + " • " + ago(n.ts) + "</small></div></button>"; }).join("") :
-          '<div class="sn-faq" style="text-align:center"><b>Abhi koi notification nahi hai</b><p>Naya test ya admin ka message yahan dikhega.</p></div>');
+          '<div class="sn-faq" style="text-align:center"><b>No notifications yet</b><p>New tests and admin messages will appear here.</p></div>');
     },
     help: function () {
-      var c = [["📞", "#dcfce7", "Call karein", SUPPORT_PHONE, "tel:" + SUPPORT_PHONE], ["💬", "#dcfce7", "WhatsApp karein", "Chat par turant madad", "https://wa.me/91" + SUPPORT_PHONE + "?text=" + encodeURIComponent("Namaste, mujhe The Vishnu Sharma app mein madad chahiye.")], ["✉️", "#dbeafe", "Email karein", SUPPORT_EMAIL, "mailto:" + SUPPORT_EMAIL + "?subject=" + encodeURIComponent("The Vishnu Sharma Support")]];
-      var faq = [["Test start nahi ho raha?", "Internet check karein, phir Settings → \"Cache saaf karke refresh\" dabayein."], ["Naya test list mein nahi dikh raha?", "Tests tab kholkar refresh karein ya app dobara kholein."], ["Password bhool gaye?", "Login screen par \"Forgot Password\" use karein, ya Admin se sampark karein."]];
-      return '<div class="ph"><button type="button" data-a="back">' + svg("back") + '</button><b>Help & Support</b></div><div class="sn-perf"><div><b>Koi problem hai?</b><p>Neeche diye gaye number ya email par seedha contact karein.</p></div>' + svg("headset", 48, "#fff") + '</div>' +
+      var c = [["📞", "#dcfce7", "Call", SUPPORT_PHONE, "tel:" + SUPPORT_PHONE], ["💬", "#dcfce7", "WhatsApp", "Instant help on chat", "https://wa.me/91" + SUPPORT_PHONE + "?text=" + encodeURIComponent("Hello, I need help with The Vishnu Sharma app.")], ["✉️", "#dbeafe", "Email", SUPPORT_EMAIL, "mailto:" + SUPPORT_EMAIL + "?subject=" + encodeURIComponent("The Vishnu Sharma Support")]];
+      var faq = [["Test not starting?", "Check your internet, then go to Settings → \"Clear cache and refresh\" dabayein."], ["New test not showing in the list?", "Open the Tests tab and refresh, or reopen the app."], ["Forgot password?", "Login screen par \"Forgot Password\" use karein, ya Admin se sampark karein."]];
+      return '<div class="ph"><button type="button" data-a="back">' + svg("back") + '</button><b>Help & Support</b></div><div class="sn-perf"><div><b>Having a problem?</b><p>Contact us directly using the number or email below.</p></div>' + svg("headset", 48, "#fff") + '</div>' +
         c.map(function (x) { return '<a class="sn-row" href="' + x[4] + '"><div class="i" style="background:' + x[1] + '">' + E(x[0]) + "</div><div>" + x[2] + "<small>" + x[3] + "</small></div></a>"; }).join("") +
-        '<div class="sn-h">Aksar poochhe jaane wale sawaal</div>' + faq.map(function (x) { return '<div class="sn-faq"><b>' + x[0] + "</b><p>" + x[1] + "</p></div>"; }).join("");
+        '<div class="sn-h">Frequently asked questions</div>' + faq.map(function (x) { return '<div class="sn-faq"><b>' + x[0] + "</b><p>" + x[1] + "</p></div>"; }).join("");
     },
     about: function () {
       var SB = window.SnapBrand, B = SB && SB.ident ? SB.ident({ name: "The Vishnu Sharma", sub: "Smart Practice • Better Result" }) : { name: "The Vishnu Sharma", sub: "Smart Practice • Better Result" };
       return '<div class="ph"><button type="button" data-a="back">' + svg("back") + '</button><b>About App</b></div><div class="sn-about">' + (SB && SB.logoHtml ? SB.logoHtml(72) : '<img src="icon-512-maskable.png" alt="">') + '<b>' + esc(B.name) + '</b><small>' + esc(B.sub) + '</small><span>Version ' + APP_VER + '</span></div>' +
-        '<div class="sn-faq"><b>Ye app kya karta hai?</b><p>Online tests, practice mode, result &amp; rank, galat sawaalon ki revision aur 3D Solids Lab — sab ek jagah.</p></div>' +
+        '<div class="sn-faq"><b>What does this app do?</b><p>Online tests, practice mode, results &amp; rank, revision of wrong answers and a 3D Solids Lab — all in one place.</p></div>' +
         '<a class="sn-row" href="mailto:' + SUPPORT_EMAIL + '"><div class="i" style="background:#dbeafe">' + E("🎧") + "</div><div>Help & Support<small>" + SUPPORT_PHONE + " • " + SUPPORT_EMAIL + "</small></div></a>";
     }
   };
@@ -160,12 +160,12 @@
     var d = document.createElement("div"); d.id = "sn-set";
     d.innerHTML =
       '<div class="sn-h">🎨 Appearance</div>' +
-      '<div class="sn-srow"><div><b>Text size</b><small>Padhne mein aasani ke liye</small></div><div class="sn-seg" id="sn-ts">' +
+      '<div class="sn-srow"><div><b>Text size</b><small>For easier reading</small></div><div class="sn-seg" id="sn-ts">' +
       [["90", "Chhota"], ["100", "Normal"], ["112", "Bada"]].map(function (x) { return '<button type="button" data-v="' + x[0] + '"' + (x[0] === ts ? ' class="on"' : "") + ">" + x[1] + "</button>"; }).join("") + "</div></div>" +
-      (wakeOK ? '<div class="sn-h">📝 Exam</div><div class="sn-srow"><div><b>Exam ke dauran screen on rakhein</b><small>Test dete waqt screen apne aap band nahi hogi</small></div><label class="sn-sw"><input type="checkbox" id="sn-wake"' + (wake ? " checked" : "") + "><i></i></label></div>" : "") +
+      (wakeOK ? '<div class="sn-h">📝 Exam</div><div class="sn-srow"><div><b>Keep screen on during exams</b><small>The screen will not turn off automatically during a test</small></div><label class="sn-sw"><input type="checkbox" id="sn-wake"' + (wake ? " checked" : "") + "><i></i></label></div>" : "") +
       '<div class="sn-h">📱 App & Data</div>' +
-      row("📈", "#d9f7f3", "Update check karein", "Latest version ke liye", "update") +
-      row("⚙️", "#e5e7eb", "Cache saaf karke refresh", "Dikkat aaye to try karein (login bana rahega)", "cache") +
+      row("📈", "#d9f7f3", "Check for updates", "Get the latest version", "update") +
+      row("⚙️", "#e5e7eb", "Clear cache and refresh", "Try this if you face issues (you will stay logged in)", "cache") +
       '<div class="sn-h">🎧 Help & About</div>' +
       row("🎧", "#dbeafe", "Help & Support", "Call / WhatsApp / Email", "help") +
       row("ℹ️", "#dbeafe", "About App", "Version " + APP_VER, "about");
@@ -184,23 +184,23 @@
       if (a === "help" || a === "about") { window.snShowPage(a, "settings"); }
       else if (a === "update") {
         var webCheck = function () {
-          if (!navigator.serviceWorker) return toast("Is device par update check available nahi hai.");
+          if (!navigator.serviceWorker) return toast("Update check is not available on this device.");
           navigator.serviceWorker.getRegistration().then(function (r) {
-            if (!r) return toast("✅ Aap latest version par hain");
+            if (!r) return toast("✅ You are on the latest version");
             return r.update().then(function () {
-              if (r.installing || r.waiting) { toast("⬆️ Naya version mil gaya — reload ho raha hai"); setTimeout(function () { location.reload(); }, 1200); }
-              else toast("✅ Aap latest version par hain");
+              if (r.installing || r.waiting) { toast("⬆️ New version found — reloading"); setTimeout(function () { location.reload(); }, 1200); }
+              else toast("✅ You are on the latest version");
             });
-          }).catch(function () { toast("Update check nahi ho paya — internet check karein."); });
+          }).catch(function () { toast("Could not check for updates — check your internet."); });
         };
-        toast("⏳ Update check ho raha hai...");
+        toast("⏳ Checking for updates...");
         /* pehle naya APK check (sirf Android app me), phir website update */
-        if (window.SnapAppUpdate && SnapAppUpdate.check) SnapAppUpdate.check({ manual: true }).then(function (st) { if (st && st.available) toast("📲 Naya APK mila — download karein", 5000); else webCheck(); }, webCheck);
+        if (window.SnapAppUpdate && SnapAppUpdate.check) SnapAppUpdate.check({ manual: true }).then(function (st) { if (st && st.available) toast("📲 New APK available — download", 5000); else webCheck(); }, webCheck);
         else webCheck();
       }
       else if (a === "cache") {
-        if (!confirm("Cache saaf karke app refresh karein? Aapka login bana rahega.")) return;
-        toast("⏳ Saaf ho raha hai...");
+        if (!confirm("Clear cache and refresh the app? You will stay logged in.")) return;
+        toast("⏳ Clearing...");
         (window.caches ? caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }) : Promise.resolve()).then(function () { location.reload(); }, function () { location.reload(); });
       }
     });
@@ -301,7 +301,7 @@
     "records-box": "students", "leaderboard-box": "students", "grade-box": "students", "omr-box": "students",
     "trash-box": "more", "settings-box": "more", "solidslab-box": "more" };
   var A_TABS = { tests: { t: "Tests & Papers" }, students: { t: "Students & Results" }, more: { t: "More" } };
-  /* Har dashboard card ko ek tab-group milta hai; kuch zaroori cards Home par bhi rehte hain (baaki Home se chhup jaate hain) */
+  /* Har dashboard card ko ek tab-group milta hai; kuch zaroori cards Home par bhi rehte hain (pending Home se chhup jaate hain) */
   var A_GROUP = { tests: "tests", generator: "tests", bank: "tests", "bulk-upload": "tests", reports: "tests",
     records: "students", leaderboard: "students", grade: "students", omr: "students",
     solidslab: "more", trash: "more", "student-view": "more", settings: "more" };
@@ -360,7 +360,7 @@
     var cards = aCards(k), T = A_TABS[k].t;
     window.__aCards = cards;
     return '<div class="ph"><button type="button" data-a="menu">' + svg("menu") + "</button><b>" + T + "</b></div>" +
-      (cards.length ? '<div class="cd-grid an-pg">' + cards.map(function (x, i) { return '<button type="button" class="cd-card ' + x.cls + '" data-ai="' + i + '">' + x.h + "</button>"; }).join("") + "</div>" : '<div class="sn-faq"><b>Abhi kuch nahi hai</b></div>');
+      (cards.length ? '<div class="cd-grid an-pg">' + cards.map(function (x, i) { return '<button type="button" class="cd-card ' + x.cls + '" data-ai="' + i + '">' + x.h + "</button>"; }).join("") + "</div>" : '<div class="sn-faq"><b>Nothing here yet</b></div>');
   }
   function aShow(k) {
     var p = $("sn-page"); if (!p) return;
@@ -378,7 +378,7 @@
   function aGo(k) {
     hidePage();
     if (k === "home") { try { backToAdminDashboard(); } catch (e) {} window.scrollTo(0, 0); }
-        else if (k === "batch") { if (window.SnapBatch && SnapBatch.openAdmin) SnapBatch.openAdmin(); else toast("Batch abhi load ho raha hai — thodi der baad try karein"); }
+        else if (k === "batch") { if (window.SnapBatch && SnapBatch.openAdmin) SnapBatch.openAdmin(); else toast("Batch is still loading — please try again shortly"); }
     else aShow(k);
     aSync(); setTimeout(aSync, 0); setTimeout(aSync, 150);
   }

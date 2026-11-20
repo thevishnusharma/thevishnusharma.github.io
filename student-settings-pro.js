@@ -120,13 +120,13 @@
   function pnOn() { try { return !localStorage.getItem(OPT_OUT); } catch (e) { return true; } }
   function syncSub() {
     var o = window.OfflineSync && OfflineSync.state || {}, n = o.pending || 0;
-    if (o.offline) return n || o.unknown ? "Offline • " + (n || "") + " badlav online save hona baaki" : "Offline • saved data se chal raha hai";
-    return n || o.unknown ? "Online save ho rahe hain…" : "Sab online save hai";
+    if (o.offline) return n || o.unknown ? "Offline • " + (n || "") + " changes pending sync" : "Offline • using saved data";
+    return n || o.unknown ? "Syncing changes…" : "Everything is synced";
   }
   function apkState() { var u = window.SnapAppUpdate; return u && u.state && u.state.available ? u.state : null; }
   function apkCard() {
     var st = apkState(); if (!st) return "";
-    return '<div class="ssp-card" style="border:1.5px solid #fdba74;background:linear-gradient(135deg,#fff7ed,#fff)"><div class="ssp-line"><div class="ssp-ic" style="background:' + TILE.amb + '">' + ico("dl") + '</div><div class="ssp-tx"><b>Naya APK aaya hai' + (st.name ? " (" + esc(st.name) + ")" : "") + '</b><p>' + esc(st.notes || "App ka naya version taiyaar hai.") + '</p></div></div><div class="ssp-act"><button type="button" class="ssp-btn" data-sgo="apkdl">' + ico("dl") + ' Download &amp; Update karein</button></div></div>';
+    return '<div class="ssp-card" style="border:1.5px solid #fdba74;background:linear-gradient(135deg,#fff7ed,#fff)"><div class="ssp-line"><div class="ssp-ic" style="background:' + TILE.amb + '">' + ico("dl") + '</div><div class="ssp-tx"><b>New APK available' + (st.name ? " (" + esc(st.name) + ")" : "") + '</b><p>' + esc(st.notes || "A new version of the app is ready.") + '</p></div></div><div class="ssp-act"><button type="button" class="ssp-btn" data-sgo="apkdl">' + ico("dl") + ' Download &amp; Update</button></div></div>';
   }
 
   var pages = {
@@ -136,44 +136,44 @@
     },
     delete: function (done) {
       var s = typeof window.getStudentSession === "function" ? window.getStudentSession() : null, mobile = s && s.mobile ? String(s.mobile) : "";
-      done("Delete Account & Data", "Permanent deletion request", mobile ? '<form id="ssp-delete-form"><div class="ssp-card"><p>Account, profile/photo, test results, scan reports, mistakes, login sessions aur batch enrollments permanent delete honge.</p><label for="ssp-delete-mobile">Account mobile number</label><input id="ssp-delete-mobile" type="tel" value="' + esc(mobile) + '" readonly><label for="ssp-delete-confirm">Confirm ke liye wahi 10-digit mobile dobara likhein</label><input id="ssp-delete-confirm" type="tel" inputmode="numeric" maxlength="10" autocomplete="off" required><label for="ssp-delete-password">Account password</label><input id="ssp-delete-password" type="password" autocomplete="current-password" required><p class="ssp-note">Deletion undo nahi hoti. Network issue ho to retry karein; partial request safe tareeke se dobara chal sakti hai.</p><button class="ssp-btn danger" type="submit">Account aur data permanently delete karein</button></div></form>' : '<div class="ssp-card"><p>Account delete karne ke liye pehle student ke roop mein login karein.</p><a href="/delete-account.html">Deletion ke steps</a></div>');
+      done("Delete Account & Data", "Permanent deletion request", mobile ? '<form id="ssp-delete-form"><div class="ssp-card"><p>Your account, profile/photo, test results, scan reports, mistakes, login sessions and batch enrollments will be permanently deleted.</p><label for="ssp-delete-mobile">Account mobile number</label><input id="ssp-delete-mobile" type="tel" value="' + esc(mobile) + '" readonly><label for="ssp-delete-confirm">Re-enter the same 10-digit mobile number to confirm</label><input id="ssp-delete-confirm" type="tel" inputmode="numeric" maxlength="10" autocomplete="off" required><label for="ssp-delete-password">Account password</label><input id="ssp-delete-password" type="password" autocomplete="current-password" required><p class="ssp-note">Deletion undo nahi hoti. Network issue ho to retry karein; partial request safe tareeke se dobara chal sakti hai.</p><button class="ssp-btn danger" type="submit">Account aur data permanently delete karein</button></div></form>' : '<div class="ssp-card"><p>Log in as a student first to delete your account.</p><a href="/delete-account.html">Deletion steps</a></div>');
     },
     privacy: function (done) {
       var c = C();
-      done("Privacy & Legal", "Data use and account controls", '<div class="ssp-card"><p>Aapka account data kaise use hota hai aur use delete karne ke liye:</p><div class="ssp-act"><a class="ssp-btn o" href="' + esc(c.privacyUrl || "/privacy.html") + '" target="_blank" rel="noopener">Privacy Policy</a><a class="ssp-btn o" href="' + esc(c.termsUrl || "/terms.html") + '" target="_blank" rel="noopener">Terms</a><a class="ssp-btn o" href="/delete-account.html">Delete account help</a></div></div>');
+      done("Privacy & Legal", "Data use and account controls", '<div class="ssp-card"><p>How your account data is used and how to delete it:</p><div class="ssp-act"><a class="ssp-btn o" href="' + esc(c.privacyUrl || "/privacy.html") + '" target="_blank" rel="noopener">Privacy Policy</a><a class="ssp-btn o" href="' + esc(c.termsUrl || "/terms.html") + '" target="_blank" rel="noopener">Terms</a><a class="ssp-btn o" href="/delete-account.html">Delete account help</a></div></div>');
     },
     profile: function (done) {
       var nm = txt("student-dp-name") || txt("student-welcome-name") || "—";
-      done("Profile & ID Card", "Aapki details",
-        '<div class="ssp-card" style="padding:13px"><h4>' + ico("idc") + ' Aapka ID Card</h4><p style="margin:5px 0 11px">Photo par tap karke apni photo lagayein ya badlein. Photo admin ko bhi turant dikhegi.</p><div data-borrow="student-idcard-outer"></div></div>' +
+      done("Profile & ID Card", "Your details",
+        '<div class="ssp-card" style="padding:13px"><h4>' + ico("idc") + ' Aapka ID Card</h4><p style="margin:5px 0 11px">Tap the photo to add or change it. Your admin will see it immediately.</p><div data-borrow="student-idcard-outer"></div></div>' +
         '<div class="ssp-card"><h4>' + ico("user") + ' Meri Details</h4><div style="height:10px"></div>' +
         kv("Naam", esc(nm), "user", 1) + kv("ID Number", esc(txt("idcard-id-number") || "—"), "hash") + kv("Class", esc(txt("idcard-class") || "—"), "book") + kv("Academic Session", esc(txt("idcard-session") || "—"), "clock") + "</div>");
     },
     notif: function (done) {
       var on = pnOn();
       done("Notifications", "Naye test aur updates ke alert",
-        '<div class="ssp-card ssp-ctr" style="padding:20px 15px"><div class="ssp-bell">' + ico("bell") + '</div><div id="ssp-pn-t" style="font-size:1rem;font-weight:800;margin-top:14px">' + (on ? "Notifications ON hain" : "Notifications OFF hain") + '</div><p>Naya test, result ya app update aate hi aapke phone par alert aayega — app band ho tab bhi.</p><span class="ssp-pill' + (on ? "" : " r") + '" id="ssp-pn-p"><i></i>' + (on ? "Chalu hai" : "Band hai") + '</span><div data-borrow="push-notify-toggle-btn,push-notify-status"></div></div>' +
-        '<div class="ssp-card"><div class="ssp-srow"><div class="ssp-tx"><b>AI voice calls</b><small>App ke andar audio message. Koi phone call nahi.</small></div><label class="ssp-sw"><input type="checkbox" id="ssp-ai-call-toggle"><i></i></label></div><p id="ssp-ai-call-status">AI call notifications aap kabhi bhi band kar sakte hain.</p></div>' +
-        '<div class="ssp-card"><h4>' + ico("info") + ' Aapko kya milega</h4><div style="height:10px"></div>' + kv("Naya test", "Publish hote hi", "book", 1) + kv("Exam result", "Result publish hote hi", "pulse") + kv("App update", "Naya version aane par", "dl") + "</div>" +
-        '<div class="ssp-note">' + ico("alert") + '<div>Alert na aaye to phone Settings → Apps → The Vishnu Sharma → Notifications → Allow karein.</div></div>');
+        '<div class="ssp-card ssp-ctr" style="padding:20px 15px"><div class="ssp-bell">' + ico("bell") + '</div><div id="ssp-pn-t" style="font-size:1rem;font-weight:800;margin-top:14px">' + (on ? "Notifications are ON" : "Notifications are OFF") + '</div><p>You will get an alert on your phone for new tests, results or app updates — even when the app is closed.</p><span class="ssp-pill' + (on ? "" : " r") + '" id="ssp-pn-p"><i></i>' + (on ? "Chalu hai" : "Band hai") + '</span><div data-borrow="push-notify-toggle-btn,push-notify-status"></div></div>' +
+        '<div class="ssp-card"><div class="ssp-srow"><div class="ssp-tx"><b>AI voice calls</b><small>Audio message inside the app. No phone call.</small></div><label class="ssp-sw"><input type="checkbox" id="ssp-ai-call-toggle"><i></i></label></div><p id="ssp-ai-call-status">AI call notifications aap kabhi bhi band kar sakte hain.</p></div>' +
+        '<div class="ssp-card"><h4>' + ico("info") + ' What you will receive</h4><div style="height:10px"></div>' + kv("Naya test", "Publish hote hi", "book", 1) + kv("Exam result", "Result publish hote hi", "pulse") + kv("App update", "When a new version is available", "dl") + "</div>" +
+        '<div class="ssp-note">' + ico("alert") + '<div>If you do not receive alerts, go to phone Settings → Apps → The Vishnu Sharma → Notifications → Allow.</div></div>');
     },
     display: function (done) {
       var ts = localStorage.getItem("sn_textsize") || "100", wakeOK = !!navigator.wakeLock, wake = localStorage.getItem("sn_wake") === "1";
       done("Display & Exam", "Text size aur exam setting",
         '<div class="ssp-card"><h4>' + ico("palette") + ' Appearance</h4><div style="height:10px"></div>' +
-        '<div style="padding-top:12px"><div style="display:flex;align-items:center;gap:12px"><div class="ssp-tile" style="background:' + TILE.tea + '">' + ico("type") + '</div><div class="ssp-tx"><b style="font-size:.9rem;display:block">Text size</b><small style="color:#64748b;font-size:.76rem">Padhne mein aasani ke liye</small></div></div><div class="ssp-seg" id="ssp-ts">' +
+        '<div style="padding-top:12px"><div style="display:flex;align-items:center;gap:12px"><div class="ssp-tile" style="background:' + TILE.tea + '">' + ico("type") + '</div><div class="ssp-tx"><b style="font-size:.9rem;display:block">Text size</b><small style="color:#64748b;font-size:.76rem">For easier reading</small></div></div><div class="ssp-seg" id="ssp-ts">' +
         [["90", "Chhota"], ["100", "Normal"], ["112", "Bada"]].map(function (x) { return '<button type="button" data-sts="' + x[0] + '"' + (x[0] === ts ? ' class="on"' : "") + ">" + x[1] + "</button>"; }).join("") + "</div></div></div>" +
-        (wakeOK ? '<div class="ssp-card"><h4>' + ico("book") + ' Exam</h4><div style="height:10px"></div><div class="ssp-srow"><div class="ssp-tx"><b style="font-size:.9rem;display:block">Exam ke dauran screen on rakhein</b><small style="color:#64748b;font-size:.76rem">Test dete waqt screen apne aap band nahi hogi</small></div><label class="ssp-sw"><input type="checkbox" id="ssp-wake"' + (wake ? " checked" : "") + "><i></i></label></div></div>" : ""));
+        (wakeOK ? '<div class="ssp-card"><h4>' + ico("book") + ' Exam</h4><div style="height:10px"></div><div class="ssp-srow"><div class="ssp-tx"><b style="font-size:.9rem;display:block">Keep screen on during exams</b><small style="color:#64748b;font-size:.76rem">The screen will not turn off automatically during a test</small></div><label class="ssp-sw"><input type="checkbox" id="ssp-wake"' + (wake ? " checked" : "") + "><i></i></label></div></div>" : ""));
     },
     data: function (done) {
       var c = C();
       done("App & Data", "Update, cache aur offline sync",
         apkCard() +
         '<div class="ssp-card"><div class="ssp-ver">' + bl(52) + '<div><b style="font-size:1rem">' + esc(bi().name) + '</b><div style="font-size:.76rem;color:#64748b;margin-top:2px">' + esc(bi().brand ? bi().sub : (c.tagline || "")) + '</div><span class="ssp-pill"><i></i>Version ' + esc((c.version || "1.0") + (c.build ? " (" + c.build + ")" : "")) + "</span></div></div></div>" +
-        '<div class="ssp-card"><div class="ssp-line"><div class="ssp-ic" style="background:' + TILE.ind + '">' + ico("dl") + '</div><div class="ssp-tx"><b>Update check</b><p>Naya version / APK aaya hai ya nahi dekhein.</p></div></div><div class="ssp-act"><button type="button" class="ssp-btn" data-sgo="update">' + ico("refresh") + ' Update check karein</button></div>' +
-        '<div class="ssp-sep"></div><div class="ssp-line"><div class="ssp-ic" style="background:' + TILE.tea + '">' + ico("trash") + '</div><div class="ssp-tx"><b>Cache saaf karke refresh</b><p>Kuch purana ya adhura dikhe to ye karein. Aapka login bana rahega.</p></div></div><div class="ssp-act"><button type="button" class="ssp-btn o" data-sgo="cache">' + ico("trash") + ' Cache saaf karein</button></div></div>' +
+        '<div class="ssp-card"><div class="ssp-line"><div class="ssp-ic" style="background:' + TILE.ind + '">' + ico("dl") + '</div><div class="ssp-tx"><b>Update check</b><p>Check whether a new version / APK is available.</p></div></div><div class="ssp-act"><button type="button" class="ssp-btn" data-sgo="update">' + ico("refresh") + ' Check for updates</button></div>' +
+        '<div class="ssp-sep"></div><div class="ssp-line"><div class="ssp-ic" style="background:' + TILE.tea + '">' + ico("trash") + '</div><div class="ssp-tx"><b>Clear cache and refresh</b><p>Use this if something looks outdated or incomplete. You will stay logged in.</p></div></div><div class="ssp-act"><button type="button" class="ssp-btn o" data-sgo="cache">' + ico("trash") + ' Clear cache</button></div></div>' +
         '<div class="ssp-card"><h4>' + ico("cloud") + ' Offline &amp; Sync</h4><div class="ssp-stat wait" id="ssp-sync-box"><div class="l"><span class="ssp-ping"></span>Data status</div><span class="ssp-pill" id="ssp-sync-pill" style="margin:0"><i></i><span id="ssp-sync-txt">…</span></span></div>' +
-        '<p style="margin-top:10px">Internet na ho tab bhi app saved data se chalegi. Offline kiye badlav internet aate hi apne aap online save ho jaayenge.</p><div class="ssp-act"><button type="button" class="ssp-btn o" data-sgo="sync">' + ico("refresh") + " Abhi sync karein</button></div></div>");
+        '<p style="margin-top:10px">The app works from saved data even without internet. Changes made offline sync automatically once you are back online.</p><div class="ssp-act"><button type="button" class="ssp-btn o" data-sgo="sync">' + ico("refresh") + " Sync now</button></div></div>");
       paintSync();
     }
   };
@@ -181,7 +181,7 @@
     var b = $("ssp-sync-box"), p = $("ssp-sync-pill"), t = $("ssp-sync-txt"); if (!b || !p || !t) return;
     var o = window.OfflineSync && OfflineSync.state || {}, n = o.pending || 0, has = n || o.unknown;
     b.className = "ssp-stat" + (o.offline || has ? " bad" : ""); p.className = "ssp-pill" + (o.offline || has ? " r" : "");
-    t.textContent = o.offline ? "Offline" + (has ? " • " + (n || "") + " baaki" : "") : has ? (n || "") + " baaki — online save ho rahe hain" : "Sab online save hai";
+    t.textContent = o.offline ? "Offline" + (has ? " • " + (n || "") + " remaining" : "") : has ? (n || "") + " remaining — syncing" : "Everything is synced";
     var sub = $("ssp-data-sub"); if (sub) sub.textContent = syncSub();
   }
 
@@ -198,25 +198,25 @@
       if (key === "notif") {
         var aiToggle = $("ssp-ai-call-toggle");
         if (aiToggle) {
-          aiToggle.onchange = function () { var enabled = !!aiToggle.checked; if (window.SnapAICall) window.SnapAICall.saveSetting(enabled); var st = $("ssp-ai-call-status"); if (st) st.textContent = enabled ? "AI voice calls chalu hain." : "AI voice calls band kar di gayi."; };
+          aiToggle.onchange = function () { var enabled = !!aiToggle.checked; if (window.SnapAICall) window.SnapAICall.saveSetting(enabled); var st = $("ssp-ai-call-status"); if (st) st.textContent = enabled ? "AI voice calls are on." : "AI voice calls are off."; };
           window.SnapAICall && window.SnapAICall.refreshSettingsUI && window.SnapAICall.refreshSettingsUI();
         }
       }
-      if (key === "notif" && window.MutationObserver) { var bt = $("push-notify-toggle-btn"); if (bt) { pnObs = new MutationObserver(function () { var on = pnOn(), t = $("ssp-pn-t"), p = $("ssp-pn-p"); if (t) t.textContent = on ? "Notifications ON hain" : "Notifications OFF hain"; if (p) { p.className = "ssp-pill" + (on ? "" : " r"); p.innerHTML = "<i></i>" + (on ? "Chalu hai" : "Band hai"); } var s = $("ssp-pn-sub"); if (s) s.textContent = "Naye test ka alert • " + (on ? "ON" : "OFF"); }); pnObs.observe(bt, { childList: true, characterData: true, subtree: true }); } }
+      if (key === "notif" && window.MutationObserver) { var bt = $("push-notify-toggle-btn"); if (bt) { pnObs = new MutationObserver(function () { var on = pnOn(), t = $("ssp-pn-t"), p = $("ssp-pn-p"); if (t) t.textContent = on ? "Notifications are ON" : "Notifications are OFF"; if (p) { p.className = "ssp-pill" + (on ? "" : " r"); p.innerHTML = "<i></i>" + (on ? "Chalu hai" : "Band hai"); } var s = $("ssp-pn-sub"); if (s) s.textContent = "Naye test ka alert • " + (on ? "ON" : "OFF"); }); pnObs.observe(bt, { childList: true, characterData: true, subtree: true }); } }
     });
   }
   function closePage() { var pg = $("ssp-page"); if (pg) pg.style.display = "none"; giveBack(); }
   window.SnapStudentSettings = { close: closePage, open: openPage };
 
   function webCheck() {
-    if (!navigator.serviceWorker) return toast("Is device par update check available nahi hai.");
+    if (!navigator.serviceWorker) return toast("Update check is not available on this device.");
     navigator.serviceWorker.getRegistration().then(function (r) {
-      if (!r) return toast("✅ Aap latest version par hain");
+      if (!r) return toast("✅ You are on the latest version");
       return r.update().then(function () {
-        if (r.installing || r.waiting) { toast("⬆️ Naya version mil gaya — reload ho raha hai"); setTimeout(function () { location.reload(); }, 1200); }
-        else toast("✅ Aap latest version par hain");
+        if (r.installing || r.waiting) { toast("⬆️ New version found — reloading"); setTimeout(function () { location.reload(); }, 1200); }
+        else toast("✅ You are on the latest version");
       });
-    }).catch(function () { toast("Update check nahi ho paya — internet check karein."); });
+    }).catch(function () { toast("Could not check for updates — check your internet."); });
   }
 
   document.addEventListener("click", function (ev) {
@@ -226,19 +226,19 @@
     if (k) {
       ev.preventDefault();
       if (k === "about") { openPage("about"); return; }
-      if (k === "help") { if (typeof window.snShowPage === "function") window.snShowPage(k, "settings"); else toast("Page available nahi"); return; }
+      if (k === "help") { if (typeof window.snShowPage === "function") window.snShowPage(k, "settings"); else toast("Page not available"); return; }
       openPage(k); return;
     }
     if (g === "back") { ev.preventDefault(); closePage(); }
-    else if (g === "sync") { if (window.OfflineSync) OfflineSync.syncNow(); else toast("Sync available nahi"); }
+    else if (g === "sync") { if (window.OfflineSync) OfflineSync.syncNow(); else toast("Sync not available"); }
     else if (g === "apkdl") { if (window.SnapAppUpdate) SnapAppUpdate.show(); }
     else if (g === "update") {
-      toast("⏳ Update check ho raha hai...");
-      if (window.SnapAppUpdate && SnapAppUpdate.check) SnapAppUpdate.check({ manual: true }).then(function (st) { if (st && st.available) toast("📲 Naya APK mila — download karein", 5000); else webCheck(); }, webCheck); else webCheck();
+      toast("⏳ Checking for updates...");
+      if (window.SnapAppUpdate && SnapAppUpdate.check) SnapAppUpdate.check({ manual: true }).then(function (st) { if (st && st.available) toast("📲 New APK available — download", 5000); else webCheck(); }, webCheck); else webCheck();
     }
     else if (g === "cache") {
-      if (!confirm("Cache saaf karke app refresh karein? Aapka login bana rahega.")) return;
-      toast("⏳ Saaf ho raha hai...");
+      if (!confirm("Clear cache and refresh the app? You will stay logged in.")) return;
+      toast("⏳ Clearing...");
       (window.caches ? caches.keys().then(function (ks) { return Promise.all(ks.map(function (x) { return caches.delete(x); })); }) : Promise.resolve()).then(function () { location.reload(); }, function () { location.reload(); });
     }
   });
@@ -247,11 +247,11 @@
     ev.preventDefault();
     var s = typeof window.getStudentSession === "function" ? window.getStudentSession() : null;
     var mobile = String(s && s.mobile || ""), typed = String($("ssp-delete-confirm") && $("ssp-delete-confirm").value || "").replace(/\D/g, ""), password = String($("ssp-delete-password") && $("ssp-delete-password").value || "");
-    if (!/^\d{10}$/.test(mobile) || typed !== mobile || !password) { toast("Mobile number aur password dobara check karein."); return; }
-    if (!confirm("Aapka account aur linked data permanently delete hoga. Ye undo nahi ho sakta. Kya aap continue karna chahte hain?")) return;
-    var b = f.querySelector('button[type="submit"]'); if (b) { b.disabled = true; b.textContent = "⏳ Account aur data delete ho raha hai..."; }
+    if (!/^\d{10}$/.test(mobile) || typed !== mobile || !password) { toast("Please re-check your mobile number and password."); return; }
+    if (!confirm("Your account and linked data will be permanently deleted. This cannot be undone. Do you want to continue?")) return;
+    var b = f.querySelector('button[type="submit"]'); if (b) { b.disabled = true; b.textContent = "⏳ Deleting account and data..."; }
     Promise.resolve().then(function () {
-      if (!window.SnapAuth || !SnapAuth.deleteMyAccount) throw new Error("Secure deletion service load nahi hua.");
+      if (!window.SnapAuth || !SnapAuth.deleteMyAccount) throw new Error("Secure deletion service failed to load.");
       return SnapAuth.deleteMyAccount(mobile, typed, password);
     }).then(function () {
       try {
@@ -263,7 +263,7 @@
       alert("✅ Aapka account aur linked data delete ho gaya hai.");
       location.reload();
     }).catch(function (e) {
-      toast("Delete nahi hua: " + (e && e.message || e), 5000);
+      toast("Could not delete: " + (e && e.message || e), 5000);
       if (b) { b.disabled = false; b.textContent = "Account aur data permanently delete karein"; }
     });
   });
@@ -290,11 +290,11 @@
     m.innerHTML = '<div class="ssp-hero"><div class="ssp-av" id="ssp-hero-av">S</div><div style="position:relative;min-width:0"><b id="ssp-hero-nm">Student</b><small id="ssp-hero-sub">Student</small><span class="ssp-pill" id="ssp-hero-st" style="background:#ffedd5;color:#c2410c;display:none"><i></i></span></div></div>' +
       '<div class="ssp-sec">ACCOUNT</div><div class="ssp-grp">' + row("user", "ind", "Profile & ID Card", "ID Card, photo, class, session", "profile") + "</div>" +
       '<div class="ssp-sec">PREFERENCES</div><div class="ssp-grp">' + row("bell", "amb", "Notifications", "Naye test ka alert • " + (pnOn() ? "ON" : "OFF"), "notif", "ssp-pn-sub") + row("palette", "pur", "Display & Exam", "Text size, screen on", "display") + "</div>" +
-      '<div class="ssp-sec">DATA</div><div class="ssp-grp">' + row("phone", "idg", "App & Data", syncSub(), "data", "ssp-data-sub") + row("shield", "blu", "Privacy & Legal", "Privacy Policy aur Terms", "privacy") + row("trash", "red", "Delete Account & Data", "Account aur linked data permanently delete karein", "delete") + "</div>" +
+      '<div class="ssp-sec">DATA</div><div class="ssp-grp">' + row("phone", "idg", "App & Data", syncSub(), "data", "ssp-data-sub") + row("shield", "blu", "Privacy & Legal", "Privacy Policy and Terms", "privacy") + row("trash", "red", "Delete Account & Data", "Account aur linked data permanently delete karein", "delete") + "</div>" +
       '<div class="ssp-sec">SUPPORT</div><div class="ssp-grp">' + row("help", "blu", "Help & Support", "Call / WhatsApp / Email, FAQ", "help") + row("info", "gry", "About App", "Version " + esc((C().version || "1.0") + (C().build ? " (build " + C().build + ")" : "")), "about") + "</div>" +
-      '<button type="button" class="ssp-row ssp-logout" id="ssp-logout"><span class="ssp-ic" style="background:' + TILE.red + '">' + ico("out") + '</span><span class="ssp-tx"><b style="color:#b91c1c">Logout</b><small>Is device se logout karein</small></span></button>';
+      '<button type="button" class="ssp-row ssp-logout" id="ssp-logout"><span class="ssp-ic" style="background:' + TILE.red + '">' + ico("out") + '</span><span class="ssp-tx"><b style="color:#b91c1c">Logout</b><small>Log out of this device</small></span></button>';
     var h3 = card.querySelector("h3.section-title"); if (h3) h3.after(m); else card.insertBefore(m, card.firstChild);
-    $("ssp-logout").addEventListener("click", function () { var b = $("student-logout-btn"); b ? b.click() : toast("Logout button nahi mila"); });
+    $("ssp-logout").addEventListener("click", function () { var b = $("student-logout-btn"); b ? b.click() : toast("Logout button not found"); });
     paintHero();
     if (window.MutationObserver) {
       var mo = new MutationObserver(function () { paintHero(); });
@@ -302,7 +302,7 @@
     }
     var n = 0, iv = setInterval(function () { paintHero(); if (++n > 20) clearInterval(iv); }, 1000);
     window.addEventListener("snap-sync-state", function () { paintSync(); var ds = $("ssp-data-sub"); if (ds) ds.textContent = syncSub(); });
-    window.addEventListener("snap-apk-update", function () { var ds = $("ssp-data-sub"); if (ds) ds.textContent = apkState() ? "Naya APK aaya hai — update karein" : syncSub(); });
+    window.addEventListener("snap-apk-update", function () { var ds = $("ssp-data-sub"); if (ds) ds.textContent = apkState() ? "New APK available — update now" : syncSub(); });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount); else mount();
   setTimeout(mount, 1500);

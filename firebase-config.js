@@ -70,7 +70,7 @@ try {
     window.vishnuFirebase.appCheckReady = startFirebaseAppCheck();
     window.vishnuFirebase.db = firebase.firestore();
     /* HYBRID MODE (own-backend.js): SNAP_CONFIG.ownBackend me jo collections likhi hain sirf wahi apne backend par jati hain,
-       baaki sab Firebase par. enabled:false (default) ho to ye line kuch nahi badalti. */
+       pending sab Firebase par. enabled:false (default) ho to ye line kuch nahi badalti. */
     try { if (window.SnapOwnBackend) window.vishnuFirebase.db = window.SnapOwnBackend.wrap(window.vishnuFirebase.db); } catch (e) { console.warn('own-backend wrap fail:', e); }
     /* v200: kuch mobile network/WebView me Firestore ka normal connection atak jaata hai ("Backend didn't respond within 10 seconds").
        Auto-detect ON: atakne par SDK khud long-polling par chala jaata hai. Fail ho to app pehle jaisa chalta hai. */
@@ -109,7 +109,7 @@ try {
   }
 } catch (error) { console.warn("Firebase unavailable", error); }
 
-/* v239: App Check token Worker ko bhejna. Sirf apne Worker URL par, sirf POST/PUT/DELETE; baaki har fetch bina chhede nikalti hai.
+/* v239: App Check token Worker ko bhejna. Sirf apne Worker URL par, sirf POST/PUT/DELETE; pending har fetch bina chhede nikalti hai.
    Token 1.5 sec me na mile (ya App Check band ho) to request bina header ke chali jaati hai — app kabhi atakta nahi.
    Worker ka APPCHECK_MODE (off/monitor/enforce) decide karta hai ki header na hone par kya ho. Docs: docs/APP_CHECK.md */
 (function () {

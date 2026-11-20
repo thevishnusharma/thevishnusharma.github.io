@@ -51,7 +51,7 @@
       function btn(label, cls, fn, title) { var x = mkBtn(label, cls, fn); x.title = title || ""; return x; }
       bt.append(btn("↑", "secondary", function () { move(i, -1); }, "Upar"), btn("↓", "secondary", function () { move(i, 1); }, "Neeche"),
         btn("✕", "danger", function () {
-          if (testSections.length <= 1) { alert("Kam se kam ek section chahiye."); return; }
+          if (testSections.length <= 1) { alert("At least one section is required."); return; }
           var cnt = count(s.title); if (cnt && !confirm("\"" + s.title + "\" me " + cnt + " question hain. Delete karne par ve pehle section me chale jayenge. Aage badhein?")) return;
           var rest = testSections.filter(function (c) { return c.id !== s.id; });
           draftQuestions.forEach(function (c) { if (c.section === s.title) c.section = rest[0].title; });

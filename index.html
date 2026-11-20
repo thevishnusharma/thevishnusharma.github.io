@@ -129,7 +129,7 @@
   <link rel="stylesheet" href="id-card.css?v=2" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="app-ui.css?v=10" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="batch-system.css?v=1">
-<link rel="stylesheet" href="exam-flow-v2.css?v=1">
+<link rel="stylesheet" href="exam-flow-v2.css?v=2">
   <noscript>
     <link rel="stylesheet" href="creative-dashboard.css?v=2">
     <link rel="stylesheet" href="exam-manager.css?v=5">
@@ -186,7 +186,7 @@
            mein Student/Admin ko ye button dikhna nahi chahiye tha). Owner
            app ab bhi bilkul pehle jaisa kaam karta hai — bas iska link ab
            public nav mein advertise nahi hota. Owner seedha owner-app.html
-           URL (ya Admin Panel → Settings → "Owner Panel Kholein") se hi
+           URL (ya Admin Panel → Settings → "Open Owner Panel") se hi
            access kare. -->
     </nav>
   </header>
@@ -195,11 +195,11 @@
   <div id="app-install-modal" class="hidden" style="position:fixed;inset:0;background:rgba(15,15,30,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;">
     <div style="background:#fff;border-radius:16px;max-width:380px;width:100%;padding:22px 20px;box-shadow:0 12px 40px rgba(0,0,0,.3);text-align:center;">
       <div style="font-size:2.4rem;line-height:1;margin-bottom:8px;">📲</div>
-      <h3 role="heading" aria-level="2" style="margin:0 0 8px;color:#1e1b4b;font-size:1.1rem;">The Vishnu Sharma App Install Karein</h3>
+      <h3 role="heading" aria-level="2" style="margin:0 0 8px;color:#1e1b4b;font-size:1.1rem;">Install The Vishnu Sharma App</h3>
       <p id="app-install-modal-text" style="margin:0 0 16px;color:#374151;font-size:.9rem;line-height:1.5;"></p>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <button id="app-install-modal-action-btn" type="button" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:10px;padding:10px 20px;font-weight:600;cursor:pointer;font-size:.9rem;">⬇️ Install Karein</button>
-        <button type="button" onclick="dismissAppInstallModal()" style="background:#f3f4f6;color:#374151;border:none;border-radius:10px;padding:10px 20px;cursor:pointer;font-size:.9rem;">Baad Mein</button>
+        <button id="app-install-modal-action-btn" type="button" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:10px;padding:10px 20px;font-weight:600;cursor:pointer;font-size:.9rem;">⬇️ Install</button>
+        <button type="button" onclick="dismissAppInstallModal()" style="background:#f3f4f6;color:#374151;border:none;border-radius:10px;padding:10px 20px;cursor:pointer;font-size:.9rem;">Not Now</button>
       </div>
     </div>
   </div>
@@ -227,14 +227,14 @@
             <input id="login-password" type="password" placeholder="Password" required />
           </div>
           <button type="submit" class="btn-primary">Login</button>
-          <button type="button" id="student-forgot-link" style="background:none;border:none;color:#2563eb;text-decoration:underline;cursor:pointer;margin-top:10px;font-size:.85rem;display:block;">Password bhool gaye?</button>
+          <button type="button" id="student-forgot-link" style="background:none;border:none;color:#2563eb;text-decoration:underline;cursor:pointer;margin-top:10px;font-size:.85rem;display:block;">Forgot password?</button>
         </form>
 
         <!-- REGISTER -->
         <form id="student-register-form" class="hidden" autocomplete="off">
           <div class="field-row">
             <label for="register-name">Name</label>
-            <input id="register-name" type="text" placeholder="Apna naam likhein" required />
+            <input id="register-name" type="text" placeholder="Enter your name" required />
           </div>
           <div class="field-row">
             <label for="register-mobile">WhatsApp / Mobile Number</label>
@@ -246,26 +246,26 @@
           </div>
           <div class="field-row">
             <label for="register-password-confirm">Confirm Password</label>
-            <input id="register-password-confirm" type="password" placeholder="Password dobara likhein" required />
+            <input id="register-password-confirm" type="password" placeholder="Re-enter password" required />
           </div>
           <div class="field-row">
             <label for="register-pin">Security PIN (4 digit)</label>
-            <input id="register-pin" type="password" inputmode="numeric" maxlength="4" placeholder="jaise: 4517 — password bhool jaane par ye chahiye hoga" required />
+            <input id="register-pin" type="password" inputmode="numeric" maxlength="4" placeholder="e.g. 4517 — needed if you forget your password" required />
           </div>
           <div class="field-row">
             <label for="register-institute">Institute</label>
             <select id="register-institute" onchange="onRegisterInstituteChange()">
-              <option value="">— Select Karein —</option>
+              <option value="">— Select —</option>
             </select>
           </div>
           <div class="field-row hidden" id="register-institute-code-row">
             <label for="register-institute-code">Institute Join Code</label>
-            <input id="register-institute-code" type="text" placeholder="Apne institute se lein" maxlength="20" style="text-transform:uppercase;" />
+            <input id="register-institute-code" type="text" placeholder="Get it from your institute" maxlength="20" style="text-transform:uppercase;" />
           </div>
           <div class="field-row">
             <label for="register-class">Class</label>
             <select id="register-class">
-              <option value="">— Pehle Institute select karein —</option>
+              <option value="">— Select an institute first —</option>
             </select>
           </div>
           <div class="field-row" style="display:flex;gap:10px;align-items:flex-start">
@@ -274,7 +274,7 @@
           </div>
           <div class="field-row" style="display:flex;gap:10px;align-items:flex-start">
             <input id="register-guardian-consent" type="checkbox" required style="margin-top:4px;min-width:18px">
-            <label for="register-guardian-consent" style="font-weight:400">Main 18+ hoon, ya mere parent/guardian ne mere account aur data use ki permission di hai.</label>
+            <label for="register-guardian-consent" style="font-weight:400">I am 18+ or my parent/guardian has given permission to use my account and data.</label>
           </div>
           <button type="submit" class="btn-primary">Register</button>
         </form>
@@ -288,18 +288,18 @@
           </div>
           <div class="field-row">
             <label for="forgot-pin">Security PIN (4 digit)</label>
-            <input id="forgot-pin" type="password" inputmode="numeric" maxlength="4" placeholder="Registration ke waqt daala hua PIN" required />
+            <input id="forgot-pin" type="password" inputmode="numeric" maxlength="4" placeholder="PIN set during registration" required />
           </div>
           <div class="field-row">
-            <label for="forgot-new-password">Naya Password</label>
+            <label for="forgot-new-password">New Password</label>
             <input id="forgot-new-password" type="password" placeholder="Kam se kam 4 characters" required />
           </div>
           <div class="field-row">
-            <label for="forgot-new-password-confirm">Naya Password (dobara)</label>
-            <input id="forgot-new-password-confirm" type="password" placeholder="Password dobara likhein" required />
+            <label for="forgot-new-password-confirm">Confirm New Password</label>
+            <input id="forgot-new-password-confirm" type="password" placeholder="Re-enter password" required />
           </div>
           <button type="submit" class="btn-primary">Reset Password</button>
-          <button type="button" id="student-forgot-back-link" style="background:none;border:none;color:#2563eb;text-decoration:underline;cursor:pointer;margin-top:10px;font-size:.85rem;display:block;">← Login par wapas jaayein</button>
+          <button type="button" id="student-forgot-back-link" style="background:none;border:none;color:#2563eb;text-decoration:underline;cursor:pointer;margin-top:10px;font-size:.85rem;display:block;">← Back to login</button>
         </form>
       </div>
     </div>
@@ -307,13 +307,13 @@
     <!-- ── STUDENT FORM ── -->
     <form id="student-form" class="hidden" autocomplete="off">
       <!-- ── CREATIVE STUDENT DASHBOARD HOME ── -->
-      <button type="button" id="student-back-btn" class="hidden" onclick="backToStudentDashboard()" style="display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #c7d2fe;color:#4338ca;font-weight:700;border-radius:999px;padding:9px 18px;margin-bottom:14px;cursor:pointer;font-size:.85rem;">← Dashboard par wapas</button>
+      <button type="button" id="student-back-btn" class="hidden" onclick="backToStudentDashboard()" style="display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #c7d2fe;color:#4338ca;font-weight:700;border-radius:999px;padding:9px 18px;margin-bottom:14px;cursor:pointer;font-size:.85rem;">← Back to Dashboard</button>
 
       <div class="cd-wrap" id="student-dashboard-home">
         <div class="cd-hero">
           <div class="cd-hero-text">
             <h2>Hi <span id="cd-student-name">Student</span> 👋</h2>
-            <p>Mock tests dein aur apni taiyari badhayein. 🏆</p>
+            <p>Take mock tests and boost your preparation. 🏆</p>
           </div>
       <div class="cd-hero-emoji" aria-hidden="true">🎯</div>
         </div>
@@ -340,42 +340,42 @@
           <button type="button" class="cd-card cd-blue" onclick="goStudentSection('student-form-fields-anchor')">
             <div class="cd-card-top"><div class="cd-icon-circle">🚀</div><span class="cd-badge">Start</span></div>
             <div class="cd-card-title">Start Test</div>
-            <div class="cd-card-sub">Naya test attempt karein</div>
+            <div class="cd-card-sub">Attempt a new test</div>
             <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
           </button>
 
           <button type="button" class="cd-card cd-green" onclick="goStudentSection('practice-mode-card')">
             <div class="cd-card-top"><div class="cd-icon-circle">🎯</div><span class="cd-badge">No Timer</span></div>
             <div class="cd-card-title">Practice Mode</div>
-            <div class="cd-card-sub">Bina pressure ke practice karein</div>
+            <div class="cd-card-sub">Practice without pressure</div>
             <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
           </button>
 
           <button type="button" class="cd-card cd-purple" onclick="goStudentSection('student-results-card')">
             <div class="cd-card-top"><div class="cd-icon-circle">📊</div><span class="cd-badge">Rank</span></div>
             <div class="cd-card-title">Result Sheet</div>
-            <div class="cd-card-sub">Sabhi students ka result</div>
+            <div class="cd-card-sub">Results of all students</div>
             <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
           </button>
 
           <button type="button" class="cd-card cd-indigo" onclick="goStudentSection('my-result-detail-card')">
-            <div class="cd-card-top"><div class="cd-icon-circle">🧾</div><span class="cd-badge">Sahi/Galat</span></div>
-            <div class="cd-card-title">Mera Result</div>
-            <div class="cd-card-sub">Apna detailed result dekhein</div>
+            <div class="cd-card-top"><div class="cd-icon-circle">🧾</div><span class="cd-badge">Correct/Wrong</span></div>
+            <div class="cd-card-title">My Result</div>
+            <div class="cd-card-sub">View your detailed result</div>
             <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
           </button>
 
           <button type="button" class="cd-card cd-teal" onclick="goStudentSection('my-progress-card')">
             <div class="cd-card-top"><div class="cd-icon-circle">📈</div><span class="cd-badge">Trend</span></div>
             <div class="cd-card-title">My Progress</div>
-            <div class="cd-card-sub">Score trend dekhein</div>
+            <div class="cd-card-sub">View your score trend</div>
             <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
           </button>
 
           <button type="button" class="cd-card cd-orange" onclick="goStudentSection('my-mistakes-card')">
             <div class="cd-card-top"><div class="cd-icon-circle">❌</div><span class="cd-badge">Revise</span></div>
             <div class="cd-card-title">My Mistakes</div>
-            <div class="cd-card-sub">Galat sawaal dobara practice karein</div>
+            <div class="cd-card-sub">Practise your wrong questions again</div>
             <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
           </button>
 
@@ -398,7 +398,7 @@
         <div class="cd-promo">
           <div class="cd-promo-text">
             <h3>Daily Practice</h3>
-            <p>Curated daily practice se apna score boost karein.</p>
+            <p>Boost your score with curated daily practice.</p>
             <button type="button" class="cd-promo-btn" onclick="goStudentSection('practice-mode-card')">Explore →</button>
           </div>
           <div class="cd-promo-icon">📅</div>
@@ -410,7 +410,7 @@
 
         <div class="field-row" style="display:none">
           <label for="student-name">Name</label>
-          <input id="student-name" type="text" placeholder="Apna naam likhein" required />
+          <input id="student-name" type="text" placeholder="Enter your name" required />
         </div>
         <div class="field-row" style="display:none">
           <label for="student-mobile">WhatsApp Number <span style="color:#ef4444">*</span></label>
@@ -442,7 +442,7 @@
            hai (goStudentSection wiring script.js mein). ── -->
       <div class="card hidden" id="student-solids-lab-card">
         <h3 class="section-title">📐 3D Solids Lab</h3>
-        <p class="muted-text">Cylinder, cone, sphere, cuboid jaise solids banayein, ghumayein aur kaat kar andar dekhein — Volume/Surface Area formula turant dikhega.</p>
+        <p class="muted-text">Build solids such as a cylinder, cone, sphere or cuboid, rotate them and cut them open — volume and surface-area formulas appear instantly.</p>
         <div id="solids-lab-mount-student" class="solids-lab-root"></div>
       </div>
 
@@ -525,19 +525,18 @@
 
         <div style="margin-top:16px;padding-top:14px;border-top:1px solid #e2e8f0;">
           <h4 style="margin:0 0 6px;font-size:.92rem;">🔔 Notifications</h4>
-          <p class="muted-text" style="margin-top:0;">Naya test aate hi notification milega. Nahi chahiye to yahan se band karein.</p>
-          <button type="button" id="push-notify-toggle-btn" class="btn-secondary" onclick="window.SavyaPush && window.SavyaPush.toggle()">🔔 Notifications On Karein</button>
+          <p class="muted-text" style="margin-top:0;">You will be notified when a new test is available. Turn it off here if you do not want alerts.</p>
+          <button type="button" id="push-notify-toggle-btn" class="btn-secondary" onclick="window.SavyaPush && window.SavyaPush.toggle()">🔔 Turn On Notifications</button>
           <p id="push-notify-status" class="muted-text" style="margin-top:8px;font-size:.8rem;"></p>
         </div>
       </div>
 
       <div class="card hidden" id="student-results-card">
         <h3 class="section-title">📊 Result Sheet</h3>
-        <p class="muted-text">Apne test ka rank aur marks dekhein — sabhi students ka result ek hi sheet mein.</p>
         <div class="field-row">
           <label for="result-test-select">Select Test</label>
           <select id="result-test-select">
-            <option value="">— Test chunein —</option>
+            <option value="">Select a test</option>
           </select>
         </div>
         <div id="student-result-sheet" class="board-result-sheet-wrap"></div>
@@ -545,10 +544,10 @@
 
       <div class="card hidden" id="my-result-detail-card">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-          <h3 class="section-title" style="margin-bottom:0;">🧾 Mera Result — Sahi/Galat Dekhein</h3>
+          <h3 class="section-title" style="margin-bottom:0;">🧾 My Result — Correct/Wrong</h3>
           <button type="button" id="my-result-refresh-btn" class="btn-secondary" style="font-size:.78rem;padding:5px 12px;">🔄 Refresh</button>
         </div>
-        <p class="muted-text">Aapke diye har test (online, OMR ya offline) mein kaun sa sawaal sahi hua aur kaun sa galat — yahan apne aap dikhega.</p>
+        <p class="muted-text">See which questions you got right or wrong in every test you took (online, OMR or offline).</p>
         <div id="my-result-list" style="margin-top:12px;"></div>
 
         <div id="my-paper-exam-section" class="hidden" style="margin-top:18px;">
@@ -569,24 +568,24 @@
       <div class="card hidden pm-card" id="practice-mode-card">
         <div class="pm-legacy" hidden>
         <h3 class="section-title">🎯 Practice Mode</h3>
-        <p class="muted-text">Bina time-pressure ke practice karein — turant sahi/galat pata chalega. Rank/marks count nahi hote.</p>
+        <p class="muted-text">Practise without time pressure and get instant feedback. Rank and marks are not counted.</p>
         <div class="field-row">
           <label for="practice-subject-filter">Subject</label>
           <select id="practice-subject-filter"></select>
         </div>
         <div class="field-row">
-          <label for="practice-question-count">Chapters (ek ya zyada chunein — kuch na chunein to sabhi chapters shamil honge)</label>
+          <label for="practice-question-count">Chapters (select one or more — if none selected, all chapters are included)</label>
         </div>
         <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
-          <button type="button" id="practice-select-all-chapters" class="btn-secondary" style="font-size:.78rem;padding:5px 12px;">☑️ Sabhi Select Karein</button>
-          <button type="button" id="practice-clear-all-chapters" class="btn-secondary" style="font-size:.78rem;padding:5px 12px;">◻️ Sab Hatayein</button>
+          <button type="button" id="practice-select-all-chapters" class="btn-secondary" style="font-size:.78rem;padding:5px 12px;">☑️ Select All</button>
+          <button type="button" id="practice-clear-all-chapters" class="btn-secondary" style="font-size:.78rem;padding:5px 12px;">◻️ Clear All</button>
         </div>
         <div id="practice-chapter-list" class="chapter-grid"></div>
         <div class="field-row">
           <label for="practice-question-count">Questions Count</label>
           <input id="practice-question-count" type="number" min="1" value="10" />
         </div>
-        <button type="button" id="practice-start-btn" class="btn-primary">▶️ Practice Shuru Karein</button>
+        <button type="button" id="practice-start-btn" class="btn-primary">▶️ Start Practice</button>
       </div>
         <div id="pm-root"></div>
       </div>
@@ -594,8 +593,8 @@
       <!-- ── MY PROGRESS (score trend across all tests) ── -->
       <div class="card hidden" id="my-progress-card">
         <h3 class="section-title">📈 My Progress</h3>
-        <p class="muted-text">Aapke saare tests ka score trend — dekhein kitna improve ho raha hai.</p>
-        <div id="my-progress-empty" class="muted-text">Abhi tak koi test attempt nahi hua.</div>
+        <p class="muted-text">Your score trend across all tests — see how much you are improving.</p>
+        <div id="my-progress-empty" class="muted-text">No test attempted yet.</div>
         <canvas id="my-progress-chart" height="140" style="display:none;"></canvas>
       </div>
 
@@ -603,10 +602,10 @@
       <div class="card hidden mm-card" id="my-mistakes-card">
         <div class="mm-legacy" hidden>
         <h3 class="section-title">❌ My Mistakes</h3>
-        <p class="muted-text">Test mein galat hue questions yahan apne aap save hote hain — revise karke "Maine sikh liya" dabayein.</p>
+        <p class="muted-text">Questions you answered wrongly are saved here automatically — revise them and tap "Mark as learned".</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
           <button type="button" id="refresh-mistakes-btn" class="btn-secondary">🔄 Refresh</button>
-          <button type="button" id="practice-mistakes-btn" class="btn-primary" style="background:linear-gradient(135deg,#f59e0b,#d97706);">🔁 Inhe Practice Karein</button>
+          <button type="button" id="practice-mistakes-btn" class="btn-primary" style="background:linear-gradient(135deg,#f59e0b,#d97706);">🔁 Practise These</button>
         </div>
         </div>
         <div id="my-mistakes-list"></div>
@@ -623,7 +622,7 @@
         <div id="test-analysis-meta" class="test-analysis-meta"></div>
         <div id="test-analysis-summary" class="test-analysis-summary"></div>
         <div id="test-analysis-chapters"></div>
-        <button type="button" id="test-analysis-solution-btn" class="btn-primary hidden" style="width:100%;margin-top:14px;">📖 Solution Dekhein</button>
+        <button type="button" id="test-analysis-solution-btn" class="btn-primary hidden" style="width:100%;margin-top:14px;">📖 View Solution</button>
       </div>
     </div>
 
@@ -633,7 +632,7 @@
     <div id="examgr-add-overlay" class="test-analysis-overlay examgr-overlay-full hidden" onclick="if(event.target===this) examgrCloseAdd()">
       <div class="test-analysis-sheet">
         <button type="button" class="test-analysis-close" onclick="examgrCloseAdd()">✕</button>
-        <div class="test-analysis-title">🗂️ Naya Exam Banayein</div>
+        <div class="test-analysis-title">🗂️ Create New Exam</div>
         <p class="muted-text">Offline/paper exam ka record banega.</p>
         <div class="field-row">
           <label for="examgr-add-name">Exam Name</label>
@@ -644,7 +643,7 @@
           <input type="text" id="examgr-add-class" placeholder="jaise: Class 10">
         </div>
         <div class="field-row" id="examgr-add-classid-row">
-          <label for="examgr-add-classid">Class (eligibility ke liye)</label>
+          <label for="examgr-add-classid">Class (for eligibility)</label>
           <select id="examgr-add-classid"></select>
         </div>
         <div class="two-col">
@@ -653,13 +652,13 @@
             <input type="date" id="examgr-add-date">
           </div>
           <div class="field-row">
-            <label for="examgr-add-questions">Kitne Questions</label>
+            <label for="examgr-add-questions">Number of Questions</label>
             <input type="number" id="examgr-add-questions" min="1" max="100" value="100">
           </div>
         </div>
         <div class="two-col">
           <div class="field-row">
-            <label for="examgr-add-sets">Kitne Sets (A–E)</label>
+            <label for="examgr-add-sets">Number of Sets (A–E)</label>
             <input type="number" id="examgr-add-sets" min="1" max="5" value="1">
           </div>
           <div class="field-row">
@@ -668,14 +667,14 @@
           </div>
         </div>
         <div class="field-row">
-          <label for="examgr-add-roll-digits">Roll No Digits (sheet par kitne digit bubble columns)</label>
+          <label for="examgr-add-roll-digits">Roll No digits (bubble columns on the sheet)</label>
           <select id="examgr-add-roll-digits"><option value="1">1 digit</option><option value="2" selected>2 digits</option><option value="3">3 digits</option><option value="4">4 digits</option><option value="5">5 digits</option></select>
         </div>
         <div class="field-row" id="examgr-add-reg-row" style="display:none">
            <label for="examgr-add-reg">📝 Registration se jodein (pehle se register students + roll)</label>
            <select id="examgr-add-reg"></select>
          </div>
-         <p class="muted-text" style="font-size:.78rem;margin-top:-6px;">Note: OMR sheet 100 questions / 5 columns ki hai, isliye questions 100 tak rakhein. Ek se zyada set ho to har set ki answer key Answer Key screen mein alag bharein.</p>
+         <p class="muted-text" style="font-size:.78rem;margin-top:-6px;">Note: The OMR sheet supports 100 questions / 5 columns, so keep questions within 100. If you use more than one set, enter each set's answer key separately on the Answer Key screen.</p>
         <button type="button" class="btn-primary" id="examgr-add-save-btn" style="width:100%;">💾 Exam Banayein</button>
       </div>
     </div>
@@ -720,16 +719,16 @@
           <button type="button" class="examgr-action-btn" data-action="absentees"><span>🙈</span>Absentees</button>
         </div>
 
-        <button type="button" class="btn-danger" id="examgr-delete-btn" style="width:100%;margin-top:16px;">🗑️ Ye Exam Delete Karein</button>
+        <button type="button" class="btn-danger" id="examgr-delete-btn" style="width:100%;margin-top:16px;">🗑️ Delete This Exam</button>
       </div>
     </div>
 
     <!-- Exam Settings -->
     <div id="examgr-settings-overlay" class="test-analysis-overlay examgr-overlay-full hidden" onclick="if(event.target===this) examgrCloseSettings()">
       <div class="test-analysis-sheet examgr-settings-sheet">
-        <button type="button" class="test-analysis-close" onclick="examgrCloseSettings()" aria-label="Settings band karein">✕</button>
+        <button type="button" class="test-analysis-close" onclick="examgrCloseSettings()" aria-label="Close settings">✕</button>
         <div class="test-analysis-title">⚙️ Exam Settings</div>
-        <p class="muted-text">Is exam ki OMR sheet aur scan ka tareeka yahan set karein.</p>
+        <p class="muted-text">Configure the OMR sheet and scanning options for this exam.</p>
         <p id="examgr-settings-notice" class="examgr-settings-notice" hidden></p>
 
         <div class="examgr-settings-grid">
@@ -738,24 +737,24 @@
             <input type="number" id="examgr-settings-questions" min="1" max="100" inputmode="numeric">
           </div>
           <div class="field-row">
-            <label for="examgr-settings-sets">Exam mein sets</label>
+            <label for="examgr-settings-sets">Sets in exam</label>
             <input type="number" id="examgr-settings-sets" min="1" max="5" inputmode="numeric">
           </div>
           <div class="field-row">
-            <label for="examgr-settings-attempt">Attempt Limit (pehle itne bhare hue sawaal hi check hon)</label>
-            <input type="number" id="examgr-settings-attempt" min="1" max="100" inputmode="numeric" placeholder="Khali = sab sawaal check hon">
+            <label for="examgr-settings-attempt">Attempt Limit (only this many answered questions are checked)</label>
+            <input type="number" id="examgr-settings-attempt" min="1" max="100" inputmode="numeric" placeholder="Blank = check all questions">
           </div>
         </div>
 
         <section class="examgr-settings-section" aria-labelledby="examgr-settings-sheet-title">
           <h4 id="examgr-settings-sheet-title">🗒️ OMR Sheet</h4>
           <label class="examgr-settings-toggle" for="examgr-settings-include-roll">
-            <span class="examgr-settings-toggle-copy"><strong>Roll No ke bubbles dikhayein</strong><small>Band karne par nayi OMR sheet par Roll No ka hissa nahi aayega.</small></span>
+            <span class="examgr-settings-toggle-copy"><strong>Roll No ke bubbles dikhayein</strong><small>If turned off, the new OMR sheet will not include the Roll No section.</small></span>
             <input type="checkbox" id="examgr-settings-include-roll">
             <span class="examgr-settings-switch" aria-hidden="true"></span>
           </label>
           <div class="field-row" id="examgr-settings-roll-digits-row">
-            <label for="examgr-settings-roll-digits">Roll No mein kitne digit?</label>
+            <label for="examgr-settings-roll-digits">How many digits in Roll No?</label>
             <select id="examgr-settings-roll-digits"><option value="1">1 digit</option><option value="2">2 digits</option><option value="3">3 digits</option><option value="4">4 digits</option><option value="5">5 digits</option></select>
           </div>
         </section>
@@ -763,12 +762,12 @@
         <section class="examgr-settings-section" aria-labelledby="examgr-settings-scan-title">
           <h4 id="examgr-settings-scan-title">📷 Scan ke options</h4>
           <label class="examgr-settings-toggle" for="examgr-settings-ignore-set">
-            <span class="examgr-settings-toggle-copy"><strong>Set ko scan mein ignore karein</strong><small>Set bubbles sheet se hatenge; checking Set A ki answer key se hogi.</small></span>
+            <span class="examgr-settings-toggle-copy"><strong>Ignore Set while scanning</strong><small>Set bubbles are removed from the sheet; checking uses the Set A answer key.</small></span>
             <input type="checkbox" id="examgr-settings-ignore-set">
             <span class="examgr-settings-switch" aria-hidden="true"></span>
           </label>
           <label class="examgr-settings-toggle" for="examgr-settings-ignore-roll">
-            <span class="examgr-settings-toggle-copy"><strong>Roll No ko scan mein ignore karein</strong><small>Scanner Roll No nahi padhega; result bina Roll No ke save hoga.</small></span>
+            <span class="examgr-settings-toggle-copy"><strong>Ignore Roll No while scanning</strong><small>The scanner will not read Roll No; the result is saved without it.</small></span>
             <input type="checkbox" id="examgr-settings-ignore-roll">
             <span class="examgr-settings-switch" aria-hidden="true"></span>
           </label>
@@ -776,7 +775,7 @@
 
         <div class="examgr-settings-footer">
           <button type="button" class="btn-secondary" onclick="examgrCloseSettings()">Cancel</button>
-          <button type="button" class="btn-primary" id="examgr-settings-save-btn">💾 Settings Save Karein</button>
+          <button type="button" class="btn-primary" id="examgr-settings-save-btn">💾 Save Settings</button>
         </div>
       </div>
     </div>
@@ -786,12 +785,12 @@
       <div class="test-analysis-sheet examgr-akey-sheet">
         <button type="button" class="test-analysis-close" onclick="examgrCloseAnswerKey()">✕</button>
         <div class="test-analysis-title">✅ Answer Key</div>
-        <p class="muted-text" id="examgr-akey-sub">Har question ke liye sahi option par click karein.</p>
+        <p class="muted-text" id="examgr-akey-sub">Click the correct option for each question.</p>
         <div class="examgr-akey-tabs" id="examgr-akey-tabs" hidden></div>
         <div class="examgr-akey-note" id="examgr-akey-note" hidden></div>
         <div class="examgr-akey-list" id="examgr-akey-list"></div>
         <div class="examgr-akey-footer">
-          <button type="button" class="btn-secondary" id="examgr-akey-refill-btn" hidden>📄 Paper se dobara bharo</button>
+          <button type="button" class="btn-secondary" id="examgr-akey-refill-btn" hidden>📄 Refill from paper</button>
           <button type="button" class="btn-secondary" id="examgr-akey-reset-btn">Reset</button>
           <button type="button" class="btn-primary" id="examgr-akey-save-btn">💾 Save</button>
         </div>
@@ -803,10 +802,10 @@
       <div class="test-analysis-sheet examgr-sheet-modal">
         <button type="button" class="test-analysis-close" onclick="examgrCloseOmrSheet()">✕</button>
         <div class="test-analysis-title">🗒️ OMR / Bubble Sheet</div>
-        <p class="muted-text">100 question, 5 column — print karke seedha use karein. Corner ke 4 kaale square poore dikhne chahiye.</p>
+        <p class="muted-text">100 questions, 5 columns — print and use directly. All 4 black corner squares must be fully visible.</p>
         <div class="examgr-sheet-preview-wrap"><div class="examgr-sheet-preview" id="examgr-sheet-preview"></div></div>
-        <button type="button" class="btn-primary" id="examgr-sheet-jpg-btn" style="width:100%;margin-top:14px;">🖼️ JPG Download Karein</button>
-        <div class="muted-text" style="margin:14px 0 4px;font-weight:700;">✅ Bhari hui Reference OMR (sahi answers bhare hue)</div>
+        <button type="button" class="btn-primary" id="examgr-sheet-jpg-btn" style="width:100%;margin-top:14px;">🖼️ Download JPG</button>
+        <div class="muted-text" style="margin:14px 0 4px;font-weight:700;">✅ Filled Reference OMR (with correct answers)</div>
         <div style="display:flex;gap:8px;"><button type="button" class="btn-primary" id="examgr-ref-pdf-btn" style="flex:1;">🖨️ PDF (Print)</button><button type="button" class="btn-secondary" id="examgr-ref-jpg-btn" style="flex:1;">🖼️ JPG</button></div>
       </div>
     </div>
@@ -816,7 +815,7 @@
       <div class="test-analysis-sheet examgr-scan-modal">
         <button type="button" class="test-analysis-close" onclick="examgrCloseScanner()">✕</button>
         <div class="test-analysis-title">📷 Scan Sheet</div>
-        <p class="muted-text" id="examgr-scan-desc">Sheet ko blue box mein rakhein — 4 corner ke kaale square align hote hi photo apne aap ho jaayegi aur Answer Key se check hogi.</p>
+        <p class="muted-text" id="examgr-scan-desc">Place the sheet inside the blue box — once the 4 black corner squares align, the photo is taken automatically and checked against the Answer Key.</p>
 
         <div class="examgr-scan-graded-head" id="examgr-scan-graded-head" hidden>
           <span>Roll No <strong id="examgr-scan-g-roll">0</strong></span>
@@ -824,7 +823,7 @@
           <span>Marks <strong id="examgr-scan-g-marks">0.0</strong></span>
         </div>
         <!-- v22: shows the background OCR guess of the handwritten name
-             box while it's running ("⏳ Naam padha ja raha hai...") and
+             box while it's running ("⏳ Reading name...") and
              then the recognized text once done — purely informational
              here; the actual suggested student match happens in the
              Link-to-Student step (examgr-link-student-overlay) below. -->
@@ -843,19 +842,19 @@
           <img class="examgr-scan-capture" id="examgr-scan-capture" alt="Captured OMR scan" hidden>
           <button type="button" class="examgr-scan-torch-btn" id="examgr-scan-torch-btn" aria-label="Flash On/Off" hidden>🔦 Flash</button>
           <div class="examgr-scan-overlay-ui" id="examgr-scan-overlay-ui">
-            <div class="examgr-scan-guide">Har kaale square ko blue corner box ke andar align karein</div>
+            <div class="examgr-scan-guide">Align each black square inside the blue corner box</div>
             <div class="examgr-scan-corner tl" data-marker="top-left"><span class="examgr-scan-dot"></span></div>
             <div class="examgr-scan-corner tr" data-marker="top-right"><span class="examgr-scan-dot"></span></div>
             <div class="examgr-scan-corner bl" data-marker="bottom-left"><span class="examgr-scan-dot"></span></div>
             <div class="examgr-scan-corner br" data-marker="bottom-right"><span class="examgr-scan-dot"></span></div>
-            <div class="examgr-scan-status" id="examgr-scan-status"><span class="examgr-scan-status-dot"></span><span id="examgr-scan-status-text">Kaale OMR squares dhoonde ja rahe hain...</span></div>
+            <div class="examgr-scan-status" id="examgr-scan-status"><span class="examgr-scan-status-dot"></span><span id="examgr-scan-status-text">Detecting OMR corner squares...</span></div>
           </div>
           <div class="examgr-scan-saved-toast" id="examgr-scan-saved-toast" hidden>✅ Saved</div>
           <div class="examgr-scan-permission" id="examgr-scan-permission" hidden>
             <div class="examgr-scan-permission-panel">
-              <strong>📷 Camera access chahiye</strong>
-              <p id="examgr-scan-permission-msg">Camera ki permission allow karein, phir dobara try karein.</p>
-              <button type="button" class="btn-primary" id="examgr-scan-enable-btn">Camera Enable Karein</button>
+              <strong>📷 Camera access required</strong>
+              <p id="examgr-scan-permission-msg">Allow camera permission and try again.</p>
+              <button type="button" class="btn-primary" id="examgr-scan-enable-btn">Enable Camera</button>
             </div>
           </div>
         </div>
@@ -878,12 +877,12 @@
     <div id="examgr-scan-edit-overlay" class="test-analysis-overlay examgr-overlay-full hidden" onclick="if(event.target===this) examgrCloseEdit()">
       <div class="test-analysis-sheet examgr-akey-sheet">
         <button type="button" class="test-analysis-close" onclick="examgrCloseEdit()">✕</button>
-        <div class="test-analysis-title">✏️ Reading Theek Karein</div>
-        <p class="muted-text">Camera se galat padha ho to yahan sahi karein.</p>
+        <div class="test-analysis-title">✏️ Correct Reading</div>
+        <p class="muted-text">Fix it here if the camera misread anything.</p>
         <div class="examgr-edit-rollset" id="examgr-edit-rollset"></div>
         <div class="examgr-akey-list" id="examgr-edit-qlist"></div>
         <div class="examgr-akey-footer">
-          <button type="button" class="btn-primary" id="examgr-edit-apply-btn" style="width:100%;">✅ Apply Karein</button>
+          <button type="button" class="btn-primary" id="examgr-edit-apply-btn" style="width:100%;">✅ Apply</button>
         </div>
       </div>
     </div>
@@ -897,7 +896,7 @@
           <div class="examgr-reports-summary-card"><span id="examgr-reports-label-1">Σ Marks</span><strong id="examgr-reports-maxmarks">0</strong></div>
           <div class="examgr-reports-summary-card"><span id="examgr-reports-label-2">Reports</span><strong id="examgr-reports-count">0</strong></div>
         </div>
-        <div style="display:flex;gap:8px;margin-bottom:12px;"><button type="button" class="btn-primary" id="examgr-rs-img-btn" style="flex:1;">🖼️ Result Sheet (Image)</button><button type="button" class="btn-secondary" id="examgr-rs-share-btn" style="flex:1;">📤 Group me Bhejein</button></div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;"><button type="button" class="btn-primary" id="examgr-rs-img-btn" style="flex:1;">🖼️ Result Sheet (Image)</button><button type="button" class="btn-secondary" id="examgr-rs-share-btn" style="flex:1;">📤 Send to Group</button></div>
         <div class="examgr-reports-list" id="examgr-reports-list"></div>
       </div>
     </div>
@@ -932,20 +931,20 @@
     <div id="examgr-link-student-overlay" class="test-analysis-overlay hidden" onclick="if(event.target===this) examgrCloseLinkStudent()">
       <div class="test-analysis-sheet" style="max-width:420px;">
         <button type="button" class="test-analysis-close" onclick="examgrCloseLinkStudent()">✕</button>
-        <div class="test-analysis-title">🔗 Student Se Link Karein</div>
+        <div class="test-analysis-title">🔗 Link to Student</div>
         <p class="muted-text">Is result ko student ke mobile number se link karein — student ise apne "My Result" mein (photo ke saath) dekh paayega. Neeche naam se student chunein, number apne aap bhar jaayega.</p>
         <div class="field-row">
           <label for="examgr-link-name-input">Registered Student Dhoondein (Naam se)</label>
-          <input id="examgr-link-name-input" type="text" placeholder="Student ka naam type karein..." autocomplete="off" />
+          <input id="examgr-link-name-input" type="text" placeholder="Type student name..." autocomplete="off" />
         </div>
         <div class="field-row">
           <label for="examgr-link-mobile-input">Student ka Mobile Number</label>
           <input id="examgr-link-mobile-input" type="tel" placeholder="jaise: 9876543210" maxlength="10" />
         </div>
         <div id="examgr-link-status" class="muted-text" style="min-height:20px;"></div>
-        <button type="button" class="btn-primary" id="examgr-link-confirm-btn" style="width:100%;margin-top:8px;">🔗 Link Karein</button>
-        <button type="button" class="btn-secondary" id="examgr-link-skip-btn" style="width:100%;margin-top:8px;">⏭️ Skip Karein (Baad Mein Link Karenge)</button>
-        <button type="button" class="btn-secondary" id="examgr-link-unlink-btn" style="width:100%;margin-top:8px;">🔓 Unlink Karein</button>
+        <button type="button" class="btn-primary" id="examgr-link-confirm-btn" style="width:100%;margin-top:8px;">🔗 Link</button>
+        <button type="button" class="btn-secondary" id="examgr-link-skip-btn" style="width:100%;margin-top:8px;">⏭️ Skip (link later)</button>
+        <button type="button" class="btn-secondary" id="examgr-link-unlink-btn" style="width:100%;margin-top:8px;">🔓 Unlink</button>
       </div>
     </div>
 
@@ -953,8 +952,8 @@
     <div id="examgr-report-edit-overlay" class="test-analysis-overlay examgr-overlay-full hidden" onclick="if(event.target===this) examgrCloseReportEdit()">
       <div class="test-analysis-sheet examgr-akey-sheet">
         <button type="button" class="test-analysis-close" onclick="examgrCloseReportEdit()">✕</button>
-        <div class="test-analysis-title">✏️ Result Edit Karein</div>
-        <p class="muted-text">Roll No, Exam Set ya kisi bhi question ka jawab yahan se sahi karein.</p>
+        <div class="test-analysis-title">✏️ Edit Result</div>
+        <p class="muted-text">Correct the Roll No, Exam Set or any answer here.</p>
         <div class="examgr-edit-rollset" id="examgr-rd-edit-rollset"></div>
         <div class="examgr-akey-list" id="examgr-rd-edit-qlist"></div>
         <div class="examgr-akey-footer">
@@ -975,7 +974,7 @@
         <input id="admin-password" type="password" placeholder="Password" />
       </div>
       <button type="submit" class="btn-primary">Login</button>
-      <button type="button" id="forgot-password-link" style="background:none;border:none;color:#2563eb;text-decoration:underline;cursor:pointer;margin-top:10px;font-size:.85rem;display:block;">🔑 Password bhool gaye?</button>
+      <button type="button" id="forgot-password-link" style="background:none;border:none;color:#2563eb;text-decoration:underline;cursor:pointer;margin-top:10px;font-size:.85rem;display:block;">🔑 Forgot password?</button>
 
       <!-- Owner ke liye — Owner ke paas Admin ka login/password nahi
            hota (wo bilkul alag role hai, apne khud ke email/password se
@@ -992,14 +991,14 @@
 
     <!-- ── ADMIN PANEL ── -->
     <div id="admin-panel" class="hidden">
-      <button type="button" id="admin-back-btn" class="hidden" onclick="backToAdminDashboard()" style="display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #c7d2fe;color:#4338ca;font-weight:700;border-radius:999px;padding:9px 18px;margin-bottom:14px;cursor:pointer;font-size:.85rem;">← Dashboard par wapas</button>
+      <button type="button" id="admin-back-btn" class="hidden" onclick="backToAdminDashboard()" style="display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #c7d2fe;color:#4338ca;font-weight:700;border-radius:999px;padding:9px 18px;margin-bottom:14px;cursor:pointer;font-size:.85rem;">← Back to Dashboard</button>
 
       <!-- ── CREATIVE ADMIN DASHBOARD HOME ── -->
       <div class="cd-wrap" id="admin-dashboard-home">
         <div class="cd-hero">
           <div class="cd-hero-text">
             <h2>Welcome 👋</h2>
-            <p>Tests, students aur results — sab yahin se manage karein. 🛡️</p>
+            <p>Manage tests, students and results from here. 🛡️</p>
           </div>
           <div class="cd-hero-emoji" aria-hidden="true">🛡️</div>
         </div>
@@ -1009,21 +1008,21 @@
           <button type="button" class="cd-card cd-blue" onclick="goAdmin('tests')">
             <div class="cd-card-top"><div class="cd-icon-circle">📋</div><span class="cd-badge">Create</span></div>
             <div class="cd-card-title">Tests</div>
-            <div class="cd-card-sub">Naya test banayein ya edit karein</div>
+            <div class="cd-card-sub">Create or edit a test</div>
             <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
           </button>
 
           <button type="button" class="cd-card cd-pink" onclick="goAdmin('generator')">
             <div class="cd-card-top"><div class="cd-icon-circle">📄</div><span class="cd-badge">New</span></div>
             <div class="cd-card-title">Paper Generator</div>
-            <div class="cd-card-sub">Question paper turant banayein</div>
+            <div class="cd-card-sub">Generate a question paper instantly</div>
             <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
           </button>
 
           <button type="button" class="cd-card cd-purple" onclick="goAdmin('bank')">
             <div class="cd-card-top"><div class="cd-icon-circle">🏦</div><span class="cd-badge">Bank</span></div>
             <div class="cd-card-title">Question Bank</div>
-            <div class="cd-card-sub">Saare questions ek jagah</div>
+            <div class="cd-card-sub">All questions in one place</div>
             <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
           </button>
 
@@ -1047,21 +1046,21 @@
           <button type="button" class="cd-card cd-gold" onclick="goAdmin('leaderboard')">
             <div class="cd-card-top"><div class="cd-icon-circle">🏆</div><span class="cd-badge">Rank</span></div>
             <div class="cd-card-title">Top Performers</div>
-            <div class="cd-card-sub">Kiske marks kis test se bane, poora dekhein</div>
+            <div class="cd-card-sub">See how each student's marks were earned, test by test</div>
             <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
           </button>
 
           <button type="button" class="cd-card cd-orange" onclick="goAdmin('grade')">
             <div class="cd-card-top"><div class="cd-icon-circle">📝</div><span class="cd-badge">Manual</span></div>
             <div class="cd-card-title">Grade Subjective</div>
-            <div class="cd-card-sub">Subjective answers grade karein</div>
+            <div class="cd-card-sub">Grade subjective answers</div>
             <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
           </button>
 
           <button type="button" class="cd-card cd-green" onclick="goAdmin('omr')">
             <div class="cd-card-top"><div class="cd-icon-circle">🔲</div><span class="cd-badge">Scan</span></div>
             <div class="cd-card-title">OMR</div>
-            <div class="cd-card-sub">OMR sheets scan &amp; check karein</div>
+            <div class="cd-card-sub">Scan &amp; check OMR sheets</div>
             <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
           </button>
         </div>
@@ -1071,21 +1070,21 @@
           <button type="button" class="cd-card cd-green" onclick="showMode('student')">
             <div class="cd-card-top"><div class="cd-icon-circle">🎓</div><span class="cd-badge">Preview</span></div>
             <div class="cd-card-title">Student View</div>
-            <div class="cd-card-sub">Student dashboard mein jaakar check karein</div>
+            <div class="cd-card-sub">Preview the student dashboard</div>
             <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
           </button>
 
           <button type="button" class="cd-card cd-blue" onclick="goAdmin('solidslab')">
             <div class="cd-card-top"><div class="cd-icon-circle">📐</div><span class="cd-badge">3D</span></div>
             <div class="cd-card-title">Solids Lab</div>
-            <div class="cd-card-sub">Class mein dikhane ke liye 3D solids</div>
+            <div class="cd-card-sub">3D solids for classroom demos</div>
             <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
           </button>
 
           <button type="button" class="cd-card cd-red" onclick="goAdmin('trash')">
             <div class="cd-card-top"><div class="cd-icon-circle">🗑️</div><span class="cd-badge">Bin</span></div>
             <div class="cd-card-title">Recycle Bin</div>
-            <div class="cd-card-sub">Delete kiye gaye items recover karein</div>
+            <div class="cd-card-sub">Recover deleted items</div>
             <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
           </button>
         </div>
@@ -1125,13 +1124,13 @@
             <button type="button" class="cd-card cd-blue" onclick="showTestsSubTab('create')">
               <div class="cd-card-top"><div class="cd-icon-circle">➕</div><span class="cd-badge">New</span></div>
               <div class="cd-card-title">Create Test</div>
-              <div class="cd-card-sub">Naya test banayein ya edit karein</div>
+              <div class="cd-card-sub">Create or edit a test</div>
               <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
             </button>
             <button type="button" class="cd-card cd-purple" onclick="showTestsSubTab('list')">
               <div class="cd-card-top"><div class="cd-icon-circle">📋</div><span class="cd-badge" id="tests-hub-count"></span></div>
               <div class="cd-card-title">All Tests</div>
-              <div class="cd-card-sub">Sabhi tests dekhein, edit/delete karein</div>
+              <div class="cd-card-sub">View, edit or delete all tests</div>
               <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
             </button>
           </div>
@@ -1139,14 +1138,14 @@
 
         <!-- Create Test -->
         <div id="test-create-box" class="hidden">
-          <button type="button" class="btn-secondary" onclick="backToTestsHub()" style="margin-bottom:12px;">⬅ Tests par wapas</button>
+          <button type="button" class="btn-secondary" onclick="backToTestsHub()" style="margin-bottom:12px;">⬅ Back to Tests</button>
         <!-- v141: Saved Drafts (Paper Generator + Test drafts) — yahin se Edit / Publish (Online Test) -->
         <div id="create-drafts-card" class="card" style="margin-bottom:14px;">
           <h3 class="section-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
             <span>📝 Saved Drafts <span id="create-drafts-count" style="font-size:.8rem;color:#6b7280;font-weight:600;"></span></span>
           </h3>
           <small style="color:#6b7280;font-size:.78rem;display:block;margin-bottom:8px;">Paper Generator ya "Save as Draft" se bane tests yahan dikhte hain. <b>Edit</b> se neeche form me khulega, <b>Online Test Banao</b> se students ke liye publish ho jaayega.</small>
-          <div id="create-drafts-list" class="list-box"><p class="muted-text">Koi draft nahi hai.</p></div>
+          <div id="create-drafts-list" class="list-box"><p class="muted-text">No drafts.</p></div>
           <div id="create-drafts-legacy" style="margin-top:10px;"></div>
         </div>
         <form id="test-form" class="card">
@@ -1184,8 +1183,8 @@
             <div class="field-row">
               <label for="test-syllabus">Test Schedule (optional)</label>
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <input id="test-start-time" type="datetime-local" style="flex:1;" title="Test kab se available hoga" />
-                <input id="test-end-time" type="datetime-local" style="flex:1;" title="Test kab band hoga" />
+                <input id="test-start-time" type="datetime-local" style="flex:1;" title="Test available from" />
+                <input id="test-end-time" type="datetime-local" style="flex:1;" title="Test closes at" />
               </div>
               <small style="color:#6b7280;font-size:.78rem;">Khaali chhodein = hamesha available. Start time se pehle test lock rahega (students ko Upcoming dikhega, syllabus ke saath notification jaayega).</small>
             </div>
@@ -1197,17 +1196,17 @@
           </div>
 
           <div class="field-row" id="send-to-generator-row" style="margin-top:6px;">
-            <button type="button" id="send-to-generator-btn" class="btn-secondary" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;border:none;font-weight:700;">📄 Questions Paper Generator mein Add Karein →</button>
+            <button type="button" id="send-to-generator-btn" class="btn-secondary" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;border:none;font-weight:700;">📄 Add Questions in Paper Generator →</button>
             <small style="color:#6b7280;font-size:.78rem;display:block;margin-top:6px;">Upar ki details (Title, Category, Duration, Marks, Limits) bhar kar yahan click karein. Paper Generator khulega — wahan paper banakar "✅ Save &amp; Admin ko Bhejein" dabayein, test questions ke saath yahan aa jaayega.</small>
           </div>
           <div class="hidden">
             <hr />
             <h4>Test Sections (Section-wise Paper)</h4>
-            <p class="muted-text">Ek hi test mein Section A, B, C alag-alag bana sakte hain.</p>
+            <p class="muted-text">You can create separate Sections A, B, C within one test.</p>
             <div id="test-sections-list" class="sections-list"></div>
             <button type="button" id="add-test-section" class="btn-secondary" style="margin-bottom:12px;">➕ Add Section</button>
             <div class="field-row">
-              <label for="active-section-select">Active Section (questions yahan add honge)</label>
+              <label for="active-section-select">Active Section (questions are added here)</label>
               <select id="active-section-select"></select>
             </div>
           </div>
@@ -1258,9 +1257,9 @@
               </div>
             </div>
             <div id="question-subjective-fields" class="field-row hidden">
-              <label for="question-marks">Max Marks (is question ke liye)</label>
+              <label for="question-marks">Max Marks (for this question)</label>
               <input id="question-marks" type="number" min="0" step="0.5" placeholder="Khaali = test ke default marks/question" />
-              <small style="color:#6b7280;font-size:.78rem;">Student text mein jawab likhega; teacher baad mein check karke marks denge.</small>
+              <small style="color:#6b7280;font-size:.78rem;">The student types the answer; the teacher checks it later and awards marks.</small>
             </div>
             <div class="field-row"><label for="explanation-text-hi">Explanation (HI)</label><textarea id="explanation-text-hi" rows="2"></textarea></div>
             <button type="button" id="add-question" class="btn-secondary">Add Question to Test</button>
@@ -1278,7 +1277,7 @@
 
         <!-- All Tests -->
         <div id="test-list-box" class="hidden">
-          <button type="button" class="btn-secondary" onclick="backToTestsHub()" style="margin-bottom:12px;">⬅ Tests par wapas</button>
+          <button type="button" class="btn-secondary" onclick="backToTestsHub()" style="margin-bottom:12px;">⬅ Back to Tests</button>
           <div class="card">
             <h3 class="section-title">All Tests</h3>
             <div id="test-list" class="list-box"></div>
@@ -1302,25 +1301,25 @@
             </div>
             <div class="field-row"><label for="bank-classid">1️⃣ Class (कक्षा)</label>
               <select id="bank-classid" onchange="onBankClassIdChange()">
-                <option value="">-- Class chunein --</option>
+                <option value="">-- Select class --</option>
               </select>
-              <small style="color:#6b7280;font-size:.78rem;margin-top:2px;display:block;">Pehle Class chunein, tabhi Subject/Chapter list milegi.</small>
+              <small style="color:#6b7280;font-size:.78rem;margin-top:2px;display:block;">Select a class first to see the Subject/Chapter list.</small>
             </div>
             <div class="field-row"><label for="bank-subject-select">2️⃣ Subject</label>
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                 <select id="bank-subject-select" style="flex:1;min-width:160px;" onchange="onBankSubjectSelectChange()">
-                  <option value="">-- Pehle Class chunein --</option>
+                  <option value="">-- Select class first --</option>
                 </select>
-                <input id="bank-subject" type="text" aria-label="Or enter a new subject" placeholder="Ya naya subject likhein..." style="flex:1;min-width:160px;" oninput="updateMathPreview()" onchange="updateMathPreview()" />
+                <input id="bank-subject" type="text" aria-label="Or enter a new subject" placeholder="Or type a new subject..." style="flex:1;min-width:160px;" oninput="updateMathPreview()" onchange="updateMathPreview()" />
               </div>
               <small style="color:#6b7280;font-size:.78rem;margin-top:2px;display:block;">Dropdown se chunein <strong>ya</strong> naya subject manually likhein — save hone par automatically add ho jaayega</small>
             </div>
             <div class="field-row"><label for="bank-chapter">3️⃣ Chapter</label>
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                 <select id="bank-chapter-select" aria-label="Choose an existing chapter" style="flex:1;min-width:160px;" onchange="onBankChapterSelectChange()">
-                  <option value="">-- Chapter chunein --</option>
+                  <option value="">-- Select chapter --</option>
                 </select>
-                <input id="bank-chapter" type="text" placeholder="Ya naya chapter likhein..." style="flex:1;min-width:160px;" />
+                <input id="bank-chapter" type="text" placeholder="Or type a new chapter..." style="flex:1;min-width:160px;" />
               </div>
               <small style="color:#6b7280;font-size:.78rem;margin-top:2px;display:block;">Dropdown se chunein <strong>ya</strong> naya chapter manually likhein — save hone par automatically add ho jaayega</small>
             </div>
@@ -1361,7 +1360,7 @@
               </div>
             </div>
             <div id="bank-subjective-fields" class="field-row hidden">
-              <label for="bank-marks">Max Marks (is question ke liye)</label>
+              <label for="bank-marks">Max Marks (for this question)</label>
               <input id="bank-marks" type="number" min="0" step="0.5" placeholder="Khaali = test ke default marks/question" />
             </div>
             <div class="field-row"><label for="bank-difficulty">Difficulty Level</label>
@@ -1387,7 +1386,7 @@
             <h3 class="section-title" style="margin:0;">Question Bank</h3>
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
               <span id="bank-question-count" style="background:#dbeafe;color:#1e40af;font-weight:700;font-size:.82rem;padding:3px 10px;border-radius:20px;">0 questions</span>
-              <button type="button" id="bank-migrate-class10-btn" onclick="migrateQuestionBankToClass10();" style="display:none;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:.8rem;cursor:pointer;font-weight:600;" title="Jin questions mein abhi Class set nahi hai unhe Class 10 assign karein (one-time, safe to re-run)">🎓 Class 10 Assign Karein</button>
+              <button type="button" id="bank-migrate-class10-btn" onclick="migrateQuestionBankToClass10();" style="display:none;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:.8rem;cursor:pointer;font-weight:600;" title="Jin questions mein abhi Class set nahi hai unhe Class 10 assign karein (one-time, safe to re-run)">🎓 Assign Class 10</button>
               <button type="button" onclick="showDuplicateReport();" style="background:linear-gradient(135deg,#d97706,#b45309);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:.8rem;cursor:pointer;font-weight:600;" title="Duplicate questions dhundho">🔁 Duplicates Check</button>
               <button type="button" onclick="testFirebaseDelete();" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:.8rem;cursor:pointer;font-weight:600;" title="Firebase delete permission test karo">🔧 Test Delete</button>
             </div>
@@ -1424,8 +1423,8 @@
     <select id="move-target-subject" onchange="populateMoveChapterList()" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.9rem;margin-bottom:12px;"></select>
     <label style="font-size:.85rem;font-weight:600;color:#374151;display:block;margin-bottom:6px;" for="move-target-chapter">Chapter</label>
     <select id="move-target-chapter" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.9rem;margin-bottom:6px;"></select>
-    <p style="font-size:.78rem;color:#9ca3af;margin:0 0 16px;">Ya naya chapter naam likhein:</p>
-    <input id="move-target-new-chapter" type="text" aria-label="Or enter a new chapter" placeholder="Naya chapter naam (optional)..." style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.9rem;margin-bottom:18px;box-sizing:border-box;" />
+    <p style="font-size:.78rem;color:#9ca3af;margin:0 0 16px;">Or enter a new chapter name:</p>
+    <input id="move-target-new-chapter" type="text" aria-label="Or enter a new chapter" placeholder="New chapter name (optional)..." style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:.9rem;margin-bottom:18px;box-sizing:border-box;" />
     <div style="display:flex;gap:10px;justify-content:flex-end;">
       <button onclick="closeMoveChapterModal()" style="background:#f3f4f6;color:#374151;border:none;border-radius:8px;padding:8px 18px;font-size:.9rem;cursor:pointer;font-weight:600;">Cancel</button>
       <button onclick="confirmMoveToChapter()" style="background:linear-gradient(135deg,#0369a1,#0284c7);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:.9rem;cursor:pointer;font-weight:700;">📦 Move</button>
@@ -1442,7 +1441,7 @@
       <div id="bulk-upload-box" class="hidden">
         <div class="card">
           <h3 class="section-title">📦 Bulk Question Upload</h3>
-          <p class="muted-text">Bahut saare questions ek saath paste karne ke liye. Format:</p>
+          <p class="muted-text">Paste many questions at once. Format:</p>
           <div style="font-size:.78rem;color:#64748b;background:#f1f5f9;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-family:monospace;white-space:pre-wrap;">1. भारत की राजधानी क्या है?
 A) दिल्ली
 B) मुंबई
@@ -1460,17 +1459,17 @@ Model Answer: समाजवाद एक आर्थिक व्यवस्
             <div style="flex:1;min-width:160px;">
               <label for="bulk-class-select">Class (कक्षा) <span style="color:#dc2626;">*</span></label>
               <select id="bulk-class-select" required style="border:1px solid #cbd5e1;" onchange="onBulkClassSelectChange()">
-                <option value="">-- Class chunein --</option>
+                <option value="">-- Select class --</option>
               </select>
-              <small style="color:#6b7280;font-size:.78rem;margin-top:2px;display:block;">Zaroori — ye poora batch isi Class ke liye save hoga</small>
+              <small style="color:#6b7280;font-size:.78rem;margin-top:2px;display:block;">Required — this whole batch will be saved for this Class</small>
             </div>
             <div style="flex:1;min-width:200px;">
               <label for="bulk-subject-select">Subject (विषय)</label>
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                 <select id="bulk-subject-select" style="flex:1;min-width:140px;" onchange="onBulkSubjectSelectChange()">
-                  <option value="">-- Subject chunein --</option>
+                  <option value="">-- Select subject --</option>
                 </select>
-                <input type="text" id="bulk-subject" aria-label="Or enter a new subject" value="Mathematics" placeholder="Ya naya subject likhein..." style="flex:1;min-width:140px;" oninput="onBulkSubjectInputChange()" />
+                <input type="text" id="bulk-subject" aria-label="Or enter a new subject" value="Mathematics" placeholder="Or type a new subject..." style="flex:1;min-width:140px;" oninput="onBulkSubjectInputChange()" />
               </div>
               <small style="color:#6b7280;font-size:.78rem;margin-top:2px;display:block;">Dropdown se chunein <strong>ya</strong> naya subject manually likhein</small>
             </div>
@@ -1478,9 +1477,9 @@ Model Answer: समाजवाद एक आर्थिक व्यवस्
               <label for="bulk-chapter">Chapter (चैप्टर)</label>
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                 <select id="bulk-chapter-select" aria-label="Choose an existing chapter" style="flex:1;min-width:140px;" onchange="onBulkChapterSelectChange()">
-                  <option value="">-- Chapter chunein --</option>
+                  <option value="">-- Select chapter --</option>
                 </select>
-                <input type="text" id="bulk-chapter" value="General" placeholder="Ya naya chapter likhein..." style="flex:1;min-width:140px;" />
+                <input type="text" id="bulk-chapter" value="General" placeholder="Or type a new chapter..." style="flex:1;min-width:140px;" />
               </div>
               <small style="color:#6b7280;font-size:.78rem;margin-top:2px;display:block;">Dropdown se chunein <strong>ya</strong> naya chapter manually likhein</small>
             </div>
@@ -1495,7 +1494,7 @@ Model Answer: समाजवाद एक आर्थिक व्यवस्
           </div>
 
           <div class="field-row">
-            <label for="bulk-images-input">📷 Images Attach Karein (optional)</label>
+            <label for="bulk-images-input">📷 Attach Images (optional)</label>
             <input type="file" id="bulk-images-input" accept="image/*" multiple style="width:100%;padding:6px;border:1px dashed #94a3b8;border-radius:8px;background:#f8fafc;" onchange="handleBulkImagesSelected(this.files)" />
             <small style="color:#6b7280;font-size:.78rem;margin-top:2px;display:block;">
               File ka naam question number se match karo (jaise <code>Q1.jpg</code>, <code>2.png</code>) — auto-attach ho jaayega. Preview table me manually bhi attach/change kar sakte ho.
@@ -1510,7 +1509,7 @@ Model Answer: समाजवाद एक आर्थिक व्यवस्
 
           <div id="bulk-combined-panel">
             <div class="field-row">
-              <label for="bulk-raw-text">Questions Paste Karein</label>
+              <label for="bulk-raw-text">Paste Questions</label>
               <textarea id="bulk-raw-text" rows="12" style="font-family:monospace;font-size:.85rem;" placeholder="प्रश्‍न 1. किसी बहुपद में चर का घात इनमें से कौन होगा?
 (क) धन पूर्णांक
 (ख) ऋण पूर्णांक
@@ -1536,10 +1535,10 @@ Model Answer: समाजवाद एक आर्थिक व्यवस्
 
           <div id="bulk-separate-panel" class="hidden">
             <p class="muted-text" style="font-size:.8rem;">
-              Alag-alag boxes bharein — <strong>har line ek sawaal</strong> ke liye hai, aur sabhi boxes mein line ka number match hona chahiye (jaise Questions box ki line 3 = Option A box ki line 3 = Answer box ki line 3, waise hi sab).
+              Alag-alag boxes bharein — <strong>one question per line</strong> ke liye hai, aur sabhi boxes mein line ka number match hona chahiye (jaise Questions box ki line 3 = Option A box ki line 3 = Answer box ki line 3, waise hi sab).
             </p>
             <div class="field-row">
-              <label for="bulk-sep-questions">1️⃣ Questions (har line = ek sawaal)</label>
+              <label for="bulk-sep-questions">1️⃣ Questions (one per line)</label>
               <textarea id="bulk-sep-questions" rows="5" style="font-family:monospace;font-size:.85rem;" placeholder="भारत की राजधानी क्या है?
 भारत का राष्ट्रीय पशु कौन सा है?"></textarea>
             </div>
@@ -1571,7 +1570,7 @@ Model Answer: समाजवाद एक आर्थिक व्यवस्
 B"></textarea>
             </div>
             <div class="field-row">
-              <label for="bulk-sep-explanations">7️⃣ Explanation (optional — khaali chhod sakte hain)</label>
+              <label for="bulk-sep-explanations">7️⃣ Explanation (optional — may be left blank)</label>
               <textarea id="bulk-sep-explanations" rows="4" style="font-family:monospace;font-size:.85rem;" placeholder="दिल्ली भारत की राजधानी है।
 बाघ भारत का राष्ट्रीय पशु है।"></textarea>
             </div>
@@ -1618,7 +1617,7 @@ B"></textarea>
           <div id="bulk-upload-log" style="margin-top:14px;padding:12px;background:#f1f5f9;border-radius:8px;max-height:240px;overflow-y:auto;font-size:.82rem;color:#475569;display:none;"></div>
 
           <div id="bulk-failed-area" style="display:none;margin-top:14px;padding:12px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;">
-            <strong style="color:#b91c1c;font-size:.85rem;">⚠️ Kuch questions fail ho gaye</strong>
+            <strong style="color:#b91c1c;font-size:.85rem;">⚠️ Some questions failed</strong>
             <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
               <button type="button" class="btn-secondary" onclick="retryFailedBulk()">🔁 Retry Failed</button>
               <button type="button" class="btn-secondary" onclick="exportFailedBulk()">⬇️ Export Failed (text)</button>
@@ -1637,24 +1636,24 @@ B"></textarea>
             <button type="button" class="cd-card cd-red" onclick="showRecordsSubTab('reset')">
               <div class="cd-card-top"><div class="cd-icon-circle">🔑</div><span class="cd-badge">Admin</span></div>
               <div class="cd-card-title">Password Reset</div>
-              <div class="cd-card-sub">Student ka password reset karein</div>
+              <div class="cd-card-sub">Reset student password</div>
               <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
             </button>
             <button type="button" class="cd-card cd-blue" onclick="showRecordsSubTab('directory')">
               <div class="cd-card-top"><div class="cd-icon-circle">👥</div><span class="cd-badge">Students</span></div>
               <div class="cd-card-title">Students Directory</div>
-              <div class="cd-card-sub">Naam, mobile aur unke answers dekhein</div>
+              <div class="cd-card-sub">View names, mobiles and their answers</div>
               <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
             </button>
             <button type="button" class="cd-card cd-green" onclick="showRecordsSubTab('results')">
               <div class="cd-card-top"><div class="cd-icon-circle">📁</div><span class="cd-badge">Sheets</span></div>
               <div class="cd-card-title">Result Sheets</div>
-              <div class="cd-card-sub">Excel/PDF/WhatsApp export karein</div>
+              <div class="cd-card-sub">Export to Excel/PDF/WhatsApp</div>
               <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
             </button>
             <button type="button" class="cd-card cd-orange" onclick="showRecordsSubTab('fixmobile')">
               <div class="cd-card-top"><div class="cd-icon-circle">🔧</div><span class="cd-badge">Fix</span></div>
-              <div class="cd-card-title">Fake/Galat Mobile Number Theek Karein</div>
+              <div class="cd-card-title">Fix Fake/Incorrect Mobile Numbers</div>
               <div class="cd-card-sub">Placeholder number (jaise 1111111111) aur registered number se mismatch — dono pakde jaate hain</div>
               <div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>
             </button>
@@ -1663,7 +1662,7 @@ B"></textarea>
 
         <!-- Password Reset -->
         <div id="record-reset-box" class="hidden">
-          <button type="button" class="btn-secondary" onclick="backToRecordsHub()" style="margin-bottom:12px;">⬅ Records par wapas</button>
+          <button type="button" class="btn-secondary" onclick="backToRecordsHub()" style="margin-bottom:12px;">⬅ Back to Records</button>
         <div class="card" style="background:linear-gradient(135deg,#fef2f2,#fee2e2);border:1.5px solid #fca5a5;margin-bottom:12px;">
           <h3 class="section-title" style="color:#991b1b;">🔑 Student Password Reset (Admin)</h3>
           <p style="font-size:.82rem;color:#7f1d1d;margin-bottom:10px;">Student ka password AUR security PIN dono bhool jaayein to pehchaan (WhatsApp/class mein) confirm karke hi reset karein.</p>
@@ -1673,10 +1672,10 @@ B"></textarea>
               <input id="admin-reset-student-mobile" type="tel" placeholder="jaise: 9876543210" style="max-width:200px;" />
             </div>
             <div class="field-row" style="margin:0;">
-              <label for="admin-reset-student-pass">Naya Password</label>
+              <label for="admin-reset-student-pass">New Password</label>
               <input id="admin-reset-student-pass" type="text" placeholder="Kam se kam 4 characters" style="max-width:200px;" />
             </div>
-            <button type="button" id="admin-reset-student-btn" class="btn-primary" style="background:linear-gradient(135deg,#dc2626,#b91c1c);">Reset Karein</button>
+            <button type="button" id="admin-reset-student-btn" class="btn-primary" style="background:linear-gradient(135deg,#dc2626,#b91c1c);">Reset</button>
           </div>
           <p style="font-size:.75rem;color:#7f1d1d;margin-top:8px;">ℹ️ Note: Asli password kabhi bhi dekha nahi ja sakta (security ke liye sirf ek-tarfa hash save hota hai) — yahan sirf <strong>naya</strong> password set kiya ja sakta hai.</p>
         </div>
@@ -1685,17 +1684,17 @@ B"></textarea>
 
         <!-- Students Directory -->
         <div id="record-directory-box" class="hidden">
-          <button type="button" class="btn-secondary" onclick="backToRecordsHub()" style="margin-bottom:12px;">⬅ Records par wapas</button>
+          <button type="button" class="btn-secondary" onclick="backToRecordsHub()" style="margin-bottom:12px;">⬅ Back to Records</button>
         <div class="card" style="margin-bottom:16px;">
           <h3 class="section-title">👥 Students Directory</h3>
           <p class="muted-text">Har registered student ka naam, mobile (ID) aur MCQ answers yahan milenge — online, OMR ya Manual Entry, kisi bhi tarah se diya ho.</p>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px;">
             <div class="field-row" style="margin:0;flex:1;min-width:180px;">
-              <label for="students-directory-search">Naam ya Mobile Se Search Karein</label>
+              <label for="students-directory-search">Search by name or mobile</label>
               <input id="students-directory-search" type="text" placeholder="jaise: Rahul ya 9876543210" oninput="renderStudentsDirectory()" />
             </div>
             <button type="button" class="btn-secondary" onclick="loadStudentsDirectory()">🔄 Refresh</button>
-            <button type="button" class="btn-secondary" onclick="loadStudentsDirectory(true)" title="Speed ke liye default list sirf apne institute + unassigned students dikhati hai. Bahut purane (institute set hone se pehle wale) students ke liye ye poora scan karta hai — thoda dheema ho sakta hai.">🗄️ Purane students bhi (poora scan)</button>
+            <button type="button" class="btn-secondary" onclick="loadStudentsDirectory(true)" title="Speed ke liye default list sirf apne institute + unassigned students dikhati hai. Bahut purane (institute set hone se pehle wale) students ke liye ye poora scan karta hai — thoda dheema ho sakta hai.">🗄️ Include older students (full scan)</button>
           </div>
           <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;margin-bottom:10px;cursor:pointer;" for="students-directory-only-with-records">
             <input type="checkbox" id="students-directory-only-with-records" onchange="renderStudentsDirectory()" />
@@ -1711,7 +1710,7 @@ B"></textarea>
             <label for="students-directory-lookup-mobile" style="font-size:.85rem;font-weight:600;">Ya seedha mobile number se answers dekhein (chahe student registered ho ya na ho):</label>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
               <input id="students-directory-lookup-mobile" type="tel" placeholder="10-digit mobile number" maxlength="10" style="max-width:200px;" />
-              <button type="button" class="btn-primary" onclick="viewStudentAnswersByInput()">📄 Answers Dekhein</button>
+              <button type="button" class="btn-primary" onclick="viewStudentAnswersByInput()">📄 View Answers</button>
             </div>
           </div>
 
@@ -1724,11 +1723,11 @@ B"></textarea>
         <div id="student-proof-overlay" class="test-analysis-overlay examgr-overlay-full hidden" onclick="if(event.target===this) closeStudentProofForm()">
           <div class="test-analysis-sheet">
             <button type="button" class="test-analysis-close" onclick="closeStudentProofForm()">✕</button>
-            <div class="test-analysis-title">🪪 Student Profile Complete Karein</div>
+            <div class="test-analysis-title">🪪 Complete Student Profile</div>
             <p class="muted-text">
               <strong id="proof-form-student-name">-</strong> ·
               Mobile: <strong id="proof-form-student-mobile">-</strong><br>
-              Jo field ⚠️ highlight hai wahi abhi missing hai — baaki pehle se bhari hui hain, zaroorat ho to unhe bhi badal sakte hain.
+              Jo field ⚠️ highlight hai wahi abhi missing hai — pending pehle se bhari hui hain, zaroorat ho to unhe bhi badal sakte hain.
             </p>
             <form onsubmit="return submitStudentProofForm(event)">
               <div class="field-row" data-proof-field="photoDataUrl">
@@ -1756,7 +1755,7 @@ B"></textarea>
                 <strong id="proof-form-institute-title">Institute</strong>
                 <p id="proof-form-institute-label" class="muted-text" aria-labelledby="proof-form-institute-title" style="margin:0;">-</p>
               </div>
-              <button type="submit" class="btn-primary" id="proof-form-save-btn" style="width:100%;margin-top:6px;">💾 Save Karein</button>
+              <button type="submit" class="btn-primary" id="proof-form-save-btn" style="width:100%;margin-top:6px;">💾 Save</button>
             </form>
           </div>
         </div>
@@ -1765,9 +1764,9 @@ B"></textarea>
 
         <!-- Fake Mobile Number Fix -->
         <div id="record-fixmobile-box" class="hidden">
-          <button type="button" class="btn-secondary" onclick="backToRecordsHub()" style="margin-bottom:12px;">⬅ Records par wapas</button>
+          <button type="button" class="btn-secondary" onclick="backToRecordsHub()" style="margin-bottom:12px;">⬅ Back to Records</button>
         <div class="card" style="margin-bottom:16px;">
-          <h3 class="section-title">🔧 Fake/Galat Mobile Number Theek Karein</h3>
+          <h3 class="section-title">🔧 Fix Fake/Incorrect Mobile Numbers</h3>
           <p class="muted-text">Manual Entry/OMR mein kabhi-kabhi placeholder number (jaise <code>1111111111</code>, <code>0000000000</code>) chadh jaate hain — aur kabhi-kabhi teacher se koi bhi RANDOM valid-dikhne wala number bhi galat type ho jaata hai (jo placeholder pattern na hone ki wajah se pehle pakda nahi jaata tha). Dono cases mein wo student Students Directory ke registered account se match nahi hota aur Leaderboard mein alag-se (duplicate) entry ban jaati hai. Yeh tool ab Students Directory se cross-check karke, registered number se mismatch bhi pakadta hai — jahan possible ho wahan sahi number apne aap suggest bhi kar deta hai. Confirm karke "Update Karein" dabayein — us group ke SAARE galat-number records ek saath sahi ho jaayenge.</p>
           <button type="button" class="btn-secondary" onclick="loadFakeMobileGroups()" style="margin-bottom:12px;">🔄 Refresh</button>
           <div id="fixmobile-list"><p class="muted-text">Loading...</p></div>
@@ -1777,16 +1776,16 @@ B"></textarea>
 
         <!-- Result Sheets -->
         <div id="record-results-box" class="hidden">
-          <button type="button" class="btn-secondary" onclick="backToRecordsHub()" style="margin-bottom:12px;">⬅ Records par wapas</button>
+          <button type="button" class="btn-secondary" onclick="backToRecordsHub()" style="margin-bottom:12px;">⬅ Back to Records</button>
         <div class="card">
           <h3 class="section-title">Student Result Sheets</h3>
           <button id="clear-records" class="btn-danger">🗑️ Clear All Records</button>
           <button type="button" class="btn-secondary" onclick="window.print()" style="margin-left:8px;">🖨️ Print Results</button>
 
           <div class="field-row" style="margin-top:10px;">
-            <label for="admin-result-test-select">📋 Select Test (Excel/PDF/WhatsApp ke liye)</label>
+            <label for="admin-result-test-select">📋 Select Test (for Excel/PDF/WhatsApp)</label>
             <select id="admin-result-test-select" onchange="if(window.renderAdminRecordsForSelectedTest) renderAdminRecordsForSelectedTest()">
-              <option value="">— Sabhi Tests (ya neeche se ek test chunein) —</option>
+              <option value="">— All Tests (or select one below) —</option>
             </select>
           </div>
 
@@ -1809,7 +1808,7 @@ B"></textarea>
                "Select Test" changes (see renderClasswideWeakChapters()). -->
           <div class="card" style="margin-top:16px;border:1.5px solid #6366f1;">
             <h3 class="section-title" style="color:#4338ca;">📊 Class-wide Weak Chapters</h3>
-            <p class="muted-text" style="margin-top:-6px;">Test chunein (ya "Sabhi Tests" rehne dein) — neeche har chapter mein poori class ki accuracy dikhegi.</p>
+            <p class="muted-text" style="margin-top:-6px;">Select a test (ya "Sabhi Tests" rehne dein) — neeche har chapter mein poori class ki accuracy dikhegi.</p>
             <div id="classwide-analytics-box"><p class="muted-text" style="margin:0;">Loading...</p></div>
           </div>
 
@@ -1822,7 +1821,7 @@ B"></textarea>
       <div id="grade-box" class="hidden">
         <div class="card">
           <h3 class="section-title">📝 Grade Subjective Answers</h3>
-          <p class="muted-text">Test chunein — subjective jawab likhne wale students ki list neeche aayegi. Jawab padhkar marks dein aur Save karein.</p>
+          <p class="muted-text">Select a test — subjective jawab likhne wale students ki list neeche aayegi. Jawab padhkar marks dein aur Save karein.</p>
           <div class="field-row"><label for="grade-test-select">Test</label><select id="grade-test-select"></select></div>
           <div id="grade-students-list" class="list-box"></div>
         </div>
@@ -1866,7 +1865,7 @@ B"></textarea>
              photo aur "Name" Admin apne liye alag se set karta hai
              (id-card.js → renderAdminIdCard). -->
         <div class="card" style="margin-bottom:12px;">
-          <h3 class="section-title" style="margin-top:0;">🪪 Aapka ID Card</h3>
+          <h3 class="section-title" style="margin-top:0;">🪪 Your ID Card</h3>
           <p class="muted-text" style="margin-top:-6px;">Logo par click karke institute ka logo lagayein (ID Card par bhi dikhega). Photo aur Naam par click/✏️ karke details set karein.</p>
           <div class="idcard-outer" id="admin-idcard-outer">
             <div class="idcard">
@@ -1890,7 +1889,7 @@ B"></textarea>
 
               <div class="idcard-body">
                 <div class="idcard-photo-col">
-                  <label for="admin-dp-photo-input" class="idcard-photo-frame" title="Apni photo lagayein/badlein">
+                  <label for="admin-dp-photo-input" class="idcard-photo-frame" title="Add/change your photo">
                     <img id="admin-dp-preview" src="" alt="Admin Photo" style="display:none;" />
                     <div id="admin-dp-placeholder" class="idcard-photo-placeholder">
                       <span class="idcard-photo-icon">📷</span>
@@ -1933,11 +1932,11 @@ B"></textarea>
           <p class="muted-text" style="margin-top:-6px;">Naye students ko registration ke waqt ye code dena hoga — bina code ke koi aapke institute mein register nahi kar paayega. Code sirf apne students ko dein.</p>
           <p id="institute-joincode-status" class="muted-text" style="font-weight:700;">Loading...</p>
           <div class="field-row">
-            <label for="institute-joincode-input">Naya Code Set/Badlein</label>
+            <label for="institute-joincode-input">Set/Change Code</label>
             <input type="text" id="institute-joincode-input" placeholder="jaise: SAVYA2026" maxlength="20" style="text-transform:uppercase;" />
           </div>
-          <button type="button" class="btn-primary" onclick="saveInstituteJoinCode()">💾 Code Save Karein</button>
-          <button type="button" class="btn-secondary" onclick="disableInstituteJoinCode()" style="margin-left:8px;">🚫 Protection Hatayein</button>
+          <button type="button" class="btn-primary" onclick="saveInstituteJoinCode()">💾 Save Code</button>
+          <button type="button" class="btn-secondary" onclick="disableInstituteJoinCode()" style="margin-left:8px;">🚫 Remove Protection</button>
         </div>
         <div class="card" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1.5px solid #93c5fd;margin-bottom:12px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
           <div>
@@ -1949,7 +1948,7 @@ B"></textarea>
         <div class="card" style="background:linear-gradient(135deg,#fff7ed,#ffedd5);border:1.5px solid #fdba74;margin-bottom:12px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
           <div>
             <strong style="color:#9a3412;">🔐 Admin Password</strong>
-            <p style="font-size:.82rem;color:#7c2d12;margin-top:3px;">Password ab online save hota hai, isliye har device par same rahega.</p>
+            <p style="font-size:.82rem;color:#7c2d12;margin-top:3px;">Your password is now saved online, so it stays the same on every device.</p>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button id="change-admin-password-btn" class="btn-primary" style="background:linear-gradient(135deg,#ea580c,#c2410c);">🔁 Change Password</button>
@@ -1987,42 +1986,42 @@ B"></textarea>
 
         <!-- Generate OMR Sheet -->
         <div id="omr-generate-box" class="hidden">
-          <button type="button" class="btn-secondary" onclick="backToOmrHub()" style="margin-bottom:12px;">⬅ OMR par wapas</button>
+          <button type="button" class="btn-secondary" onclick="backToOmrHub()" style="margin-bottom:12px;">⬅ Back to OMR</button>
         <div class="card" style="margin-bottom:16px;">
           <h3 class="section-title">🖨️ OMR Sheet Banayein</h3>
-          <p class="muted-text">Kisi bhi test ke liye printable OMR answer sheet (PDF) banayein — students isi par offline answers bharenge.</p>
+          <p class="muted-text">Create a printable OMR answer sheet (PDF) for any test — students fill in their answers on it offline.</p>
           <div class="field-row">
-            <label for="omr-sheet-test-select">Test Chunein</label>
+            <label for="omr-sheet-test-select">Select Test</label>
             <select id="omr-sheet-test-select"></select>
           </div>
-          <button type="button" id="omr-generate-sheet-btn" class="btn-primary">🖨️ OMR Sheet Generate Karein (JPG)</button>
-          <p class="muted-text" style="margin-top:8px;">Note: Sheet ki poori photo kheenchein (bina crop, seedhi, achhi light mein) — corner ke 4 kaale square poore dikhne chahiye.</p>
+          <button type="button" id="omr-generate-sheet-btn" class="btn-primary">🖨️ Generate OMR Sheet (JPG)</button>
+          <p class="muted-text" style="margin-top:8px;">Note: Capture the full sheet (uncropped, straight, in good light) — all 4 black corner squares must be visible.</p>
         </div>
         </div>
         <!-- /Generate OMR Sheet -->
 
         <!-- Manual Entry -->
         <div id="omr-manual-box" class="hidden">
-          <button type="button" class="btn-secondary" onclick="backToOmrHub()" style="margin-bottom:12px;">⬅ OMR par wapas</button>
+          <button type="button" class="btn-secondary" onclick="backToOmrHub()" style="margin-bottom:12px;">⬅ Back to OMR</button>
 
         <div class="card" style="margin-bottom:16px;border:1.5px solid #7c3aed;">
           <h3 class="section-title" style="color:#6d28d9;">🤖 Auto-Scan Galat Ho To — ChatGPT Se Answers Nikalwayein</h3>
           <p class="muted-text">Agar OMR Scanner kisi sheet ke answers galat pakde (halki marking, camera angle ya shadow se), to us sheet ki photo ChatGPT ko dikhakar sahi answers nikalwayein, phir neeche "Answers Type Karein" box mein paste karke save karein.</p>
-          <button type="button" class="btn-secondary" onclick="copyChatGptOmrPrompt()">📋 ChatGPT Prompt Copy Karein</button>
+          <button type="button" class="btn-secondary" onclick="copyChatGptOmrPrompt()">📋 Copy ChatGPT Prompt</button>
           <ol style="margin:10px 0 0;padding-left:20px;font-size:.85rem;color:#475569;line-height:1.7;">
             <li><a href="https://chatgpt.com" target="_blank" rel="noopener">chatgpt.com</a> par ek naya chat kholein.</li>
-            <li>Upar wala "📋 ChatGPT Prompt Copy Karein" button dabayein, phir ChatGPT mein paste karein.</li>
+            <li>Upar wala "📋 Copy ChatGPT Prompt" button dabayein, phir ChatGPT mein paste karein.</li>
             <li>Us sheet ki photo(s) usi message mein attach karke bhejein.</li>
             <li>ChatGPT jo <code>1 A</code> / <code>2</code> / <code>3 C</code> jaisa format wapas dega, use poora copy karein.</li>
-            <li>Neeche "Answers" box mein paste karke "Answers Parse Karein" dabayein — answers apne aap bhar jaayenge, baaki dropdown se check/fix karein.</li>
+            <li>Neeche "Answers" box mein paste karke "Answers Parse Karein" dabayein — answers apne aap bhar jaayenge, pending dropdown se check/fix karein.</li>
           </ol>
         </div>
 
         <div class="card" style="margin-bottom:16px;">
-          <h3 class="section-title">✍️ Answers Type Karke Marks Chadhayein</h3>
+          <h3 class="section-title">✍️ Type Answers to Record Marks</h3>
           <p class="muted-text">Photo ki zaroorat nahi — student ka OMR khud dekh kar answers yahan type karein, jaise: <code>1 c 2 b 3 a 4 d</code> (ek line me ya alag-alag lines me, "x" ya "-" likhne se woh question not-attempted maana jaayega).</p>
           <div class="field-row">
-            <label for="omr-manual-test-select">Test Chunein</label>
+            <label for="omr-manual-test-select">Select Test</label>
             <select id="omr-manual-test-select"></select>
           </div>
           <div class="field-row">
@@ -2040,7 +2039,7 @@ B"></textarea>
 3 a
 4 d ..."></textarea>
           </div>
-          <button type="button" id="omr-manual-parse-btn" class="btn-primary">📝 Answers Parse Karein &amp; Review Dikhayein</button>
+          <button type="button" id="omr-manual-parse-btn" class="btn-primary">📝 Parse Answers &amp; Review</button>
           <p id="omr-manual-status" class="muted-text" style="margin-top:8px;"></p>
           <div id="omr-manual-review-area"></div>
         </div>
@@ -2049,19 +2048,19 @@ B"></textarea>
 
         <!-- Exam Manager -->
         <div id="omr-exammgr-box" class="hidden">
-          <button type="button" class="btn-secondary" onclick="backToOmrHub()" style="margin-bottom:12px;">⬅ OMR par wapas</button>
+          <button type="button" class="btn-secondary" onclick="backToOmrHub()" style="margin-bottom:12px;">⬅ Back to OMR</button>
 
         <div class="card" style="margin-bottom:16px;">
           <h3 class="section-title">🗂️ Exam Manager</h3>
-          <p class="muted-text">Offline/paper exams ka record yahan rakhein: answer key, sheets ki ginti aur reports.</p>
+          <p class="muted-text">Keep records of offline/paper exams here: answer keys, sheet counts and reports.</p>
           <button type="button" class="btn-secondary" onclick="__examgrOpenRegSafe()" style="width:100%;margin-bottom:8px;">📝 Registration aur Admit Card</button>
-          <button type="button" class="btn-secondary" onclick="syncOldTestsToExamManager()" id="examgr-sync-old-btn" style="width:100%;margin-top:10px;">🔄 Purane Tests Sync Karein</button>
-          <button type="button" class="btn-secondary" onclick="examgrCleanOrphans()" id="examgr-orphan-btn" style="width:100%;margin-top:10px;">🧹 Student side ke purane OMR results hatayein</button>
-          <p class="muted-text" style="font-size:.78rem;margin-top:4px;">Naye tests apne aap yahan aate hain. Ye button sirf purane tests ke liye hai.</p>
+          <button type="button" class="btn-secondary" onclick="syncOldTestsToExamManager()" id="examgr-sync-old-btn" style="width:100%;margin-top:10px;">🔄 Sync Older Tests</button>
+          <button type="button" class="btn-secondary" onclick="examgrCleanOrphans()" id="examgr-orphan-btn" style="width:100%;margin-top:10px;">🧹 Remove old OMR results from the student side</button>
+          <p class="muted-text" style="font-size:.78rem;margin-top:4px;">New tests appear here automatically. This button is only for older tests.</p>
         </div>
 
         <div class="examgr-intro-row">
-          <span class="muted-text" style="margin:0;">Aapke exams</span>
+          <span class="muted-text" style="margin:0;">Your exams</span>
           <button type="button" class="examgr-sort-btn" id="examgr-sort-btn">⇅ Newest first</button>
         </div>
         <div id="examgr-list"></div>
@@ -2307,7 +2306,7 @@ B"></textarea>
      dono normal student ke test-taking flow mein kabhi chhute hi nahi,
      phir bhi pehle HAR visitor ke liye eager download+parse hoti thin.
      Ab __ensureLib se sirf actual use-point par load hoti hain:
-       - ownerPanel → "🏢 Owner Panel Kholein" button
+       - ownerPanel → "🏢 Open Owner Panel" button
        - examManager → OMR hub → "🗂️ Exam Manager" sub-tab
      SAVYA_CLASS_OPTIONS (owner-panel.js ka ek chhota top-level global,
      jo script.js/exam-manager.js/id-card.js mein turant chahiye hota
@@ -2341,7 +2340,7 @@ B"></textarea>
 <script defer src="offline-sync.js"></script>
 <!-- Android/TWA back-button fix: exam ya kisi bhi screen ke beech
      back dabane par app close hone se rokta hai -->
-<script defer src="exam-flow-v2.js?v=1"></script>
+<script defer src="exam-flow-v2.js?v=2"></script>
 <script defer src="admin-parts-v2.js?v=1"></script>
 <script defer src="overlay-back.js"></script>
 <script defer src="back-button-guard.js"></script>

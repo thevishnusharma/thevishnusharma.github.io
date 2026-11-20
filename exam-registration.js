@@ -283,7 +283,7 @@
       return chain;
     }).then(function () { return ref.collection("roster").doc("main").delete().catch(function () {}); })
       .then(function () { return ref.delete(); })
-      .then(function () { note("🗑️ Registration delete ho gayi."); return refreshList(); }).catch(function (e) { note("❌ Delete nahi hua: " + (e.code || e.message || e)); });
+      .then(function () { note("🗑️ Registration delete ho gayi."); return refreshList(); }).catch(function (e) { note("❌ Could not delete: " + (e.code || e.message || e)); });
   }
   /* students jodo. photoMap={mobile:dataURL} optional. Publish ho chuka ho to naye students ko turant random roll + card */
   function addPeople(people, photoMap, prefix) {
@@ -401,7 +401,7 @@
       .then(function (failed) {
         note("🚀 " + R.list.length + " students ke Roll No shuffle hokar publish ho gaye." + (failed ? " ⚠️ " + failed + " cards app tak nahi pahunche — unhe PDF ya WhatsApp se dein." : " Jinke paas app hai unhe Admit Card app me dikhega.") + " Ab \"📄 PDF\" se print/WhatsApp kar sakte hain.");
         renderCur();
-      }).catch(function (e) { R.list = prevList; note("❌ Publish nahi hua: " + (e.code || e.message || e)); renderCur(); });
+      }).catch(function (e) { R.list = prevList; note("❌ Could not publish: " + (e.code || e.message || e)); renderCur(); });
   }
   function pdfList() { var g = S.pdfGroup; return S.R.list.filter(function (e) { return e.roll && (!g || e.group === g); }).sort(byRoll); }
   function printPdf() {

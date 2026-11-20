@@ -397,9 +397,9 @@
           var on = s.connected;
           box.innerHTML = "<h3>💾 Mera Storage (Google Drive) — " + (on ? '<span class="bm-badge">Jura hai</span>' : '<span class="bm-badge o">Jura nahi</span>') + "</h3>" +
             (on ? '<div class="bm-row"><div class="g">Account</div><b>' + c0(s.email || "—") + '</b></div><div class="bm-row"><div class="g">Files / use</div><span>' + (s.files || 0) + " files • " + (s.usedMB || 0) + " MB</span></div>"
-                : '<div class="bm-note">' + (hasId ? "Apna Google Drive jodein — files aapke apne Drive me rahengi (data aapka)." : "Drive jodne ka setup abhi baaki hai (Owner ko batayein). Tab tak links/YouTube chalte rahenge.") + "</div>") +
+                : '<div class="bm-note">' + (hasId ? "Apna Google Drive jodein — files aapke apne Drive me rahengi (data aapka)." : "Drive jodne ka setup abhi pending hai (Owner ko batayein). Tab tak links/YouTube chalte rahenge.") + "</div>") +
             '<div class="bm-note">💡 Institute ke naam ka <b>alag Google account</b> use karein (personal se nahi) — admin badle to files saath na jaayein. App sirf apni banayi hui files dekh sakta hai.</div>' +
-            '<button class="bm-btn" id="bx-dc"' + (hasId ? "" : " disabled") + ">" + (hasId ? (on ? "Account badlein" : "Drive jodein") : "Setup baaki hai") + "</button>" +
+            '<button class="bm-btn" id="bx-dc"' + (hasId ? "" : " disabled") + ">" + (hasId ? (on ? "Account badlein" : "Drive jodein") : "Setup pending hai") + "</button>" +
             (on ? ' <button class="bm-btn" id="bx-do">📂 Drive folder kholein</button> <button class="bm-btn red" id="bx-dd">Disconnect</button>' : "");
           var bc = box.querySelector("#bx-dc"), bo = box.querySelector("#bx-do"), bd = box.querySelector("#bx-dd");
           bc && (bc.onclick = function () { bc.disabled = true; sd.connect(inst).then(function () { c.audit("institute.driveConnect", inst); c.toast("✅ Drive jur gaya"); drv(); try { c.driveBanner(); } catch (e) {} }, function (e) { bc.disabled = false; c.toast("Drive nahi juda: " + (e && e.message || e)); }); });
@@ -459,7 +459,7 @@
           sb.disabled = true; var db = c.DB(), FV = c.FV, col = c.bref(c.A.inst, bf0).collection("items"), chunks = [];
           for (var i = 0; i < ok.length; i += 400) chunks.push(ok.slice(i, i + 400));
           chunks.reduce(function (pr, ch) { return pr.then(function () { var wb = db.batch(); ch.forEach(function (r) { var d = { batchId: bf0, instituteId: c.A.inst, kind: "recording", title: r.title, desc: "", subject: r.subject, chapter: r.chapter, durationMin: 0, teacher: "", status: "ready", published: false, url: c.ytWatch(r.id), ytId: r.id, createdAt: FV().serverTimestamp(), createdBy: c.adminEmail(), updatedAt: FV().serverTimestamp() }; EXT.stampIds(d, { batchId: bf0, subject: r.subject, chapter: r.chapter }); wb.set(col.doc(), d); }); return wb.commit(); }); }, Promise.resolve())
-            .then(function () { c.audit("item.bulkyt", String(ok.length)); c.toast("✅ " + ok.length + " recordings save hui (Ready — Publish baaki)"); return c.loadAll().then(function () { c.adminGo("recording"); }); })
+            .then(function () { c.audit("item.bulkyt", String(ok.length)); c.toast("✅ " + ok.length + " recordings save hui (Ready — Publish pending)"); return c.loadAll().then(function () { c.adminGo("recording"); }); })
             .catch(function (e) { sb.disabled = false; c.toast("Save nahi hua: " + (e.code || e.message)); });
         };
       });

@@ -44,8 +44,8 @@
     var root = $("pm-root"); if (!root) return;
     var keep = document.activeElement && document.activeElement.id === "pm-q";
     var left;
-    if (S.state === "loading" || S.state === "idle") left = '<div class="pm-none">Question bank load ho raha hai...</div>';
-    else if (!S.data || !Object.keys(S.data).length) left = '<div class="pm-none">Abhi koi question bank uplabdh nahi hai.</div>';
+    if (S.state === "loading" || S.state === "idle") left = '<div class="pm-none">Loading question bank...</div>';
+    else if (!S.data || !Object.keys(S.data).length) left = '<div class="pm-none">No question bank is available right now.</div>';
     else {
       var f = S.q.trim().toLowerCase(), h = "";
       Object.keys(S.data).sort(cmp).forEach(function (s) {
@@ -55,23 +55,23 @@
         h += '<div class="pm-sj' + (o ? " open" : "") + '"><div class="pm-sh" data-h="' + esc(s) + '"><span class="pm-cb ' + st + '" data-a="' + esc(s) + '"></span><b>' + esc(s) + "</b><small>" + (n ? n + " / " : "") + all.length + '<span class="pm-w"> chapters</span></small>' + ARR + '</div><div class="pm-cl">' +
           cs.map(function (c) { return '<div class="pm-ci" data-s="' + esc(s) + '" data-c="' + esc(c) + '"><span class="pm-cb ' + (S.sel[s] && S.sel[s].has(c) ? "on" : "") + '"></span><span class="n">' + esc(c) + "</span><small>" + S.data[s][c] + '<span class="pm-w"> prashn</span></small></div>'; }).join("") + "</div></div>";
       });
-      left = h || '<div class="pm-none">Koi chapter nahi mila.</div>';
+      left = h || '<div class="pm-none">No chapters found.</div>';
     }
     var T = S.data ? totals() : { ks: [], tc: 0, av: 0, eff: 0 }, right;
-    if (!T.tc) right = '<div class="pm-em">Abhi koi chapter select nahi hai.</div>';
+    if (!T.tc) right = '<div class="pm-em">No chapter selected.</div>';
     else right = T.ks.map(function (s) { return '<div class="pm-sg"><b>' + esc(s) + "<small>" + S.sel[s].size + " chapter</small></b>" + Array.from(S.sel[s]).sort(cmp).map(function (c) { return '<div class="pm-t"><span>' + esc(c) + '</span><button type="button" class="pm-x" aria-label="Hatayein" data-r="' + esc(s) + "|" + esc(c) + '">×</button></div>'; }).join("") + "</div>"; }).join("") +
-      '<div class="pm-qs"><label>Prashnon ki sankhya</label><div class="pm-pre">' + [10, 20, 30, 50].map(function (n) { return '<button type="button" class="' + (S.want === n ? "on" : "") + '" data-n="' + n + '">' + n + "</button>"; }).join("") + '</div><div class="pm-cu">Ya apni sankhya:<input id="pm-cn" type="number" min="1" max="' + T.av + '" value="' + S.want + '"></div>' +
-      '<div class="pm-r"><span>Chune hue chapter</span><b>' + T.tc + '</b></div><div class="pm-r"><span>Uplabdh prashn</span><b>' + T.av + '</b></div><div class="pm-r"><span>Is practice mein</span><b>' + T.eff + '</b></div><button type="button" class="pm-go" id="pm-go">Practice shuru karein</button><button type="button" class="pm-clr" id="pm-clr">Sab hatayein</button></div>';
-    root.innerHTML = '<div class="pm-grid"><div class="pm-panel"><div class="pm-h">Subjects aur chapters<span>' + (T.tc ? T.tc + " chapter chune" : "Koi chayan nahi") + '</span></div><div class="pm-srch"><input id="pm-q" placeholder="Chapter khojein" value="' + esc(S.q) + '"></div>' + left + '</div><div class="pm-panel pm-sum"><div class="pm-h">Aapka practice test</div>' + right + "</div></div>";
+      '<div class="pm-qs"><label>Prashnon ki sankhya</label><div class="pm-pre">' + [10, 20, 30, 50].map(function (n) { return '<button type="button" class="' + (S.want === n ? "on" : "") + '" data-n="' + n + '">' + n + "</button>"; }).join("") + '</div><div class="pm-cu">Or enter a number:<input id="pm-cn" type="number" min="1" max="' + T.av + '" value="' + S.want + '"></div>' +
+      '<div class="pm-r"><span>Selected chapters</span><b>' + T.tc + '</b></div><div class="pm-r"><span>Available questions</span><b>' + T.av + '</b></div><div class="pm-r"><span>In this practice</span><b>' + T.eff + '</b></div><button type="button" class="pm-go" id="pm-go">Start practice</button><button type="button" class="pm-clr" id="pm-clr">Clear all</button></div>';
+    root.innerHTML = '<div class="pm-grid"><div class="pm-panel"><div class="pm-h">Subjects aur chapters<span>' + (T.tc ? T.tc + " chapters selected" : "Nothing selected") + '</span></div><div class="pm-srch"><input id="pm-q" placeholder="Chapter khojein" value="' + esc(S.q) + '"></div>' + left + '</div><div class="pm-panel pm-sum"><div class="pm-h">Your practice test</div>' + right + "</div></div>";
     if (keep) { var i = $("pm-q"); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }
   }
   function start() {
-    var e = sess(); if (!e) { alert("Practice ke liye pehle login karein."); return; }
+    var e = sess(); if (!e) { alert("Please log in to start practice."); return; }
     var T = totals(); if (!T.tc) return;
-    if (!S.want || S.want <= 0) { alert("Questions count 0 se zyada hona chahiye."); return; }
+    if (!S.want || S.want <= 0) { alert("Question count must be greater than 0."); return; }
     var pool = bank().filter(function (r) { return (typeof isValidQ !== "function" || isValidQ(r)) && S.sel[subj(r)] && S.sel[subj(r)].has(r.chapter); }).map(cloneQ);
     pool = shuffleArray(pool);
-    if (!pool.length) { alert("Is filter ke liye koi question available nahi hai."); return; }
+    if (!pool.length) { alert("No questions available for this filter."); return; }
     var items = pool.slice(0, Math.min(S.want, pool.length)), first = T.ks[0] ? Array.from(S.sel[T.ks[0]])[0] : "";
     var label = T.tc === 1 ? first : T.ks.length === 1 ? T.tc + " Chapters" : T.ks.length + " Subjects, " + T.tc + " Chapters";
     current.student = { name: ($("student-name") && $("student-name").value.trim()) || e.name || "Student", mobile: ($("student-mobile") && $("student-mobile").value.trim()) || e.mobile || "", email: "" };

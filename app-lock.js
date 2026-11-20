@@ -43,7 +43,7 @@
       /* list load ho chuki hai par locked institute usme nahi => registration abhi band (limit/plan/band) */
       if (sel.options.length > 1 && sel.dataset.snapNote !== "1" && !document.getElementById("snap-lock-regnote") && sel.parentNode) {
         var nt = document.createElement("div"); nt.id = "snap-lock-regnote"; nt.style.cssText = "background:#fff4e5;color:#92400e;border-radius:8px;padding:8px 10px;font-size:.82rem;margin:6px 0;";
-        nt.textContent = "Is institute me abhi naye registration band hain (limit poori / plan khatam / app band). Apne institute se sampark karein.";
+        nt.textContent = "Is institute me abhi naye registration band hain (limit poori / plan khatam / app band). Please contact your institute.";
         sel.parentNode.insertBefore(nt, sel); sel.dataset.snapNote = "1";
       }
       return;
@@ -65,21 +65,21 @@
     var nm = esc(b && b.name || "Institute");
     var title, msg, btns;
     if (kind === "expired") {
-      title = nm + " ka plan khatam ho gaya";
+      title = nm + " plan has expired";
       msg = "Is institute ka subscription expire ho gaya hai. Renew ke liye apne institute (owner) se sampark karein. Renew hote hi app apne aap khul jaayega.";
-      btns = '<button id="snap-lock-retry" style="margin-top:18px;padding:11px 22px;border:0;border-radius:10px;background:#4f46e5;color:#fff;font-size:1rem;">🔄 Dobara check karein</button>';
+      btns = '<button id="snap-lock-retry" style="margin-top:18px;padding:11px 22px;border:0;border-radius:10px;background:#4f46e5;color:#fff;font-size:1rem;">🔄 Check again</button>';
     } else if (kind === "suspended") {
-      title = nm + " ka app abhi band hai";
+      title = nm + " app is currently unavailable";
       msg = "Is institute ka access abhi roka gaya hai. Kripya apne institute se sampark karein. Chalu hote hi app apne aap khul jaayega.";
-      btns = '<button id="snap-lock-retry" style="margin-top:18px;padding:11px 22px;border:0;border-radius:10px;background:#4f46e5;color:#fff;font-size:1rem;">🔄 Dobara check karein</button>';
+      btns = '<button id="snap-lock-retry" style="margin-top:18px;padding:11px 22px;border:0;border-radius:10px;background:#4f46e5;color:#fff;font-size:1rem;">🔄 Check again</button>';
     } else {
-      title = "Ye app sirf " + nm + " ke liye hai";
+      title = "This app is only for " + nm;
       msg = "Aap kisi doosre institute ke account se login hain. Is app me sirf " + nm + " ke Student/Admin chal sakte hain.";
-      btns = '<button id="snap-lock-logout" style="margin-top:18px;padding:11px 22px;border:0;border-radius:10px;background:#dc2626;color:#fff;font-size:1rem;">Logout karein</button>';
+      btns = '<button id="snap-lock-logout" style="margin-top:18px;padding:11px 22px;border:0;border-radius:10px;background:#dc2626;color:#fff;font-size:1rem;">Log out</button>';
     }
     o.innerHTML = '<div style="max-width:340px;">' + logo + '<h2 style="margin:0 0 10px;font-size:1.25rem;">' + title + '</h2><p style="margin:0;opacity:.8;line-height:1.5;font-size:.95rem;">' + msg + '</p>' + btns + "</div>";
     document.body.appendChild(o);
-    var r = o.querySelector("#snap-lock-retry"); if (r) r.onclick = function () { r.textContent = "Check ho raha hai…"; (window.SnapBrand ? window.SnapBrand.load(extra, true) : Promise.resolve()).then(function () { location.reload(); }, function () { location.reload(); }); };
+    var r = o.querySelector("#snap-lock-retry"); if (r) r.onclick = function () { r.textContent = "Checking…"; (window.SnapBrand ? window.SnapBrand.load(extra, true) : Promise.resolve()).then(function () { location.reload(); }, function () { location.reload(); }); };
     var l = o.querySelector("#snap-lock-logout"); if (l) l.onclick = function () {
       try { if (typeof logoutStudent === "function") logoutStudent(); } catch (e) {}
       try { if (typeof logoutAdmin === "function") logoutAdmin(); } catch (e) {}
@@ -88,14 +88,14 @@
   }
   function clearOverlay() { var o = document.getElementById("snap-lock-overlay"); if (o) { o.remove(); shownFor = ""; } }
 
-  /* ---------- admin ke liye "plan jaldi khatam hoga" patti (sirf 7 din bache ho ya grace chal raha ho) ---------- */
+  /* ---------- admin ke liye "plan expires soon" patti (sirf 7 din bache ho ya grace chal raha ho) ---------- */
   function banner(exp, grace) {
     var el = document.getElementById("snap-lock-banner");
     if (!exp) { if (el) el.remove(); return; }
     var left = Math.ceil((exp - Date.now()) / 86400000);
     if (left > 7) { if (el) el.remove(); return; }
-    var txt = left > 0 ? "⚠️ Aapka plan " + left + " din me khatam hoga — renew ke liye Owner se sampark karein." :
-      "⚠️ Plan khatam ho chuka hai — " + Math.max(0, Math.ceil((exp + grace - Date.now()) / 86400000)) + " din me app band ho jaayega. Abhi renew karwayein.";
+    var txt = left > 0 ? "⚠️ Your plan " + left + " days — contact the owner to renew." :
+      "⚠️ Your plan has expired — " + Math.max(0, Math.ceil((exp + grace - Date.now()) / 86400000)) + " days left before the app is disabled. Please renew now.";
     if (!el) { el = document.createElement("div"); el.id = "snap-lock-banner"; el.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:2147482000;background:#b45309;color:#fff;text-align:center;padding:8px 12px;font:600 .82rem system-ui,sans-serif;"; document.body.appendChild(el); }
     el.textContent = txt;
   }

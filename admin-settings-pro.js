@@ -118,7 +118,7 @@
       done("Notifications", "Students ko push bhejein",
         '<div class="asp-card asp-ctr" style="padding:20px 15px"><div class="asp-bell">' + ico("bell") + '</div><div style="font-size:1rem;font-weight:800">Students ko notification</div><p>App band ho tab bhi students ke phone par aati hai.</p>' +
         '<div class="asp-act"><button type="button" class="asp-btn" data-go="sendnotif">' + ico("send") + ' Notification bhejein</button></div></div>' +
-        '<div class="asp-card"><h4>' + ico("pulse") + ' Push service status</h4><div class="asp-stat wait" id="asp-push-box"><div class="l"><span class="asp-ping"></span>Server</div><span id="asp-push-st" style="font-size:.78rem;color:#64748b">Check ho raha hai…</span></div>' +
+        '<div class="asp-card"><h4>' + ico("pulse") + ' Push service status</h4><div class="asp-stat wait" id="asp-push-box"><div class="l"><span class="asp-ping"></span>Server</div><span id="asp-push-st" style="font-size:.78rem;color:#64748b">Checking…</span></div>' +
         '<div class="asp-note">' + ico("alert") + '<div>Status ❌ ho to Owner se contact karein. Notification ke liye students ko naya app install karke ek baar login karna aur permission Allow karni hogi.</div></div></div>');
       var setSt = function (ok, txt) { var b = $("asp-push-box"), e = $("asp-push-st"); if (!b || !e) return; b.className = "asp-stat" + (ok ? "" : " bad"); e.className = "asp-pill" + (ok ? "" : " r"); e.removeAttribute("style"); e.innerHTML = "<i></i>" + txt; };
       fetch(url, { method: "GET" }).then(function (r) { return r.json(); }).then(function (j) { setSt(j && j.ok, j && j.ok ? "Chalu hai" : "Jawab galat"); }).catch(function () { setSt(false, "Connect nahi hua"); });
@@ -131,7 +131,7 @@
       if (em) acts += '<a class="asp-btn o" href="mailto:' + esc(em) + '?subject=' + encodeURIComponent("The Vishnu Sharma Admin Support") + '">✉️ Email</a>';
       var faqs = (c.adminFaqs || []).map(function (f) { return '<div class="asp-card"><b>' + esc(f[0]) + '</b><p>' + esc(f[1]) + '</p></div>'; }).join("");
       done("Help & Support", "Humse sampark karein",
-        '<div class="asp-card"><b>Koi problem hai?</b><p>Owner / Developer se seedha contact karein.' + (c.supportHours ? "<br>🕒 " + esc(c.supportHours) : "") + '</p>' +
+        '<div class="asp-card"><b>Having a problem?</b><p>Owner / Developer se seedha contact karein.' + (c.supportHours ? "<br>🕒 " + esc(c.supportHours) : "") + '</p>' +
         (acts ? '<div class="asp-act">' + acts + '</div>' : "") + '</div>' + (faqs ? '<div class="asp-h" style="margin-top:14px">Aam sawaal</div>' + faqs : ""));
     },
     about: function (done) {
@@ -146,8 +146,8 @@
       done("App & Data", "Update, cache aur question bank",
         apkCard() +
         '<div class="asp-card"><div class="asp-ver">' + bl(52) + '<div><b style="font-size:1rem">' + esc(bi().name) + '</b><div style="font-size:.76rem;color:#64748b;margin-top:2px">' + esc(bi().brand ? bi().sub : (c.tagline || "")) + '</div><span class="asp-pill"><i></i>Version ' + esc((c.version || "") + (c.build ? " (" + c.build + ")" : "")) + '</span></div></div></div>' +
-        '<div class="asp-card"><div class="asp-line"><div class="asp-ic" style="background:' + TILE.ind + '">' + ico("dl") + '</div><div class="asp-tx"><b>Update check</b><p>Latest version laga hai ya nahi dekhein.</p></div></div><div class="asp-act"><button type="button" class="asp-btn" data-go="update">' + ico("refresh") + ' Update check karein</button></div>' +
-        '<div class="asp-sep"></div><div class="asp-line"><div class="asp-ic" style="background:' + TILE.tea + '">' + ico("trash") + '</div><div class="asp-tx"><b>Cache saaf karke refresh</b><p>Kuch purana ya adhura dikhe to ye karein. Aapka login bana rahega.</p></div></div><div class="asp-act"><button type="button" class="asp-btn o" data-go="cache">' + ico("trash") + ' Cache saaf karein</button></div></div>' +
+        '<div class="asp-card"><div class="asp-line"><div class="asp-ic" style="background:' + TILE.ind + '">' + ico("dl") + '</div><div class="asp-tx"><b>Update check</b><p>Latest version laga hai ya nahi dekhein.</p></div></div><div class="asp-act"><button type="button" class="asp-btn" data-go="update">' + ico("refresh") + ' Check for updates</button></div>' +
+        '<div class="asp-sep"></div><div class="asp-line"><div class="asp-ic" style="background:' + TILE.tea + '">' + ico("trash") + '</div><div class="asp-tx"><b>Clear cache and refresh</b><p>Use this if something looks outdated or incomplete. You will stay logged in.</p></div></div><div class="asp-act"><button type="button" class="asp-btn o" data-go="cache">' + ico("trash") + ' Clear cache</button></div></div>' +
         '<div class="asp-card"><h4>' + ico("db") + ' Question Bank</h4>' +
         '<div class="asp-line" style="margin-top:12px"><div class="asp-tx"><b>Bank dobara load karein</b><p>Doosre admin ne questions jode hon aur yahan na dikhein to dabayein.</p><span class="asp-tag">Reads lagenge</span></div><button type="button" class="asp-mini" data-go="bank">Refresh</button></div>' +
         '<div class="asp-sep"></div><div class="asp-line"><div class="asp-tx"><b>Bank students ke liye publish</b><p>Students ko bank alag server se milta hai (reads 0). Ye apne aap hota hai; kabhi na ho to yahan dabayein.</p><span class="asp-tag">Reads: 0</span></div><button type="button" class="asp-mini g" data-go="pub">Publish</button></div>' +
@@ -157,7 +157,7 @@
     joincode: function (done) {
       if (typeof window.loadInstituteJoinCodeStatus === "function") { try { window.loadInstituteJoinCodeStatus(); } catch (e) {} }
       done("Institute Join Code", "Student registration ki suraksha",
-        '<div class="asp-card asp-ctr" style="padding:20px 15px"><div class="asp-big" id="asp-jc-ic">' + ico("shield") + '</div><div id="asp-jc-t" style="font-size:1rem;font-weight:800;margin-top:12px">Check ho raha hai…</div><p id="asp-jc-p" style="display:none">Abhi ka code</p><span class="asp-code" id="asp-jc-code" style="display:none"></span></div>' +
+        '<div class="asp-card asp-ctr" style="padding:20px 15px"><div class="asp-big" id="asp-jc-ic">' + ico("shield") + '</div><div id="asp-jc-t" style="font-size:1rem;font-weight:800;margin-top:12px">Checking…</div><p id="asp-jc-p" style="display:none">Abhi ka code</p><span class="asp-code" id="asp-jc-code" style="display:none"></span></div>' +
         '<div class="asp-card"><h4>' + ico("key") + ' Naya code set / badlein</h4><div class="asp-lbl">NAYA CODE</div><div data-borrow="institute-joincode-input"></div>' +
         '<div class="asp-act" style="flex-direction:column"><button type="button" class="asp-btn" data-go="jcsave">' + ico("db") + ' Code Save Karein</button><button type="button" class="asp-btn r" data-go="jcoff">' + ico("alert") + ' Protection Hatayein</button></div></div>' +
         '<div class="asp-note">' + ico("alert") + '<div>Naye students ko registration ke waqt ye code dena hoga — bina code ke koi aapke institute mein register nahi kar paayega. Code sirf apne students ko dein.</div></div>' +
@@ -174,7 +174,7 @@
   function apkState() { var u = window.SnapAppUpdate; return u && u.state && u.state.available ? u.state : null; }
   function apkCard() {
     var st = apkState(); if (!st) return "";
-    return '<div class="asp-card" style="border:1.5px solid #fdba74;background:linear-gradient(135deg,#fff7ed,#fff)"><div class="asp-line"><div class="asp-ic" style="background:' + TILE.amb + '">' + ico("dl") + '</div><div class="asp-tx"><b>Naya APK aaya hai' + (st.name ? " (" + esc(st.name) + ")" : "") + '</b><p>' + esc(st.notes || "App ka naya version taiyaar hai.") + '</p></div></div><div class="asp-act"><button type="button" class="asp-btn" data-go="apkdl">' + ico("dl") + ' Download &amp; Update karein</button></div></div>';
+    return '<div class="asp-card" style="border:1.5px solid #fdba74;background:linear-gradient(135deg,#fff7ed,#fff)"><div class="asp-line"><div class="asp-ic" style="background:' + TILE.amb + '">' + ico("dl") + '</div><div class="asp-tx"><b>New APK available' + (st.name ? " (" + esc(st.name) + ")" : "") + '</b><p>' + esc(st.notes || "A new version of the app is ready.") + '</p></div></div><div class="asp-act"><button type="button" class="asp-btn" data-go="apkdl">' + ico("dl") + ' Download &amp; Update</button></div></div>';
   }
   function row2(ic, bg, t, sub, go) { return '<button type="button" class="asp-row" data-go="' + go + '"><span class="asp-ic" style="background:' + TILE[bg] + '">' + ico(ic) + '</span><span class="asp-tx"><b>' + t + '</b><small>' + sub + '</small></span><span class="asp-ch">' + ico("chev") + '</span></button>'; }
   /* purane elements (ID Card, join-code box, seed button) ko naye page me "udhaar" lete hain — original id/handlers waise hi rehte hain */
@@ -193,7 +193,7 @@
   function jcInfo(el) { var t = (el && el.textContent) || "", on = /ON/i.test(t) && !/OFF|band|nahi/i.test(t), m = t.match(/code\s*:\s*([A-Za-z0-9_-]+)/i); return { on: on, code: m ? m[1].toUpperCase() : "", loading: /loading/i.test(t) || !t.trim() }; }
   function jcPaint() {
     var el = $("institute-joincode-status"), i = jcInfo(el), ic = $("asp-jc-ic"), t = $("asp-jc-t"), p = $("asp-jc-p"), c = $("asp-jc-code"); if (!ic || !t) return;
-    if (i.loading) { t.textContent = "Check ho raha hai…"; return; }
+    if (i.loading) { t.textContent = "Checking…"; return; }
     ic.className = "asp-big" + (i.on ? "" : " off"); t.textContent = i.on ? "Protection ON" : "Protection OFF";
     p.style.display = c.style.display = i.on && i.code ? "" : "none"; c.textContent = i.code;
   }
@@ -234,10 +234,10 @@
     else if (g === "jcoff") { if (typeof window.disableInstituteJoinCode === "function") window.disableInstituteJoinCode(); else toast("Available nahi"); }
     else if (g === "pw") { var b1 = $("change-admin-password-btn"); b1 ? b1.click() : toast("Button nahi mila"); }
     else if (g === "rec") { var b2 = $("set-recovery-btn"); b2 ? b2.click() : toast("Button nahi mila"); }
-    else if (g === "lo") { var b3 = $("admin-logout-btn"); b3 ? b3.click() : toast("Logout button nahi mila"); }
-    else if (g === "update") { toast("⏳ Update check ho raha hai...");
-      var webCheck = function () { if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) navigator.serviceWorker.getRegistration().then(function (r) { if (!r) return toast("✅ Aap latest version par hain"); return r.update().then(function () { if (r.installing || r.waiting) { toast("⬆️ Naya version mil gaya — reload ho raha hai"); setTimeout(function () { location.reload(); }, 1200); } else toast("✅ Aap latest version par hain"); }); }).catch(function () { toast("Update check nahi ho paya"); }); else toast("✅ Aap latest version par hain"); };
-      if (window.SnapAppUpdate && SnapAppUpdate.check) SnapAppUpdate.check({ manual: true }).then(function (st) { if (st && st.available) toast("📲 Naya APK mila — download karein", 5000); else webCheck(); }, webCheck); else webCheck(); }
+    else if (g === "lo") { var b3 = $("admin-logout-btn"); b3 ? b3.click() : toast("Logout button not found"); }
+    else if (g === "update") { toast("⏳ Checking for updates...");
+      var webCheck = function () { if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) navigator.serviceWorker.getRegistration().then(function (r) { if (!r) return toast("✅ You are on the latest version"); return r.update().then(function () { if (r.installing || r.waiting) { toast("⬆️ New version found — reloading"); setTimeout(function () { location.reload(); }, 1200); } else toast("✅ You are on the latest version"); }); }).catch(function () { toast("Update check nahi ho paya"); }); else toast("✅ You are on the latest version"); };
+      if (window.SnapAppUpdate && SnapAppUpdate.check) SnapAppUpdate.check({ manual: true }).then(function (st) { if (st && st.available) toast("📲 New APK available — download", 5000); else webCheck(); }, webCheck); else webCheck(); }
     else if (g === "apkdl") { if (window.SnapAppUpdate) SnapAppUpdate.show(); }
     else if (g === "cache") { toast("⏳ Cache saaf ho raha hai..."); var keep = {}; try { Object.keys(localStorage).forEach(function (k2) { if (/session|auth|firebase|savya_student|admin/i.test(k2)) keep[k2] = localStorage.getItem(k2); }); } catch (e) {}
       Promise.resolve(window.caches && caches.keys ? caches.keys().then(function (ks) { return Promise.all(ks.map(function (k2) { return caches.delete(k2); })); }) : 0).then(function () { return navigator.serviceWorker && navigator.serviceWorker.getRegistrations ? navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.update(); })); }) : 0; }).catch(function () {}).then(function () { try { localStorage.removeItem("savya_bank_cache"); localStorage.removeItem("snap_bank_sync_ts"); } catch (e) {} setTimeout(function () { location.reload(); }, 600); }); }
@@ -257,15 +257,15 @@
         m.innerHTML = '<div class="asp-hero"><div class="asp-av" id="asp-hero-av">' + esc(initials((user() || {}).email)) + '</div><div><b id="asp-hero-nm">Admin</b><small id="asp-hero-sub">' + esc((user() || {}).email || "Admin") + '</small><span class="asp-pill" id="asp-hero-st"><i></i>Institute Active</span></div></div>' +
           '<div class="asp-sec">ACCOUNT</div><div class="asp-grp">' + row("user", "ind", "Profile & Institute", "ID Card, email, institute, status", "profile") + row("lock", "orc", "Admin Password", "Change password, recovery info", "pwd") + '</div>' +
           '<div class="asp-sec">STUDENTS</div><div class="asp-grp">' + row("key", "tea", "Institute Join Code", "Student registration ki suraksha", "joincode").replace("<small>", '<small id="asp-jc-sub">') + row("bell", "amb", "Notifications", "Students ko push bhejna, status", "notif") + '</div>' +
-          '<div class="asp-sec">DATA</div><div class="asp-grp">' + row("phone", "idg", "App & Data", apkState() ? "Naya APK aaya hai — update karein" : "Update, cache, bank, seed", "data").replace("<small>", '<small id="asp-data-sub">') + row("shield", "blu", "Result Privacy Fix", "Purane results me institute tag lagayein", "recfix") + row("shield", "pnk", "Privacy & Terms", "Aapke data ke baare me", "privacy") + '</div>' +
+          '<div class="asp-sec">DATA</div><div class="asp-grp">' + row("phone", "idg", "App & Data", apkState() ? "New APK available — update now" : "Update, cache, bank, seed", "data").replace("<small>", '<small id="asp-data-sub">') + row("shield", "blu", "Result Privacy Fix", "Purane results me institute tag lagayein", "recfix") + row("shield", "pnk", "Privacy & Terms", "Aapke data ke baare me", "privacy") + '</div>' +
           '<div class="asp-sec">SUPPORT</div><div class="asp-grp">' + row("help", "blu", "Help & Support", "Call / WhatsApp / Email, FAQ", "help") + row("info", "gry", "About App", "Version " + esc((C().version || "") + (C().build ? " (" + C().build + ")" : "")), "about") + '</div>' +
           '<div class="asp-sec">OWNER</div><div class="asp-grp">' + row("crown", "ind", "Owner Panel", "Har institute ka admin manage karein", "owner") + '</div>' +
           '<button type="button" class="asp-row asp-logout" id="asp-logout"><span class="asp-ic" style="background:' + TILE.red + '">' + ico("out") + '</span><span class="asp-tx"><b style="color:#b91c1c">Admin Logout</b><small>Is device se admin logout</small></span></button>';
         var first = box.querySelector(".card"); if (first && first.nextSibling) box.insertBefore(m, first.nextSibling); else box.insertBefore(m, box.firstChild);
-        try { window.addEventListener("snap-apk-update", function () { var e = $("asp-data-sub"); if (e) e.textContent = apkState() ? "Naya APK aaya hai — update karein" : "Update, cache, bank, seed"; }); } catch (e) {}
+        try { window.addEventListener("snap-apk-update", function () { var e = $("asp-data-sub"); if (e) e.textContent = apkState() ? "New APK available — update now" : "Update, cache, bank, seed"; }); } catch (e) {}
         try { var jcEl = $("institute-joincode-status"); if (jcEl && window.MutationObserver) new MutationObserver(jcMenuSub).observe(jcEl, { childList: true, characterData: true, subtree: true }); jcMenuSub(); } catch (e) {}
         loadInst().then(function (i) { var n = $("asp-hero-nm"); if (!n || !i) return; if (i.name) { n.textContent = i.name; $("asp-hero-av").textContent = initials(i.name); } var st = $("asp-hero-st"); if (st && i.active === false) { st.className = "asp-pill r"; st.innerHTML = "<i></i>Deactivated"; } });
-        $("asp-logout").addEventListener("click", function () { var b = $("admin-logout-btn"); if (b) b.click(); else toast("Logout button nahi mila"); });
+        $("asp-logout").addEventListener("click", function () { var b = $("admin-logout-btn"); if (b) b.click(); else toast("Logout button not found"); });
       }
     } catch (e) { console.warn("[asp] mount fail", e); }
   }

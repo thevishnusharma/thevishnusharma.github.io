@@ -477,10 +477,10 @@ function compressImageToDataUrl(file, maxDim, quality) {
   quality = quality || 0.72;
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error('Image padhi nahi gayi'));
+    reader.onerror = () => reject(new Error('Could not read image'));
     reader.onload = () => {
       const img = new Image();
-      img.onerror = () => reject(new Error('Image load nahi hui'));
+      img.onerror = () => reject(new Error('Image failed to load'));
       img.onload = () => {
         let width = img.width, height = img.height;
         if (width > maxDim || height > maxDim) {
@@ -569,7 +569,7 @@ function parseSeparateBoxesQuestions() {
   const ansLines = ansRaw.split('\n').map(l => l.trim()).filter(Boolean);
   const expLines = expRaw.split('\n').map(l => l.trim()).filter(Boolean);
 
-  if (!qLines.length) { alert('Pehle Questions box mein sawaal likhein.'); return []; }
+  if (!qLines.length) { alert('Enter questions in the Questions box first.'); return []; }
 
   const checkLen = (lines, boxName) => {
     if (lines.length !== qLines.length) {
@@ -621,10 +621,10 @@ function previewBulkQuestions() {
     if (!parsed.length) return; // parseSeparateBoxesQuestions already alerted the specific issue
   } else {
     const rawText = (document.getElementById('bulk-raw-text')?.value || '').trim();
-    if (!rawText) { alert('Pehle questions paste karo.'); return; }
+    if (!rawText) { alert('Paste the questions first.'); return; }
     parsed = tryParseAsCSV(rawText) || parseBulkQuestions(rawText);
     if (!parsed.length) {
-      alert('❌ Koi valid question nahi mila! Format check karo.');
+      alert('❌ No valid questions found! Please check the format.');
       return;
     }
   }
@@ -635,13 +635,13 @@ function previewBulkQuestions() {
     while (q.options.length < 4) q.options.push("");
     const issues = [];
     if (qType === 'subjective') {
-      if (q.marks == null) issues.push("Marks nahi mila");
-      if (!q.modelAnswer || !q.modelAnswer.trim()) issues.push("Model answer nahi mila");
+      if (q.marks == null) issues.push("Marks not found");
+      if (!q.modelAnswer || !q.modelAnswer.trim()) issues.push("Model answer not found");
     } else {
       if (q.options.filter(o => !o.trim()).length > 0 && q.options.filter(Boolean).length < 4) issues.push("Khaali option");
       if (q.answer == null || q.answer < 0 || q.answer > 3 || !q.options[q.answer]) issues.push("Answer galat/khaali option se match nahi");
     }
-    if (!q.text || q.text.length < 5) issues.push("Question text bahut chhota/khaali");
+    if (!q.text || q.text.length < 5) issues.push("Question text is too short or empty");
     return { ...q, qType, marks: q.marks ?? null, modelAnswer: q.modelAnswer || '', isDuplicate: isDuplicateQuestion(q.text), include: true, issues };
   });
 
@@ -860,7 +860,7 @@ async function undoLastBulkUpload() {
   if (!bulkLastUploadedIds.length) return;
   if (!confirm(`Last batch ke ${bulkLastUploadedIds.length} questions delete (Recycle Bin me move) karna hai?`)) return;
   const btn = document.getElementById('bulk-undo-btn');
-  btn.disabled = true; btn.textContent = '⏳ Undo ho raha hai...';
+  btn.disabled = true; btn.textContent = '⏳ Undoing...';
   let ok = 0, fail = 0;
   for (const id of bulkLastUploadedIds) {
     try { await window.deleteBankQuestion(id, true); ok++; }
@@ -980,7 +980,7 @@ async function handleBulkFileUpload(file) {
 
     /* ── PDF ─────────────────────────────────────── */
     else if (ext === 'pdf') {
-      if (!window.PdfImport) throw new Error('pdf-import.js load nahi hua. Page refresh karein.');
+      if (!window.PdfImport) throw new Error('pdf-import.js failed to load. Please refresh the page.');
       const result = await window.PdfImport.extractTextFromPdf(file);
       extractedText = result;
     }
@@ -1001,7 +1001,7 @@ async function handleBulkFileUpload(file) {
       catch (_) { throw new Error('Ye format abhi support nahi hota: .' + ext); }
     }
 
-    if (!extractedText.trim()) throw new Error('File se koi text nahi mila.');
+    if (!extractedText.trim()) throw new Error('No text found in the file.');
 
     document.getElementById('bulk-raw-text').value = extractedText.trim();
     const lineCount = extractedText.trim().split('\n').filter(Boolean).length;
@@ -1013,7 +1013,7 @@ async function handleBulkFileUpload(file) {
     setTimeout(() => ta.style.border = '', 2000);
 
   } catch (err) {
-    bulkFileStatus('❌ ' + (err.message || 'File padhne mein dikkat aayi.'), false);
+    bulkFileStatus('❌ ' + (err.message || 'There was a problem reading the file.'), false);
     console.error('[BulkFileUpload]', err);
   }
 }
@@ -1110,7 +1110,7 @@ async function docxToText(file) {
   if (!window.mammoth) {
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
   }
-  if (!window.mammoth) throw new Error('mammoth.js load nahi hua. Internet check karein.');
+  if (!window.mammoth) throw new Error('mammoth.js failed to load. Check your internet.');
   const arrayBuffer = await file.arrayBuffer();
   const result = await window.mammoth.extractRawText({ arrayBuffer });
   return result.value || '';
@@ -1121,9 +1121,9 @@ async function imageToText(file) {
   if (!window.Tesseract) {
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js');
   }
-  if (!window.Tesseract) throw new Error('Tesseract.js load nahi hua. Internet check karein.');
+  if (!window.Tesseract) throw new Error('Tesseract.js failed to load. Check your internet.');
 
-  bulkFileStatus('🔍 Image se text nikaal raha hoon (OCR)… thoda wait karein…');
+  bulkFileStatus('🔍 Extracting text from image (OCR)… please wait…');
 
   const { data: { text } } = await window.Tesseract.recognize(file, 'hin+eng', {
     logger: m => {
@@ -1229,14 +1229,14 @@ function getAllChapters(subject, classId) {
 
 function populateBankSubjectDropdown(sel_val, classId) {
   var sel=document.getElementById('bank-subject-select'); if(!sel)return;
-  var placeholder = classId ? '-- Subject chunein --' : '-- Pehle Class chunein --';
+  var placeholder = classId ? '-- Select subject --' : '-- Select class first --';
   sel.innerHTML='<option value="">'+placeholder+'</option>';
   sel.disabled = !classId;
   getAllSubjects(classId).forEach(function(s){var o=document.createElement('option');o.value=s;o.textContent=s;if(s===sel_val)o.selected=true;sel.appendChild(o);});
 }
 function populateBankChapterDropdown(subject,sel_val,classId) {
   var sel=document.getElementById('bank-chapter-select'); if(!sel)return;
-  sel.innerHTML='<option value="">-- Chapter chunein --</option>';
+  sel.innerHTML='<option value="">-- Select chapter --</option>';
   sel.disabled = !classId;
   getAllChapters(subject||'', classId).forEach(function(ch){var o=document.createElement('option');o.value=ch;o.textContent=ch;if(ch===sel_val)o.selected=true;sel.appendChild(o);});
 }
@@ -1298,7 +1298,7 @@ function fillClassSelectOptions(sel, sel_val) {
     var _al = (typeof getCurrentAdminAllowedClasses === 'function') ? getCurrentAdminAllowedClasses() : null;
     if (_al && _al.length) opts = opts.filter(function (c) { return _al.indexOf(c.id) >= 0 || c.id === sel_val; });
   } catch (e) {}
-  sel.innerHTML = '<option value="">-- Class chunein --</option>';
+  sel.innerHTML = '<option value="">-- Select class --</option>';
   opts.forEach(function (c) {
     var o = document.createElement('option');
     o.value = c.id; o.textContent = c.label;
@@ -1314,7 +1314,7 @@ function populateBankClassDropdown(sel_val) {
 }
 // ── Bulk Upload: Subject/Chapter dropdowns (existing subjects/chapters dikhane ke liye) ──
 // v35: Class → Subject → Chapter cascading — Class chune bina Subject/
-// Chapter dropdown disabled rehte hain (khaali "-- Pehle Class chunein --"),
+// Chapter dropdown disabled rehte hain (khaali "-- Select class first --"),
 // taaki admin ko sabse pehle Class chunni hi pade.
 function currentBulkClassId() {
   var el = document.getElementById('bulk-class-select');
@@ -1322,14 +1322,14 @@ function currentBulkClassId() {
 }
 function populateBulkSubjectDropdown(sel_val, classId) {
   var sel=document.getElementById('bulk-subject-select'); if(!sel)return;
-  var placeholder = classId ? '-- Subject chunein --' : '-- Pehle Class chunein --';
+  var placeholder = classId ? '-- Select subject --' : '-- Select class first --';
   sel.innerHTML='<option value="">'+placeholder+'</option>';
   sel.disabled = !classId;
   getAllSubjects(classId).forEach(function(s){var o=document.createElement('option');o.value=s;o.textContent=s;if(s===sel_val)o.selected=true;sel.appendChild(o);});
 }
 function populateBulkChapterDropdown(subject,sel_val,classId) {
   var sel=document.getElementById('bulk-chapter-select'); if(!sel)return;
-  sel.innerHTML='<option value="">-- Chapter chunein --</option>';
+  sel.innerHTML='<option value="">-- Select chapter --</option>';
   sel.disabled = !classId;
   getAllChapters(subject||'', classId).forEach(function(ch){var o=document.createElement('option');o.value=ch;o.textContent=ch;if(ch===sel_val)o.selected=true;sel.appendChild(o);});
 }
@@ -1453,7 +1453,7 @@ function closeManagePanel(){var p=document.getElementById('manage-sc-panel');if(
 function renderManagePanel(){
   var msel=document.getElementById('manage-subject-sel'); if(!msel)return;
   var cur=msel.value;
-  msel.innerHTML='<option value="">-- Subject chunein --</option>';
+  msel.innerHTML='<option value="">-- Select subject --</option>';
   getAllSubjects().forEach(function(s){var o=document.createElement('option');o.value=s;o.textContent=s;if(s===cur)o.selected=true;msel.appendChild(o);});
   renderManageSubjectList(); renderManageChapters();
 }
@@ -1472,10 +1472,10 @@ function renderManageChapters(){
   var msel=document.getElementById('manage-subject-sel'),section=document.getElementById('manage-chapter-section');
   if(!msel||!section)return;
   var subject=msel.value;
-  if(!subject){section.innerHTML='<p style="color:#9ca3af;font-size:.84rem;text-align:center;padding:12px 0;">Upar subject chunein — us subject ke chapters dikhenge</p>';return;}
+  if(!subject){section.innerHTML='<p style="color:#9ca3af;font-size:.84rem;text-align:center;padding:12px 0;">Select a subject above to see its chapters</p>';return;}
   var chapters=getAllChapters(subject),customChaps=getCustomChapters(subject);
   var html='<div style="font-weight:700;color:#1e293b;font-size:.9rem;margin-bottom:10px;display:flex;align-items:center;gap:6px;">📖 &ldquo;'+subject+'&rdquo; Chapters <span style="background:#dcfce7;color:#166534;font-size:.75rem;padding:2px 8px;border-radius:20px;">'+chapters.length+'</span></div>';
-  if(!chapters.length){section.innerHTML=html+'<p style="color:#9ca3af;font-size:.84rem;">Koi chapter nahi mila.</p>';return;}
+  if(!chapters.length){section.innerHTML=html+'<p style="color:#9ca3af;font-size:.84rem;">No chapters found.</p>';return;}
   html+='<div style="display:flex;flex-direction:column;gap:5px;">';
   chapters.forEach(function(ch){
     var isC=customChaps.includes(ch);
@@ -1643,7 +1643,7 @@ window.scheduleAutoDuplicateCheck = scheduleAutoDuplicateCheck;
 
 
 async function autoMergeAllDuplicates() {
-  if (autoDupInProgress) { alert('Automatic merge already chal raha hai, thoda wait karo.'); return; }
+  if (autoDupInProgress) { alert('Automatic merge is already running — please wait.'); return; }
   lastDupGroups = findDuplicates();
   if (!lastDupGroups.length) { alert('Koi duplicate nahi mila jise merge karein.'); return; }
   var totalRemove = lastDupGroups.reduce(function(n, g){ return n + g.items.length - 1; }, 0);
@@ -1665,17 +1665,17 @@ async function autoMergeAllDuplicates() {
 }
 
 async function mergeOneGroup(groupIndex) {
-  if (autoDupInProgress) { alert('Automatic merge already chal raha hai, thoda wait karo.'); return; }
+  if (autoDupInProgress) { alert('Automatic merge is already running — please wait.'); return; }
   var group = lastDupGroups[groupIndex];
   if (!group) return;
   var panel = document.getElementById('dup-report-panel');
   var checked = panel.querySelector('input[name="keep-' + groupIndex + '"]:checked');
-  if (!checked) { alert('Pehle ek question select karo jise rakhna hai.'); return; }
+  if (!checked) { alert('Select the question you want to keep first.'); return; }
   var keepId = checked.value;
   var removeIds = group.items.filter(function(q){ return String(q.id) !== String(keepId); }).map(function(q){ return q.id; });
   if (!confirm(removeIds.length + ' duplicate(s) Recycle Bin mein move honge, sirf selected question rahega.\n\nContinue?')) return;
   var res = await window.mergeDuplicateGroup(keepId, removeIds);
-  alert('✅ Merged! ' + res.ok + ' duplicate(s) hata diye.');
+  alert('✅ Merged! ' + res.ok + ' duplicate(s) removed.');
   lastDupGroups = findDuplicates();
   renderDupReportPanel();
   if (typeof renderBank === 'function') renderBank();
@@ -1694,7 +1694,7 @@ function renderDupReportPanel() {
   } else {
     var totalRemove = dups.reduce(function(n, g){ return n + g.items.length - 1; }, 0);
     bodyHtml = '<div style="background:#fef3c7;border:1.5px solid #fbbf24;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:.84rem;color:#92400e;font-weight:600;">⚠️ ' + dups.length + ' duplicate group' + (dups.length > 1 ? 's' : '') + ' mili (' + totalRemove + ' extra copies) — neeche details dekhen</div>';
-    bodyHtml += '<button id="dup-automerge-btn" onclick="autoMergeAllDuplicates()" style="width:100%;margin-bottom:14px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:.85rem;cursor:pointer;font-weight:700;">🤖 Auto-Merge All (best wala rakho, baaki Recycle Bin mein)</button>';
+    bodyHtml += '<button id="dup-automerge-btn" onclick="autoMergeAllDuplicates()" style="width:100%;margin-bottom:14px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:.85rem;cursor:pointer;font-weight:700;">🤖 Auto-Merge All (best wala rakho, pending Recycle Bin mein)</button>';
     dups.forEach(function(group, gi) {
       var items = group.items;
       var best = pickBestInGroup(items);
