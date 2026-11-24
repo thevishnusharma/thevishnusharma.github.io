@@ -68,12 +68,12 @@ async function t(name, fn) { try { await fn(); passed++; console.log("  ✅", na
   await env.withSecurityRulesDisabled(async (ctx) => fsOf(ctx).doc("admins/claims-admin@x.com").set({ active: false, instituteId: A }));
   await t("Disabled custom-claim admin is still blocked", () => assertFails(d(claimAdmin, "questionBank/claim-disabled-question").set({ createdBy: "claims-admin@x.com" })));
 
+  console.log("\nStudent registration consent");
+  const serverTimestamp = require("firebase/firestore").serverTimestamp;
   console.log("\nv325 multi-institute student keys");
   await t("v325: composite key (inst__mobile) + phone ke saath consent wali registration chalti hai", () => assertSucceeds(d(newStudent, "students/" + A + "__9003000003").set({ name: "New", mobile: A + "__9003000003", phone: "9003000003", instituteId: A, classId: "c1", hasPin: true, termsAccepted: true, guardianConsent: true, consentVersion: "test-v1", consentAt: serverTimestamp(), createdAt: serverTimestamp() })));
   await t("v325: phone ka format galat ho to registration reject", () => assertFails(d(newStudent, "students/" + A + "__9003000004").set({ name: "New", mobile: A + "__9003000004", phone: "not-a-phone", instituteId: A, classId: "c1", hasPin: true, termsAccepted: true, guardianConsent: true, consentVersion: "test-v1", consentAt: serverTimestamp(), createdAt: serverTimestamp() })));
   await t("v325: doc id aur mobile field alag ho to reject", () => assertFails(d(newStudent, "students/" + A + "__9003000005").set({ name: "New", mobile: "9003000005", instituteId: A, classId: "c1", hasPin: true, termsAccepted: true, guardianConsent: true, consentVersion: "test-v1", consentAt: serverTimestamp(), createdAt: serverTimestamp() })));
-  console.log("\nStudent registration consent");
-  const serverTimestamp = require("firebase/firestore").serverTimestamp;
   await t("Student registration without Terms/guardian consent is rejected", () => assertFails(d(newStudent, "students/9001").set({ name: "New", mobile: "9001", instituteId: A, classId: "c1", hasPin: true, createdAt: serverTimestamp() })));
   await t("Student registration accepts the explicit consent fields", () => assertSucceeds(d(newStudent, "students/9002").set({ name: "New", mobile: "9002", instituteId: A, classId: "c1", hasPin: true, createdAt: serverTimestamp(), termsAccepted: true, guardianConsent: true, consentVersion: "test-v1", consentAt: serverTimestamp() })));
 
