@@ -22,7 +22,7 @@
 
 // ── Firebase Config ──
 const PROJECT_ID = "the-vishnu-sharma";
-const API_KEY    = "AIzaSyBTrKAoQ2T9KNB2vcacv4EPehaDboXmUxk";
+const API_KEY = PropertiesService.getScriptProperties().getProperty('FIREBASE_API_KEY'); // v324: key ab repo me nahi — Apps Script > Project Settings > Script properties me FIREBASE_API_KEY daalein;
 const BASE_URL   = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 
 // ══════════════════════════════════════════════════════════════

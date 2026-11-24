@@ -14,7 +14,7 @@ window.SNAP_CONFIG = {
     persistCache: ["questionBank"]   // v250: in collections ki list device (IndexedDB) me save rehti hai; app khulne par sirf badle hue docs aate hain. [] = band (purana: har baar poora load)
   },
   bankAutoFix: false,  // v226 READS FIX: true karne par admin login par question-bank ki auto class-tag / chapter-merge / ID-migration chalti hai (har question par 2 reads+write+delete — bahut mehngi). Default false. Ek baar chalane ke liye console me: runBankAutoFixNow()
-  serverAuth: false,   // Phase 4: true karne par login/register/PIN Worker se (salted hash + rate limit). Pehle docs/PHASE4_AUTH.md padhein.
+  serverAuth: true,    // Phase 4 (v326: ON): login/register/PIN Worker se (salted hash + rate limit). Worker + secrets deploy hone zaroori — docs/PHASE4_AUTH.md
   appCheck: {
     enabled: true,
     webSiteKey: "",           // Firebase Console > App Check > Web app reCAPTCHA v3 site key; public site key only
@@ -29,6 +29,9 @@ window.SNAP_CONFIG = {
   branding2: true,                                                    // v221: gehri branding — splash, login card, result sheet, print header, "Powered by". false = purana look (kill-switch)
   demo: true,                                                         // v220: Owner Panel "Demo Institute" (seed/reset). false = buttons chhup jate hain (kill-switch)
   onboarding: true,                                                   // v219: Owner Panel "Naya Institute" wizard + Drive status/banner. false = purana single form (kill-switch)
+  multiInstitute: true,                                               // v325: true karne par ek hi mobile alag-alag institute me alag identity se register/login kar sakta hai (false = bilkul purana behaviour)
+  instituteId: "",                                                    // v325: institute ka apna app/build ho to uska id yahan (login me institute auto); web par ?inst=<id> link se bhi
+  driveVerifyRequired: true,                                          // v324: true karne par jab tak Owner Drive email verify na kare, us institute ka FILE upload/connect band (links/YouTube chalte rahenge). false = verify ho to enforce, na ho to purana behaviour
   driveRequired: false,                                               // v219: true karne par (aur googleClientId set hone par) Drive na jure institute ka FILE upload band; links/YouTube chalte rahenge
   catalog: true,                                                      // v218: batch ki list chhote catalog se (reads kam). false = purana tareeka (poore items padhna)
   youtubeLive: true,                                                  // v217: live class = YouTube embed (ytId). false = Phase 0 wala purana link-prompt (kill-switch)
@@ -56,7 +59,7 @@ window.SNAP_CONFIG = {
   },
   appLock: true,                                                      // institute-APK / ?inst= link lock + "app band hai" screen (kill-switch)
   ownerAlertEmail: "thevishnusharmaapp@gmail.com",                         // is email se login par owner app me alerts ka push aata hai
-  build: "323",
+  build: "326",
   ownerName: "Vishnu Sharma",
   supportPhone: "9525208263",
   supportWhatsapp: "9525208263",          // WhatsApp number (khaali = phone wala use hoga)

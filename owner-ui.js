@@ -68,8 +68,62 @@
   function statusChips(a) {
     var chip = function (ok, t) { return '<span style="display:inline-block;font-size:.72rem;margin:0 6px 4px 0;padding:2px 8px;border-radius:99px;background:' + (ok ? "#dcfce7;color:#166534" : "#fee2e2;color:#991b1b") + '">' + (ok ? "✅ " : "❌ ") + t + "</span>"; };
     var br = !!(a.logoDataUrl || a.tagline || a.brandColor);
-    return '<div class="oa-chips" style="margin:2px 0 6px">' + chip(br, "Branding") + chip(a.driveConnected === true, "Drive") + chip(!!a.youtubeChannelUrl, "YouTube") + "</div>";
+    return '<div class="oa-chips" style="margin:2px 0 6px">' + chip(br, "Branding") + chip(a.driveConnected === true, "Drive") + chip(!!a.youtubeChannelUrl, "YouTube") + chip(!!a.driveVerifiedEmail, "Drive email verified") + "</div>" +
+      (a.driveVerifiedEmail ? '<div style="font-size:.74rem;color:#166534;margin:-2px 0 6px;word-break:break-all">📧 Data save hoga: <b>' + esc(a.driveVerifiedEmail) + "</b></div>" : '<div style="font-size:.74rem;color:#b45309;margin:-2px 0 6px">📧 Drive email abhi verify nahi hua</div>');
   }
+
+
+  /* ---------- v324: Drive email verify (Owner, ek click) ----------
+     Email likho -> Google popup (email pehle se bhara) -> wahi account chunte hi verified. Us institute ka data sirf usi Google Drive me jayega. */
+  window.ouiDriveVerify = function (id) {
+    var a = _ownerInstitutesCache[id] || {}, sd = window.SnapDrive, db = ownerGetDb();
+    if (!sd || !sd.verifyEmail) { toast("Drive module load ho raha hai — 2 second baad dobara dabayein"); return; }
+    var cur = String(a.driveVerifiedEmail || "");
+    var v = prompt("Is institute ke Google Drive ka email likhein (verify karne par data sirf usi Drive me save hoga).\n" + (cur ? "Abhi verified: " + cur + "\nHatane ke liye khaali chhodkar OK dabayein." : "Google popup me isi email se login karna hoga."), cur || a.driveEmail || "");
+    if (v === null) return;
+    v = v.trim();
+    if (!v) { if (cur && confirm("Verified Drive email hata dein? Phir admin koi bhi Google account jod payega.")) sd.clearVerified(id, db).then(function () { toast("Verified email hata diya"); }, function (e) { toast("Nahi hua: " + (e && (e.code || e.message))); }); return; }
+    toast("Google popup me " + v + " se login karein…");
+    sd.verifyEmail(id, v, db).then(function (r) { toast("✅ Verified: " + r.email); }, function (e) { alert("Verify nahi hua: " + (e && e.message || e)); });
+  };
+
+
+  /* ---------- v324: Security Center — config/privacy ke lockdown switches ek jagah (sirf Owner likh sakta hai, rules me) ----------
+     Har switch ka rollback = OFF (rules dobara deploy nahi karne). Do hi read/write, koi lag nahi. */
+  var SEC = [
+    ["recordsLockdown", "Results privacy", "Student ke result sirf wahi student / uske institute ka admin padh sake"],
+    ["studentDataLockdown", "Student data lock", "Mistakes, OMR reports, admit card, PIN, DP sirf apne session se (doosre ke mobile se nahi)"],
+    ["secretsLockdown", "Secrets Worker-only", "Password/PIN hash ab client se kabhi nahi — sirf Worker. ⚠️ serverAuth ON ke BAAD"],
+    ["profileLockdown", "Profile lock", "Student ka naam/mobile/photo sirf apna session/admin padh sake. ⚠️ serverAuth ON ke BAAD"]
+  ];
+  window.ouiSecurity = function () {
+    var db = ownerGetDb(), ref = db.collection("config").doc("privacy"), old = document.getElementById("oa-sec");
+    if (old) old.remove();
+    var w = document.createElement("div"); w.id = "oa-sec";
+    w.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.55);display:flex;align-items:flex-end;justify-content:center";
+    w.onclick = function (e) { if (e.target === w) w.remove(); };
+    w.innerHTML = '<div style="background:#fff;width:100%;max-width:520px;max-height:88vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px 22px"><div style="font-weight:800;font-size:1rem;margin-bottom:4px">🔒 Security Center</div><div id="oa-sec-b" style="font-size:.8rem;color:#64748b">Load ho raha hai…</div></div>';
+    document.body.appendChild(w);
+    ref.get().then(function (d) {
+      var cur = d.exists ? d.data() : {}, serverAuth = !!(window.SNAP_CONFIG && window.SNAP_CONFIG.serverAuth), h = "";
+      h += '<div style="font-size:.76rem;margin:6px 0 10px;color:' + (serverAuth ? "#166534" : "#b45309") + '">Worker login (serverAuth): <b>' + (serverAuth ? "ON ✅" : "OFF ⚠️ — password/PIN brute-force rok nahi, app-config.js me ON karein") + "</b></div>";
+      SEC.forEach(function (s) {
+        h += '<label style="display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f1f5f9"><input type="checkbox" data-k="' + s[0] + '" ' + (cur[s[0]] !== false ? "checked" : "") + ' style="margin-top:3px;width:18px;height:18px"><span><b style="font-size:.84rem">' + s[1] + '</b><br><span style="font-size:.74rem;color:#64748b">' + s[2] + "</span></span></label>";
+      });
+      h += '<div style="display:flex;gap:8px;margin-top:14px"><button type="button" id="oa-sec-max" style="flex:1;padding:12px;border:0;border-radius:12px;background:#0f766e;color:#fff;font-weight:700">Max Security (safe 2)</button><button type="button" id="oa-sec-save" style="flex:1;padding:12px;border:0;border-radius:12px;background:#4f46e5;color:#fff;font-weight:700">Save</button></div><div style="font-size:.7rem;color:#64748b;margin-top:8px">Ab sab switch default ON hain. Kuch atke to yahin se wo switch OFF karke Save — turant purana behaviour.</div>';
+      document.getElementById("oa-sec-b").innerHTML = h;
+      var save = function () {
+        var p = { updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+        w.querySelectorAll("input[data-k]").forEach(function (i) { p[i.getAttribute("data-k")] = i.checked; });
+        ref.set(p, { merge: true }).then(function () { toast("Security settings save ho gayi"); w.remove(); }, function (e) { toast("Nahi hua: " + (e && (e.code || e.message))); });
+      };
+      document.getElementById("oa-sec-save").onclick = save;
+      document.getElementById("oa-sec-max").onclick = function () {
+        w.querySelectorAll("input[data-k]").forEach(function (i) { var k = i.getAttribute("data-k"); i.checked = (k === "recordsLockdown" || k === "studentDataLockdown") ? true : i.checked; });
+        save();
+      };
+    }, function (e) { document.getElementById("oa-sec-b").textContent = "Padh nahi paaye: " + (e && (e.code || e.message)); });
+  };
 
   /* ---------- institute card ---------- */
   function card(a, adm) {
@@ -94,6 +148,7 @@
       A("ownerRenameInstitute('" + id + "','" + an + "')", "edit", "Rename") +
       A("ownerBrandingEdit('" + id + "')", "drop", "Branding &amp; Plan") +
       A("ownerApkInfo('" + id + "')", "phone", "APK Link") +
+      A("ouiDriveVerify('" + id + "')", "chk", a.driveVerifiedEmail ? "Drive Email" : "Verify Drive Email") +
       A("ownerSetInstituteOwnerName('" + id + "','" + on + "')", "user", "Owner Naam") +
       A("ownerToggleInstitute('" + id + "'," + off + ")", off ? "chk" : "pause", off ? "Activate" : "Deactivate") +
       A("ownerDeleteInstitute('" + id + "')", "trash", "Remove", "d") + "</div>" +

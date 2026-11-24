@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
+<meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+
 
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https: wss: blob: data:; frame-src 'self' https: blob: data:; worker-src 'self' blob: https://cdnjs.cloudflare.com; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -227,6 +230,10 @@
             <label for="login-mobile">WhatsApp / Mobile Number</label>
             <input id="login-mobile" type="tel" placeholder="jaise: 9876543210" required />
           </div>
+          <div class="field-row hidden" id="login-institute-row">
+            <label for="login-institute">Institute</label>
+            <select id="login-institute"><option value="">— Institute chunein —</option></select>
+          </div>
           <div class="field-row">
             <label for="login-password">Password</label>
             <input id="login-password" type="password" placeholder="Password" required />
@@ -290,6 +297,10 @@
           <div class="field-row">
             <label for="forgot-mobile">WhatsApp / Mobile Number</label>
             <input id="forgot-mobile" type="tel" placeholder="jaise: 9876543210" required />
+          </div>
+          <div class="field-row hidden" id="forgot-institute-row">
+            <label for="forgot-institute">Institute</label>
+            <select id="forgot-institute"><option value="">— Institute chunein —</option></select>
           </div>
           <div class="field-row">
             <label for="forgot-pin">Security PIN (4 digit)</label>
@@ -2270,6 +2281,7 @@ B"></textarea>
 <script defer src="own-backend.js?v=5"></script>
 <script defer src="firebase-config.js"></script>
 <script defer src="records-lockdown.js"></script>
+<script defer src="snap-key.js"></script>
 <script defer src="server-auth.js"></script>
 
 <!-- PERF FIX: 5 question-bank files (176 KiB combined — mathematics

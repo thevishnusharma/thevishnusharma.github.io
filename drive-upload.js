@@ -9,7 +9,7 @@
   if (window.SnapDrive) return;
   var SCOPE = "https://www.googleapis.com/auth/drive.file", GSI = "https://accounts.google.com/gsi/client";
   var PART = 8 * 1024 * 1024;                       /* 256 KB ka multiple (Drive ki shart) */
-  var tok = null, tokExp = 0, tc = null, gsiP = null, folders = {};
+  var tok = null, tokExp = 0, tc = null, gsiP = null, folders = {}, tokEmail = "";   /* tokEmail: is token ka Google account (ek baar fetch, token ke saath cache) */
 
   function C() { return window.SNAP_CONFIG || {}; }
   function ready() { var c = C(); return c.driveUpload !== false && !!c.googleClientId && navigator.onLine !== false; }
@@ -27,17 +27,17 @@
   }
 
   /* access token (1 ghante chalta hai). Pehli baar Google ka "Allow" popup aata hai, uske baad chup-chaap refresh. */
-  function getToken(force) {
+  function getToken(force, hint) {
     if (!force && tok && Date.now() < tokExp - 60000) return Promise.resolve(tok);
     return loadGsi().then(function () {
       return new Promise(function (res, rej) {
         if (!tc) tc = google.accounts.oauth2.initTokenClient({ client_id: C().googleClientId, scope: SCOPE, callback: function () {} });
         tc.callback = function (r) {
-          if (r && r.access_token) { tok = r.access_token; tokExp = Date.now() + (+r.expires_in || 3600) * 1000; res(tok); }
+          if (r && r.access_token) { tok = r.access_token; tokExp = Date.now() + (+r.expires_in || 3600) * 1000; tokEmail = ""; res(tok); }
           else rej(new Error((r && (r.error_description || r.error)) || "Google Drive ki permission nahi mili"));
         };
         tc.error_callback = function (e) { rej(new Error(e && e.type === "popup_closed" ? "Google popup band ho gaya — dobara try karein" : "Google Drive permission fail")); };
-        try { tc.requestAccessToken({ prompt: tok ? "" : "consent" }); } catch (e) { rej(e); }
+        try { tc.requestAccessToken(hint ? { prompt: "select_account", hint: hint } : { prompt: tok ? "" : "consent" }); } catch (e) { rej(e); }
       });
     });
   }
@@ -94,7 +94,7 @@
   function upload(file, o, prog) {
     o = o || {}; var name = file.name || "file", type = file.type || "application/octet-stream", size = file.size, fid;
     if (!size) return Promise.reject(new Error("File khaali hai"));
-    return rootFolder().then(function (root) { return folder(String(o.inst || "general"), root); }).then(function (parent) {
+    return acctGuard(o.inst).then(function () { return rootFolder(); }).then(function (root) { return folder(String(o.inst || "general"), root); }).then(function (parent) {
       return getToken().then(function (t) {
         return fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id", {
           method: "POST",
@@ -138,7 +138,7 @@
     if (!force && st[inst]) return Promise.resolve(st[inst]);
     var db = idb(); if (!db) return Promise.resolve({ connected: false, email: "", unknown: true });
     return db.collection("institutes").doc(inst).get().then(function (d) {
-      var x = d && d.exists ? d.data() : {}; return (st[inst] = { connected: x.driveConnected === true, email: String(x.driveEmail || ""), files: +x.storageFiles || 0, usedMB: Math.round((+x.storageUsedBytes || 0) / 1048576) });
+      var x = d && d.exists ? d.data() : {}; return (st[inst] = { connected: x.driveConnected === true, email: String(x.driveEmail || ""), verifiedEmail: String(x.driveVerifiedEmail || "").toLowerCase(), files: +x.storageFiles || 0, usedMB: Math.round((+x.storageUsedBytes || 0) / 1048576) });
     }, function () { return { connected: false, email: "", unknown: true }; });
   }
   function saveStatus(inst, connected, email) {
@@ -146,21 +146,73 @@
     email = connected && MAIL.test(email || "") ? String(email).slice(0, 100) : "";
     return db.collection("institutes").doc(inst).update({ driveConnected: !!connected, driveEmail: email }).then(function () { st[inst] = Object.assign(st[inst] || {}, { connected: !!connected, email: email }); return st[inst]; });
   }
-  /* admin ke Google account se jodo: popup -> Drive ke "about" se email -> sirf status save */
+  /* ===== v324: OWNER-VERIFIED DRIVE EMAIL =====
+     Owner Panel me institute ke liye Drive email verify hota hai (institutes/{id}.driveVerifiedEmail — sirf Owner likh sakta hai, rules me).
+     Uske baad: (1) admin sirf wahi Google account jod sakta hai, (2) har upload se pehle token ka account match hota hai,
+     (3) Firestore rules driveEmail status ko bhi verifiedEmail se alag likhne nahi deti. Verified email na ho to purana behaviour. */
+  var lc = function (v) { return String(v || "").trim().toLowerCase(); };
+  function tokenEmail() {                            /* token ka account: ek baar Drive "about" se, phir cache (extra lag nahi) */
+    if (tokEmail) return Promise.resolve(tokEmail);
+    return api("GET", "https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)").then(function (j) { return (tokEmail = lc(j && j.user && j.user.emailAddress)); });
+  }
+  function revokeNow() {
+    var t = tok; tok = null; tokExp = 0; tokEmail = ""; folders = {};
+    try { if (t && window.google && google.accounts && google.accounts.oauth2) google.accounts.oauth2.revoke(t, function () {}); } catch (e) {}
+  }
+  function mismatch(have, want) { return new Error("Ye Google account (" + have + ") verified nahi hai. Owner ne is institute ke liye " + want + " verify kiya hai — usi account se jodein."); }
+  /* upload se pehle: verified email set ho to token ka account wahi hona chahiye. Cache hit par koi network call nahi. */
+  function acctGuard(inst) {
+    if (!inst) return Promise.resolve();
+    var cached = st[inst], run = function (s) {
+      var want = lc(s && s.verifiedEmail);
+      if (!want) { if (C().driveVerifyRequired === true) throw new Error("Owner ne is institute ka Drive email abhi verify nahi kiya — Owner se verify karwayein."); return null; }
+      return getToken().then(function () { return tokenEmail(); }).then(function (have) { if (have !== want) { revokeNow(); throw mismatch(have, want); } });
+    };
+    return cached ? Promise.resolve().then(function () { return run(cached); }) : status(inst).then(run);
+  }
+  /* admin ke Google account se jodo: popup -> Drive ke "about" se email -> (verified ho to match) -> sirf status save */
   function connect(inst) {
     if (!C().googleClientId) return Promise.reject(new Error("Google Client ID abhi set nahi hai (Owner ko batayein)"));
-    tok = null;                                       /* naya account chunne ka mauka */
-    return getToken(true).then(function () { return api("GET", "https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)"); })
-      .then(function (j) { return rootFolder().then(function (r) { return folder(String(inst), r); }).then(function () { return saveStatus(inst, true, j && j.user && j.user.emailAddress); }); });
+    tok = null; tokEmail = "";                        /* naya account chunne ka mauka */
+    return status(inst, true).then(function (s) {
+      var want = lc(s && s.verifiedEmail);
+      if (!want && C().driveVerifyRequired === true) throw new Error("Owner ne is institute ka Drive email abhi verify nahi kiya — Owner se verify karwayein.");
+      return getToken(true, want || undefined).then(function () { return tokenEmail(); }).then(function (have) {
+        if (want && have !== want) { revokeNow(); throw mismatch(have, want); }
+        return rootFolder().then(function (r) { return folder(String(inst), r); }).then(function () { return saveStatus(inst, true, have); });
+      });
+    });
+  }
+  /* OWNER: ek click me verify. Popup me Google login (email pehle se bhara hua) -> account email == likha hua email ho to hi save.
+     Save sirf Owner kar sakta hai (rules). Purana admin-connect alag account par ho to reset, taaki admin verified account se dobara jode. */
+  function verifyEmail(inst, email, ownerDb) {
+    email = lc(email);
+    if (!MAIL.test(email) || email.length > 100) return Promise.reject(new Error("Sahi Gmail/Google email likhein"));
+    if (!C().googleClientId) return Promise.reject(new Error("Google Client ID abhi set nahi hai"));
+    var db = ownerDb || idb(); if (!db) return Promise.reject(new Error("Server ready nahi"));   /* Owner Panel apna alag Firebase session (owner-panel-session) deta hai */
+    tok = null; tokEmail = "";
+    return getToken(true, email).then(function () { return tokenEmail(); }).then(function (have) {
+      revokeNow();                                    /* owner ka token kabhi upload ke kaam nahi aana chahiye */
+      if (have !== email) throw new Error("Aapne " + have + " se login kiya, par verify " + email + " karna tha. Sahi account chunkar dobara try karein.");
+      return db.collection("institutes").doc(inst).get().then(function (d) {
+        var x = d && d.exists ? d.data() : {}, patch = { driveVerifiedEmail: email, driveVerifiedAt: firebase.firestore.FieldValue.serverTimestamp() };
+        if (x.driveConnected === true && lc(x.driveEmail) !== email) { patch.driveConnected = false; patch.driveEmail = ""; }
+        return db.collection("institutes").doc(inst).update(patch);
+      }).then(function () { delete st[inst]; return { email: email }; });
+    });
+  }
+  function clearVerified(inst, ownerDb) {
+    var db = ownerDb || idb(); if (!db) return Promise.reject(new Error("Server ready nahi"));
+    return db.collection("institutes").doc(inst).update({ driveVerifiedEmail: "", driveVerifiedAt: firebase.firestore.FieldValue.delete() }).then(function () { delete st[inst]; });
   }
   function disconnect(inst) {
-    var t = tok; tok = null; tokExp = 0; folders = {};
+    var t = tok; tok = null; tokExp = 0; tokEmail = ""; folders = {};
     try { if (t && window.google && google.accounts && google.accounts.oauth2) google.accounts.oauth2.revoke(t, function () {}); } catch (e) {}
     return saveStatus(inst, false, "");
   }
   function folderUrl(inst) { return getToken().then(function () { return rootFolder(); }).then(function (r) { return folder(String(inst), r); }).then(function (id) { return "https://drive.google.com/drive/folders/" + id; }); }
   /* upload tabhi band jab Owner ne SNAP_CONFIG.driveRequired=true kiya ho AUR status pata ho ki Drive jura nahi. Default: kabhi block nahi. */
-  function blocked(inst) { return C().driveRequired === true && !!C().googleClientId && !!st[inst] && st[inst].connected !== true; }
+  function blocked(inst) { return !!C().googleClientId && !!st[inst] && ((C().driveRequired === true && st[inst].connected !== true) || (C().driveVerifyRequired === true && !st[inst].verifiedEmail)); }
 
-  window.SnapDrive = { ready: ready, upload: upload, remove: remove, status: status, connect: connect, disconnect: disconnect, folderUrl: folderUrl, blocked: blocked, _t: { MAIL: MAIL } };
+  window.SnapDrive = { ready: ready, upload: upload, remove: remove, status: status, connect: connect, disconnect: disconnect, folderUrl: folderUrl, blocked: blocked, verifyEmail: verifyEmail, clearVerified: clearVerified, _t: { MAIL: MAIL } };
 })();

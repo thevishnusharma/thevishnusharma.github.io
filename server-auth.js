@@ -24,16 +24,16 @@
   async function idToken() { var a = auth(), u = a && a.currentUser; if (!u) throw new Error("Pehle login karein."); return u.getIdToken(); }
   window.SnapAuth = {
     enabled: enabled,
-    login: async function (mobile, password) {
-      var j = await post("/student/login", { mobile: mobile, password: password });
+    login: async function (mobile, password, instituteId) {
+      var j = await post("/student/login", { mobile: mobile, password: password, instituteId: instituteId || undefined });
       /* Agar isi browser me Admin (email) login hai to usko replace NA karein (warna admin logout + "admin account nahi" alert aata hai). */
       var cu = auth() && auth().currentUser;
       if (!(cu && cu.email)) await auth().signInWithCustomToken(j.token);
       return j.student;
     },
-    register: function (mobile, password, pin) { return post("/student/register", { mobile: mobile, password: password, pin: pin }); },
+    register: function (mobile, password, pin, instituteId) { return post("/student/register", { mobile: mobile, password: password, pin: pin, instituteId: instituteId || undefined }); },
     setPin: async function (mobile, pin) { return post("/student/set-pin", { idToken: await idToken(), mobile: mobile, pin: pin }); },
-    resetWithPin: function (mobile, pin, newPassword) { return post("/student/reset-with-pin", { mobile: mobile, pin: pin, newPassword: newPassword }); },
+    resetWithPin: function (mobile, pin, newPassword, instituteId) { return post("/student/reset-with-pin", { mobile: mobile, pin: pin, newPassword: newPassword, instituteId: instituteId || undefined }); },
     adminReset: async function (mobile, newPassword) { return post("/student/admin-reset", { idToken: await idToken(), mobile: mobile, newPassword: newPassword }); },
     deleteMyAccount: function (mobile, confirmMobile, password) { return postDelete({ mobile: mobile, confirmMobile: confirmMobile, password: password }); },
     adminDelete: async function (mobile, confirmMobile) { return postDelete({ idToken: await idToken(), mobile: mobile, confirmMobile: confirmMobile }); },

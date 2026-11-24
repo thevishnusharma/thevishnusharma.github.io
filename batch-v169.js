@@ -14,7 +14,7 @@
   function esc(t) { return String(t == null ? "" : t).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function norm(t) { return String(t == null ? "" : t).toLowerCase().replace(/\s+/g, " ").trim(); }
   function sess() { try { return typeof getStudentSession === "function" ? getStudentSession() : null; } catch (e) { return null; } }
-  function mob() { var s = sess(); return s ? String(s.mobile || "").replace(/\D/g, "").slice(-10) : ""; }
+  function mob() { var s = sess(); return s ? (window.SnapKey && SnapKey.isKey(s.mobile) ? s.mobile : String(s.mobile || "").replace(/\D/g, "").slice(-10)) : ""; }
   function DB() { var v = W.vishnuFirebase; return v && v.enabled ? v.db : null; }
   function FV() { return firebase.firestore.FieldValue; }
   function adminEmail() { try { return (W.vishnuFirebase.auth.currentUser.email || "").toLowerCase(); } catch (e) { return ""; } }

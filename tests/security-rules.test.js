@@ -59,6 +59,8 @@ async function t(name, fn) { try { await fn(); passed++; console.log("  ✅", na
   const newStudent = env.authenticatedContext("newStudent").firestore();
   const logged = env.unauthenticatedContext().firestore();
   const col = (db, p) => db.collection(p), d = (db, p) => db.doc(p);
+  // v326: lockdown flags ab DEFAULT ON hain; purane (v178-era) tests ko legacy semantics par chalane ke liye shuru me explicit false.
+  await env.withSecurityRulesDisabled(async (c) => { await fsOf(c).doc("config/privacy").set({ recordsLockdown: false, studentDataLockdown: false, secretsLockdown: false, profileLockdown: false }); });
 
   console.log("\nCustom-claim role migration");
   await t("Active custom-claim admin can write within admin rules", () => assertSucceeds(d(claimAdmin, "questionBank/claim-admin-question").set({ createdBy: "claims-admin@x.com" })));
@@ -66,6 +68,10 @@ async function t(name, fn) { try { await fn(); passed++; console.log("  ✅", na
   await env.withSecurityRulesDisabled(async (ctx) => fsOf(ctx).doc("admins/claims-admin@x.com").set({ active: false, instituteId: A }));
   await t("Disabled custom-claim admin is still blocked", () => assertFails(d(claimAdmin, "questionBank/claim-disabled-question").set({ createdBy: "claims-admin@x.com" })));
 
+  console.log("\nv325 multi-institute student keys");
+  await t("v325: composite key (inst__mobile) + phone ke saath consent wali registration chalti hai", () => assertSucceeds(d(newStudent, "students/" + A + "__9003000003").set({ name: "New", mobile: A + "__9003000003", phone: "9003000003", instituteId: A, classId: "c1", hasPin: true, termsAccepted: true, guardianConsent: true, consentVersion: "test-v1", consentAt: serverTimestamp(), createdAt: serverTimestamp() })));
+  await t("v325: phone ka format galat ho to registration reject", () => assertFails(d(newStudent, "students/" + A + "__9003000004").set({ name: "New", mobile: A + "__9003000004", phone: "not-a-phone", instituteId: A, classId: "c1", hasPin: true, termsAccepted: true, guardianConsent: true, consentVersion: "test-v1", consentAt: serverTimestamp(), createdAt: serverTimestamp() })));
+  await t("v325: doc id aur mobile field alag ho to reject", () => assertFails(d(newStudent, "students/" + A + "__9003000005").set({ name: "New", mobile: "9003000005", instituteId: A, classId: "c1", hasPin: true, termsAccepted: true, guardianConsent: true, consentVersion: "test-v1", consentAt: serverTimestamp(), createdAt: serverTimestamp() })));
   console.log("\nStudent registration consent");
   const serverTimestamp = require("firebase/firestore").serverTimestamp;
   await t("Student registration without Terms/guardian consent is rejected", () => assertFails(d(newStudent, "students/9001").set({ name: "New", mobile: "9001", instituteId: A, classId: "c1", hasPin: true, createdAt: serverTimestamp() })));
@@ -175,6 +181,9 @@ async function t(name, fn) { try { await fn(); passed++; console.log("  ✅", na
     await db.doc("studentRecords/r2").set({ mobile: "7777", instituteId: A, testId: "t1", score: 3 });
     await db.doc("studentRecords/r3").set({ mobile: "8888", instituteId: B, testId: "t2", score: 9 });
   });
+  await env.withSecurityRulesDisabled(async (c) => { await fsOf(c).doc("config/privacy").delete(); });
+  await t("v326: config/privacy hi na ho to lockdown DEFAULT ON (anonymous list NAHI kar sakta)", () => assertFails(col(anon, "studentRecords").get()));
+  await env.withSecurityRulesDisabled(async (c) => { await fsOf(c).doc("config/privacy").set({ recordsLockdown: false, studentDataLockdown: false, secretsLockdown: false, profileLockdown: false }); });
   await t("Lockdown OFF: purana behaviour (koi bhi signed-in list kar sakta hai)", () => assertSucceeds(col(anon, "studentRecords").get()));
   await env.withSecurityRulesDisabled(async (c) => { await fsOf(c).doc("config/privacy").set({ recordsLockdown: true }); });
   await t("Lockdown ON: bina session wala (anonymous) list NAHI kar sakta", () => assertFails(col(anon, "studentRecords").get()));

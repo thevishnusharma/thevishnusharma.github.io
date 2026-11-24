@@ -48,7 +48,7 @@
     var next = Math.max(Number(opts.nextRoll) || 1, maxN + 1);
     var fresh = [], seen = {};
     (students || []).forEach(function (s) {
-      var m = String(s.mobile || "").replace(/\D/g, "").slice(-10);
+      var m = (typeof window !== "undefined" && window.SnapKey && window.SnapKey.isKey(s.mobile) ? s.mobile : String(s.mobile || "").replace(/\D/g, "").slice(-10));
       if (m.length !== 10 || have[m] || seen[m]) { skipped++; return; }
       seen[m] = 1; fresh.push({ name: String(s.name || "").trim() || "Student", mobile: m, classId: s.classId || null, rollNumber: s.rollNumber });
     });

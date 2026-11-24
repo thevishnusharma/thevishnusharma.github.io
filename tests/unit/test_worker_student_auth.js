@@ -72,13 +72,13 @@ global.fetch = async (url, init = {}) => {
     assert.strictEqual((await call('/student/login', { mobile: '9000000002', password: 'good-pass' })).status, 200);
     assert.ok(!kvm.has('rl:m:9000000002'));
   });
-  await t('legacy SHA-256 user logs in once and is silently upgraded to PBKDF2 (hash kept by default)', async () => {
+  await t('legacy SHA-256 user logs in once and is silently upgraded to PBKDF2 (hash kept only when DELETE_LEGACY_HASH=0)', async () => {
     reset(); sdoc('students/9000000003', { name: 'C', instituteId: 'i' }); sdoc('studentSecrets/9000000003', { hash: sha('old-pass1'), pinHash: sha('1111') });
-    assert.strictEqual((await call('/student/login', { mobile: '9000000003', password: 'old-pass1' })).status, 200);
-    const s = store.get('studentSecrets/9000000003'); assert.ok(s.pw.startsWith('pbkdf2$')); assert.ok(s.hash, 'legacy hash kept until DELETE_LEGACY_HASH=1');
+    assert.strictEqual((await call('/student/login', { mobile: '9000000003', password: 'old-pass1' }, { env: { ...env, DELETE_LEGACY_HASH: '0' } })).status, 200);
+    const s = store.get('studentSecrets/9000000003'); assert.ok(s.pw.startsWith('pbkdf2$')); assert.ok(s.hash, 'legacy hash kept only when DELETE_LEGACY_HASH=0');
     assert.strictEqual((await call('/student/login', { mobile: '9000000003', password: 'old-pass1' })).status, 200);   // now via PBKDF2
   });
-  await t('DELETE_LEGACY_HASH=1 removes the unsalted hash after upgrade', async () => {
+  await t('default (v326): the unsalted hash is removed right after the first successful login', async () => {
     reset(); sdoc('students/9000000004', { name: 'D', instituteId: 'i' }); sdoc('studentSecrets/9000000004', { hash: sha('old-pass2') });
     assert.strictEqual((await call('/student/login', { mobile: '9000000004', password: 'old-pass2' }, { env: { ...env, DELETE_LEGACY_HASH: '1' } })).status, 200);
     assert.ok(!store.get('studentSecrets/9000000004').hash);
@@ -137,6 +137,53 @@ global.fetch = async (url, init = {}) => {
   await t('IP limit: 20 failures from one IP across different mobiles -> 429', async () => {
     reset(); let last; for (let i = 0; i < 21; i++) last = await call('/student/login', { mobile: '90000' + String(10000 + i), password: 'x' }, { ip: '9.9.9.9' });
     assert.strictEqual(last.status, 429);
+  });
+  // ===== v325 multi-institute: ek mobile, alag institute = alag identity =====
+  const claimsOf = (tok) => JSON.parse(Buffer.from(tok.split('.')[1], 'base64url').toString()).claims;
+  await t('multi-institute: same mobile registers in institute B (composite key) while institute A student (legacy key) stays untouched', async () => {
+    reset(); sdoc('students/9876543210', { name: 'RaviA', instituteId: 'inst_A', hasPin: true }); sdoc('studentSecrets/9876543210', { hash: sha('passA#11') });
+    let r = await call('/student/register', { mobile: 'inst_B__9876543210', password: 'PassB#22', pin: '1111', instituteId: 'inst_B' });
+    const j = await r.json(); assert.strictEqual(r.status, 200); assert.strictEqual(j.mobile, 'inst_B__9876543210');
+    assert.ok(store.get('studentSecrets/inst_B__9876543210').pw.startsWith('pbkdf2$'));
+    assert.strictEqual(store.get('studentSecrets/9876543210').hash, sha('passA#11'));          // A ka password bilkul same
+  });
+  await t('multi-institute: login picks the right identity by institute; wrong institute / wrong password get the same generic 401', async () => {
+    reset(); sdoc('students/9876543210', { name: 'RaviA', instituteId: 'inst_A', hasPin: true }); sdoc('studentSecrets/9876543210', { hash: sha('passA#11') });
+    sdoc('students/inst_B__9876543210', { name: 'RaviB', instituteId: 'inst_B', hasPin: true });
+    await call('/student/register', { mobile: 'inst_B__9876543210', password: 'PassB#22', pin: '1111', instituteId: 'inst_B' });
+    let r = await call('/student/login', { mobile: '9876543210', password: 'passA#11', instituteId: 'inst_A' }); let j = await r.json();
+    assert.strictEqual(r.status, 200); assert.strictEqual(claimsOf(j.token).mobile, '9876543210'); assert.strictEqual(j.student.name, 'RaviA'); assert.strictEqual(j.student.phone, '9876543210');
+    r = await call('/student/login', { mobile: '9876543210', password: 'PassB#22', instituteId: 'inst_B' }); j = await r.json();
+    assert.strictEqual(r.status, 200); assert.strictEqual(claimsOf(j.token).mobile, 'inst_B__9876543210'); assert.strictEqual(claimsOf(j.token).instituteId, 'inst_B'); assert.strictEqual(j.student.phone, '9876543210');
+    assert.strictEqual((await call('/student/login', { mobile: '9876543210', password: 'passA#11', instituteId: 'inst_B' })).status, 401);   // A ka password B me nahi chalta
+    assert.strictEqual((await call('/student/login', { mobile: '9876543210', password: 'PassB#22', instituteId: 'inst_A' })).status, 401);   // B ka password A me nahi chalta
+    assert.strictEqual((await call('/student/login', { mobile: '9876543210', password: 'passA#11', instituteId: 'inst_C' })).status, 401);   // C me registered hi nahi
+  });
+  await t('multi-institute: legacy login WITHOUT institute still works exactly as before', async () => {
+    reset(); sdoc('students/9876543210', { name: 'RaviA', instituteId: 'inst_A' }); sdoc('studentSecrets/9876543210', { hash: sha('passA#11') });
+    const r = await call('/student/login', { mobile: '9876543210', password: 'passA#11' }); assert.strictEqual(r.status, 200); assert.strictEqual(claimsOf((await r.json()).token).mobile, '9876543210');
+  });
+  await t('multi-institute: duplicate registration in the SAME institute is rejected (409), legacy and composite', async () => {
+    reset(); sdoc('students/9876543210', { name: 'RaviA', instituteId: 'inst_A' }); sdoc('studentSecrets/9876543210', { hash: sha('passA#11') });
+    let r = await call('/student/register', { mobile: 'inst_A__9876543210', password: 'Other#pass1', pin: '2222', instituteId: 'inst_A' }); assert.strictEqual(r.status, 409);
+    sdoc('students/inst_B__9876543210', { name: 'B', instituteId: 'inst_B' }); sdoc('studentSecrets/inst_B__9876543210', { pw: 'pbkdf2$x' });
+    r = await call('/student/register', { mobile: 'inst_B__9876543210', password: 'Other#pass1', pin: '2222', instituteId: 'inst_B' }); assert.strictEqual(r.status, 409);
+  });
+  await t('multi-institute: PIN reset in institute B changes only B password, A untouched', async () => {
+    reset(); sdoc('students/9876543210', { name: 'RaviA', instituteId: 'inst_A', hasPin: true }); sdoc('studentSecrets/9876543210', { hash: sha('passA#11') });
+    sdoc('students/inst_B__9876543210', { name: 'RaviB', instituteId: 'inst_B', hasPin: true });
+    await call('/student/register', { mobile: 'inst_B__9876543210', password: 'PassB#22', pin: '1111', instituteId: 'inst_B' });
+    assert.strictEqual((await call('/student/reset-with-pin', { mobile: '9876543210', pin: '1111', newPassword: 'NewB#pass9', instituteId: 'inst_B' })).status, 200);
+    assert.strictEqual((await call('/student/login', { mobile: '9876543210', password: 'NewB#pass9', instituteId: 'inst_B' })).status, 200);
+    assert.strictEqual((await call('/student/login', { mobile: '9876543210', password: 'passA#11', instituteId: 'inst_A' })).status, 200);
+  });
+  await t('multi-institute: malformed keys never become odd document paths (they collapse to the plain 10-digit mobile, as before)', async () => {
+    reset();
+    assert.notStrictEqual((await call('/student/login', { mobile: '../students/9876543210', password: 'x1y2z3' })).status, 200);
+    assert.notStrictEqual((await call('/student/login', { mobile: 'a/b__9876543210', password: 'x1y2z3' })).status, 200);
+    await call('/student/register', { mobile: 'x'.repeat(80) + '__9876543210', password: 'Secret#77', pin: '1234' });
+    assert.ok([...store.keys()].every((k) => /^studentSecrets\/(\d{10}|[A-Za-z0-9_-]{1,64}__\d{10})$/.test(k)), 'unexpected doc path: ' + [...store.keys()]);
+    assert.ok(!store.has('studentSecrets/' + 'x'.repeat(80) + '__9876543210'));
   });
   console.log('\n' + n + ' passed'); fs.unlinkSync(tmp);
 })();

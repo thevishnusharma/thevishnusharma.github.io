@@ -1318,13 +1318,27 @@ function authOrigin(request) {
   if (AUTH_ORIGINS.indexOf(o) >= 0 || AUTH_DEV.test(o)) return o;
   throw new HttpErr(403, 'Origin allowed nahi hai');
 }
-const mobileOf = (x) => { const m = String(x || '').replace(/\D/g, '').slice(-10); return /^\d{10}$/.test(m) ? m : ''; };
+// v325 multi-institute: student "key" = 10-digit mobile (purane students) ya <instituteId>__<mobile> (alag identity). Dono valid; baaki sab digits tak.
+const KEY_RE = /^[A-Za-z0-9_-]{1,64}__\d{10}$/;
+const mobileOf = (x) => { const raw = String(x || ''); if (KEY_RE.test(raw)) return raw; const m = raw.replace(/\D/g, '').slice(-10); return /^\d{10}$/.test(m) ? m : ''; };
+const instOf = (x) => { const v = String(x || ''); return /^[A-Za-z0-9_-]{1,64}$/.test(v) ? v : ''; };
+// login/reset: client sirf asli mobile + institute bhejta hai -> key yahin (admin reads se) tay hoti hai: pehle composite, phir purani key (agar uska institute wahi ho)
+async function studentKeyFor(env, inst, phone) {
+  if (!inst || !/^\d{10}$/.test(phone)) return phone;
+  const ck = inst + '__' + phone;
+  if (await fsGetFields(env, 'students/' + ck)) return ck;
+  const st = await fsGetFields(env, 'students/' + phone);
+  if (st) { const si = sFld(st, 'instituteId'); if (!si || si === inst) return phone; }
+  return ck;
+}
 const GENERIC_BAD = 'Mobile number ya password galat hai.';
 
 async function authLogin(request, env, body) {
-  const mobile = mobileOf(body.mobile), password = typeof body.password === 'string' ? body.password : '';
+  let mobile = mobileOf(body.mobile); const password = typeof body.password === 'string' ? body.password : '';
   if (!mobile || !password || password.length > 200) throw new HttpErr(400, 'Sahi mobile number aur password likhein.');
-  const ip = request.headers.get('CF-Connecting-IP') || '0', rm = 'rl:m:' + mobile, ri = 'rl:ip:' + ip;
+  const ip0 = request.headers.get('CF-Connecting-IP') || '0';
+  if (/^\d{10}$/.test(mobile) && instOf(body.instituteId)) { await rlCheck(env, [['rl:ip:' + ip0, 20]]); mobile = await studentKeyFor(env, instOf(body.instituteId), mobile); }
+  const ip = ip0, rm = 'rl:m:' + mobile, ri = 'rl:ip:' + ip;
   const fails = [[rm, 5, 900], [ri, 20, 3600]];
   await rlCheck(env, [[rm, 5], [ri, 20]]);
   let sec = await fsGetFields(env, 'studentSecrets/' + mobile), st = await fsGetFields(env, 'students/' + mobile), ok = false, upgrade = false, legacyFromStudent = false;
@@ -1335,7 +1349,7 @@ async function authLogin(request, env, body) {
   }
   if (!ok) { await rlFail(env, fails); throw new HttpErr(401, GENERIC_BAD); }
   await rlClear(env, [rm]);
-  const del = env.DELETE_LEGACY_HASH === '1' ? ['hash'] : [];
+  const del = env.DELETE_LEGACY_HASH !== '0' ? ['hash'] : [];   // v326: default ON (purana unsalted SHA-256 hash login ke baad hat jaata hai). Rollback: DELETE_LEGACY_HASH="0"
   if (upgrade) {
     const set = { pw: await pwMake(env, password), updatedAt: new Date() };
     if (legacyFromStudent) { if (sFld(st, 'pinHash')) set.pinHash = sFld(st, 'pinHash'); }
@@ -1346,7 +1360,7 @@ async function authLogin(request, env, body) {
   }
   const instituteId = sFld(st, 'instituteId'), classId = sFld(st, 'classId');
   const hasPin = !!(sec && (sFld(sec, 'pin') || sFld(sec, 'pinHash'))) || (st.hasPin && st.hasPin.booleanValue === true) || !!sFld(st, 'pinHash');
-  return { ok: true, token: await mintCustomToken(env, 's_' + mobile, { role: 'student', mobile, instituteId }), student: { name: sFld(st, 'name'), mobile, instituteId: instituteId || null, classId: classId || null, hasPin } };
+  return { ok: true, token: await mintCustomToken(env, 's_' + mobile, { role: 'student', mobile, instituteId }), student: { name: sFld(st, 'name'), mobile, phone: mobile.slice(-10), instituteId: instituteId || null, classId: classId || null, hasPin } };
 }
 async function authRegister(request, env, body) {
   const mobile = mobileOf(body.mobile), password = body.password, pin = String(body.pin || '');
@@ -1357,9 +1371,14 @@ async function authRegister(request, env, body) {
   await rlCheck(env, [[rr, 10]]);
   const sec = await fsGetFields(env, 'studentSecrets/' + mobile);
   if (sec && (sFld(sec, 'pw') || sFld(sec, 'hash')) && await fsGetFields(env, 'students/' + mobile)) { await rlFail(env, [[rr, 10, 3600]]); throw new HttpErr(409, 'Is mobile number par account pehle se bana hua hai. Login karein.'); }
+  const regInst = instOf(body.instituteId);
+  if (KEY_RE.test(mobile) && regInst && mobile.startsWith(regInst + '__')) {     // naya composite: usi institute ki purani (mobile-key) registration bhi duplicate hai
+    const legacy = await fsGetFields(env, 'students/' + mobile.slice(-10));
+    if (legacy && sFld(legacy, 'instituteId') === regInst) { await rlFail(env, [[rr, 10, 3600]]); throw new HttpErr(409, 'Is institute me ye mobile number pehle se registered hai. Login karein.'); }
+  }
   await fsSetFields(env, 'studentSecrets/' + mobile, { pw: await pwMake(env, password), pin: await pwMake(env, pin), updatedAt: new Date() }, ['hash', 'pinHash']);
   await rlFail(env, [[rr, 10, 3600]]);
-  return { ok: true };
+  return { ok: true, mobile };
 }
 async function authSetPin(request, env, body) {
   const sa = JSON.parse(env.SERVICE_ACCOUNT_JSON), u = await verifyIdToken(body.idToken, env.PROJECT_ID || sa.project_id), mobile = mobileOf(body.mobile), pin = String(body.pin || '');
@@ -1372,10 +1391,12 @@ async function authSetPin(request, env, body) {
   return { ok: true };
 }
 async function authResetWithPin(request, env, body) {
-  const mobile = mobileOf(body.mobile), pin = String(body.pin || ''), np = body.newPassword;
+  let mobile = mobileOf(body.mobile); const pin = String(body.pin || ''), np = body.newPassword;
   if (!mobile || !/^\d{4}$/.test(pin)) throw new HttpErr(400, 'Sahi mobile number aur 4 digit PIN likhein.');
   pwPolicy(np);
-  const ip = request.headers.get('CF-Connecting-IP') || '0', rp = 'rl:p:' + mobile, ri = 'rl:ip:' + ip;
+  const ip = request.headers.get('CF-Connecting-IP') || '0';
+  if (/^\d{10}$/.test(mobile) && instOf(body.instituteId)) mobile = await studentKeyFor(env, instOf(body.instituteId), mobile);
+  const rp = 'rl:p:' + mobile, ri = 'rl:ip:' + ip;
   await rlCheck(env, [[rp, 5], [ri, 20]]);
   const sec = await fsGetFields(env, 'studentSecrets/' + mobile), st = await fsGetFields(env, 'students/' + mobile);
   let ok = false;

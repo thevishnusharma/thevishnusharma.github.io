@@ -153,7 +153,7 @@
 
   /* ---------- student side ---------- */
   function cfgOn() { try { return !(root.SNAP_CONFIG && root.SNAP_CONFIG.admitCard === false); } catch (e) { return true; } }
-  function sMobile() { try { var s = typeof root.getStudentSession === "function" ? root.getStudentSession() : null; return s && s.mobile ? String(s.mobile).replace(/\D/g, "").slice(-10) : ""; } catch (e) { return ""; } }
+  function sMobile() { try { var s = typeof root.getStudentSession === "function" ? root.getStudentSession() : null; return s && s.mobile ? (root.SnapKey && root.SnapKey.isKey(s.mobile) ? String(s.mobile) : String(s.mobile).replace(/\D/g, "").slice(-10)) : ""; } catch (e) { return ""; } }
   function ck(m) { return "snap_admit_" + m; }
   function readCache(m) { try { return JSON.parse(localStorage.getItem(ck(m)) || "null") || { at: 0, cards: [] }; } catch (e) { return { at: 0, cards: [] }; } }
   function writeCache(m, cards) { try { localStorage.setItem(ck(m), JSON.stringify({ at: Date.now(), cards: cards })); } catch (e) {} }

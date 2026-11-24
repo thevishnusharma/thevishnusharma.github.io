@@ -25,9 +25,11 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function validRegistrationConsent(mobile) {
       return request.resource.data.keys().hasOnly([
-        'name', 'mobile', 'hasPin', 'instituteId', 'classId', 'createdAt',
+        'name', 'mobile', 'phone', 'hasPin', 'instituteId', 'classId', 'createdAt',
         'termsAccepted', 'guardianConsent', 'consentVersion', 'consentAt'
       ]) && request.resource.data.mobile == mobile &&
+        // v325: multi-institute — 'phone' sirf display ke liye asli 10-digit number (key composite ho to), key mobile ke andar hi rehti hai
+        (!('phone' in request.resource.data) || (request.resource.data.phone is string && request.resource.data.phone.matches('^[0-9]{10}$'))) &&
         request.resource.data.termsAccepted == true &&
         request.resource.data.guardianConsent == true &&
         request.resource.data.consentVersion is string &&
@@ -313,8 +315,9 @@ service cloud.firestore {
     }
     // Phase 4: config/privacy.secretsLockdown = true => koi client (admin bhi) studentSecrets nahi padh/likh sakta; sab Worker se.
     function secretsLockdown() {
-      return exists(/databases/$(database)/documents/config/privacy) &&
-        get(/databases/$(database)/documents/config/privacy).data.get('secretsLockdown', false) == true;
+      // v326: DEFAULT ON — config/privacy na ho ya field na ho to lockdown ON. Sirf Owner ke explicit `false` par OFF (Security Center).
+      return !exists(/databases/$(database)/documents/config/privacy) ||
+        get(/databases/$(database)/documents/config/privacy).data.get('secretsLockdown', true) != false;
     }
     function instStrict(instituteId) {
       return exists(/databases/$(database)/documents/institutes/$(instituteId)/batchSettings/security) &&
@@ -593,7 +596,9 @@ service cloud.firestore {
     // DELETE sirf admin kar sakta hai — isse accidental/malicious mass
     // data-loss nahi ho sakta.
     match /students/{mobile} {
-      allow get: if isSignedIn();
+      // v324 SECURITY: config/privacy.profileLockdown = true => student ka profile (naam/mobile/photo) sirf apna session / admin / owner padh sake.
+      // serverAuth (Worker login) ON hone ke BAAD hi ON karein — warna login se pehle ka profile-read ruk jaayega.
+      allow get: if isSignedIn() && (!profileLockdown() || isOwner() || isAdmin() || (sessMobile() != null && sessMobile() == mobile));
       // v220: Owner ka Demo seed/reset — sirf isDemo==true docs
       allow create, update: if isOwner() && request.resource.data.get('isDemo', false) == true;
       allow list, delete: if isOwner() && resource.data.get('isDemo', false) == true;
@@ -631,6 +636,8 @@ service cloud.firestore {
         isAdmin() && studentBelongsToAdmin(mobile)
       ) || (
         isSignedIn() &&
+        // v324 SECURITY: Max-Security ON => doosre student ki DP/PIN-flag sirf uska apna session badal sake
+        (!studentDataLockdown() || (sessMobile() != null && sessMobile() == mobile)) &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'photoDataUrl', 'hasPin', 'hash', 'pinHash',
           'streakCount', 'lastActiveDate'
@@ -701,6 +708,9 @@ service cloud.firestore {
           // PIN jaane ise overwrite nahi kar sakta).
           isSignedIn() &&
           !('pinHash' in resource.data) &&
+          // v324 SECURITY: Max-Security (studentDataLockdown) ON ho to PIN sirf us student ke apne verified session se set hoga
+          // (warna koi bhi anonymous visitor mobile number jaankar PIN set -> (c) se password reset karke account hijack kar sakta tha)
+          (!studentDataLockdown() || (sessMobile() != null && sessMobile() == mobile)) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pinHash'])
         ) ||
         (
@@ -720,8 +730,9 @@ service cloud.firestore {
     // Owner Firebase Console me config/privacy = { recordsLockdown: true } karta hai tabhi nayi privacy lagu hoti hai.
     // Rollback: us field ko false/delete kar do — rules dobara deploy karne ki zaroorat nahi.
     function recordsLockdown() {
-      return exists(/databases/$(database)/documents/config/privacy) &&
-        get(/databases/$(database)/documents/config/privacy).data.get('recordsLockdown', false) == true;
+      // v326: DEFAULT ON — config/privacy na ho ya field na ho to lockdown ON. Sirf Owner ke explicit `false` par OFF (Security Center).
+      return !exists(/databases/$(database)/documents/config/privacy) ||
+        get(/databases/$(database)/documents/config/privacy).data.get('recordsLockdown', true) != false;
     }
     function canReadRecord(d) {
       return !recordsLockdown() || isOwner() || isAdmin() ||
@@ -733,8 +744,14 @@ service cloud.firestore {
     // Switch: config/privacy.studentDataLockdown = true  (default OFF => purana behaviour, kuch nahi tootta; rollback = false).
     // ON hone par: student sirf APNA (sessMobile() == mobile) padh/likh sake; admin/owner pehle jaise.
     function studentDataLockdown() {
-      return exists(/databases/$(database)/documents/config/privacy) &&
-        get(/databases/$(database)/documents/config/privacy).data.get('studentDataLockdown', false) == true;
+      // v326: DEFAULT ON — config/privacy na ho ya field na ho to lockdown ON. Sirf Owner ke explicit `false` par OFF (Security Center).
+      return !exists(/databases/$(database)/documents/config/privacy) ||
+        get(/databases/$(database)/documents/config/privacy).data.get('studentDataLockdown', true) != false;
+    }
+    function profileLockdown() {
+      // v326: DEFAULT ON — config/privacy na ho ya field na ho to lockdown ON. Sirf Owner ke explicit `false` par OFF (Security Center).
+      return !exists(/databases/$(database)/documents/config/privacy) ||
+        get(/databases/$(database)/documents/config/privacy).data.get('profileLockdown', true) != false;
     }
     function canAccessStudentMobile(m) {
       return !studentDataLockdown() || isOwner() || isAdmin() || (sessMobile() != null && sessMobile() == m);
@@ -752,7 +769,13 @@ service cloud.firestore {
       //       Client queries ko where(instituteId==...) / where(mobile==...) dena zaroori hai (records-lockdown.js ye khud karta hai).
       allow get: if isSignedIn() && canReadRecord(resource.data);
       allow list: if isSignedIn() && canReadRecord(resource.data);
-      allow create: if isSignedIn();
+      // v324 SECURITY: result create par validation — mobile/institute string hon, doc chhota ho; Max-Security (recordsLockdown) ON ho
+      // to student sirf APNA result jama kar sake (nakli/doosre ke naam ka result leaderboard me nahi ghus sakta).
+      allow create: if isSignedIn() &&
+        request.resource.data.get('mobile', '') is string &&
+        request.resource.data.get('instituteId', '') is string &&
+        request.resource.data.keys().size() <= 80 &&
+        (!recordsLockdown() || isAdmin() || (sessMobile() != null && sessMobile() == request.resource.data.get('mobile', '')));
       allow update: if isAdmin() && sameInstData(resource.data);
       allow delete: if isAdmin() && sameInstData(resource.data);
     }
@@ -848,7 +871,10 @@ service cloud.firestore {
             request.resource.data.driveEmail is string &&
             request.resource.data.driveEmail.size() <= 100 &&
             (request.resource.data.driveConnected == true || request.resource.data.driveEmail == '') &&
-            (request.resource.data.driveEmail == '' || request.resource.data.driveEmail.matches('^[^@ ]+@[^@ ]+[.][^@ ]+$'))) ||
+            (request.resource.data.driveEmail == '' || request.resource.data.driveEmail.matches('^[^@ ]+@[^@ ]+[.][^@ ]+$')) &&
+            // v324: Owner ne Drive email verify kiya ho (driveVerifiedEmail, sirf Owner likh sakta hai) to admin sirf wahi email jod sakta hai
+            (resource.data.get('driveVerifiedEmail', '') == '' || request.resource.data.driveEmail == '' ||
+              request.resource.data.driveEmail.lower() == resource.data.get('driveVerifiedEmail', ''))) ||
 
           // (a2) v132: Join Code ka ON/OFF flag — sirf `requiresJoinCode` (asli code yahan kabhi nahi)
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['requiresJoinCode']) ||
@@ -1259,7 +1285,7 @@ service cloud.firestore {
         request.resource.data.reason is string && request.resource.data.reason.size() > 0 && request.resource.data.reason.size() <= 150 &&
         request.resource.data.message is string && request.resource.data.message.size() >= 5 && request.resource.data.message.size() <= 1000 &&
         request.resource.data.name is string && request.resource.data.name.size() <= 100 &&
-        request.resource.data.mobile is string && request.resource.data.mobile.size() >= 6 && request.resource.data.mobile.size() <= 15 &&
+        request.resource.data.mobile is string && request.resource.data.mobile.size() >= 6 && request.resource.data.mobile.size() <= 80 &&
         request.resource.data.status == 'open' &&
         request.resource.data.createdAt == request.time;
       allow read: if isAdmin() && resource.data.instituteId in [adminInstituteId(), ''];

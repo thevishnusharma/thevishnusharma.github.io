@@ -1,3 +1,5 @@
+/* v324: clickjacking band — doosri site ke frame me app/owner panel khulne par top-window par le aao ya chhupa do (same-origin frame, jaise question generator, chalta rahega) */
+(function () { try { if (window.top !== window.self && window.top.location.origin !== window.location.origin) window.top.location = window.self.location; } catch (e) { try { document.documentElement.style.display = "none"; } catch (e2) {} } })();
 /* The Vishnu Sharma — safe-html.js (Phase 5). Sabse PEHLE load hota hai.
    1) Helpers: __sx (text/attribute escape), __sj (inline-handler JS string), SnapSafe.esc/escAttr/safeUrl/html/sanitizeRich
    2) Guard: innerHTML / outerHTML / insertAdjacentHTML me auto-execute hone wale hisse (script, onerror, javascript: ...) hata deta hai. */

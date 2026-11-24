@@ -256,7 +256,7 @@
     }).then(function () {
       try {
         var saved = JSON.parse(localStorage.getItem("savya_records") || "[]");
-        if (Array.isArray(saved)) localStorage.setItem("savya_records", JSON.stringify(saved.filter(function (r) { return String(r.mobile || "").replace(/\D/g, "").slice(-10) !== mobile; })));
+        if (Array.isArray(saved)) localStorage.setItem("savya_records", JSON.stringify(saved.filter(function (r) { return (window.SnapKey && SnapKey.isKey(r.mobile) ? r.mobile : String(r.mobile || "").replace(/\D/g, "").slice(-10)) !== mobile; })));
       } catch (e) {}
       [localStorage, sessionStorage].forEach(function (store) { try { for (var i = store.length - 1; i >= 0; i--) { var key = store.key(i); if (key && key.indexOf(mobile) >= 0) store.removeItem(key); } } catch (e) {} });
       try { if (typeof window.clearStudentSession === "function") window.clearStudentSession(); } catch (e) {}
