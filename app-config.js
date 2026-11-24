@@ -59,7 +59,7 @@ window.SNAP_CONFIG = {
   },
   appLock: true,                                                      // institute-APK / ?inst= link lock + "app band hai" screen (kill-switch)
   ownerAlertEmail: "thevishnusharmaapp@gmail.com",                         // is email se login par owner app me alerts ka push aata hai
-  build: "327",
+  build: "328",
   ownerName: "Vishnu Sharma",
   supportPhone: "9525208263",
   supportWhatsapp: "9525208263",          // WhatsApp number (khaali = phone wala use hoga)
@@ -68,8 +68,8 @@ window.SNAP_CONFIG = {
   website: "https://thevishnusharma.github.io",
   privacyUrl: "/privacy.html",            // Privacy Policy
   termsUrl: "/terms.html",                // Terms & Conditions
-  privacyVersion: "2026-10-15-v1",
-  termsVersion: "2026-10-15-v1",
+  privacyVersion: "2026-11-24-v1",
+  termsVersion: "2026-11-24-v1",
   adminFaqs: [
     ["Naya test kaise banayein?", "Admin Dashboard → Tests → Naya Test. Questions Question Bank se chunein, time/marks set karein aur Publish karein."],
     ["Students ko notification kaise bhejein?", "Dashboard → 🔔 Notification. Title aur message likhkar 'Students ko bhejein' dabayein. App band hone par bhi students ko mil jata hai."],

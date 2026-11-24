@@ -35,7 +35,7 @@
     setPin: async function (mobile, pin) { return post("/student/set-pin", { idToken: await idToken(), mobile: mobile, pin: pin }); },
     resetWithPin: function (mobile, pin, newPassword, instituteId) { return post("/student/reset-with-pin", { mobile: mobile, pin: pin, newPassword: newPassword, instituteId: instituteId || undefined }); },
     adminReset: async function (mobile, newPassword) { return post("/student/admin-reset", { idToken: await idToken(), mobile: mobile, newPassword: newPassword }); },
-    deleteMyAccount: function (mobile, confirmMobile, password) { return postDelete({ mobile: mobile, confirmMobile: confirmMobile, password: password }); },
+    deleteMyAccount: function (mobile, confirmMobile, password, instituteId) { return postDelete({ mobile: mobile, confirmMobile: confirmMobile, password: password, instituteId: instituteId || undefined }); },
     adminDelete: async function (mobile, confirmMobile) { return postDelete({ idToken: await idToken(), mobile: mobile, confirmMobile: confirmMobile }); },
     afterLogout: function () {
       try {

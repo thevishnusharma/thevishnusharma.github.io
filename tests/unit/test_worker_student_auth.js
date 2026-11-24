@@ -12,6 +12,7 @@ global.fetch = async (url, init = {}) => {
   if (url.startsWith('https://oauth2.googleapis.com/token')) return new Response(JSON.stringify({ access_token: 'tok', expires_in: 3600 }));
   if (url.includes('/documents:runQuery')) {
     const q = JSON.parse(init.body).structuredQuery, cid = q.from[0].collectionId;
+    if (q.from[0].allDescendants) return new Response('{"error":{"code":400,"status":"FAILED_PRECONDITION","message":"The query requires a COLLECTION_GROUP index"}}', { status: 400 });   // asli Firestore: collection-group query ko index chahiye (bana nahi hota)
     const filters = q.where.compositeFilter ? q.where.compositeFilter.filters : [q.where];
     const wanted = Object.fromEntries(filters.map((f) => [f.fieldFilter.field.fieldPath, f.fieldFilter.value.stringValue]));
     const docs = [];
@@ -30,6 +31,10 @@ global.fetch = async (url, init = {}) => {
   }
   const m = url.match(/\/documents\/([^?]+)(\?(.*))?$/); if (!m) throw new Error('unexpected fetch ' + url);
   const p = decodeURIComponent(m[1]);
+  if ((!init.method || init.method === 'GET') && !store.has(p) && Array.from(store.keys()).some((k) => k.startsWith(p + '/'))) {   // collection LIST (showMissing: parent doc na ho tab bhi child ids)
+    const ids = [...new Set(Array.from(store.keys()).filter((k) => k.startsWith(p + '/')).map((k) => k.slice(p.length + 1).split('/')[0]))];
+    return new Response(JSON.stringify({ documents: ids.map((id) => ({ name: 'projects/demo-test/databases/(default)/documents/' + p + '/' + id })) }));
+  }
   if (!init.method || init.method === 'GET') { const d = store.get(p); return d ? new Response(JSON.stringify({ fields: enc(d) })) : new Response('{}', { status: 404 }); }
   if (init.method === 'PATCH') {
     const cur = store.get(p) || {}, body = JSON.parse(init.body).fields || {}, mask = (m[3] || '').split('&').map((x) => decodeURIComponent(x.split('=')[1]));
@@ -176,6 +181,18 @@ global.fetch = async (url, init = {}) => {
     assert.strictEqual((await call('/student/reset-with-pin', { mobile: '9876543210', pin: '1111', newPassword: 'NewB#pass9', instituteId: 'inst_B' })).status, 200);
     assert.strictEqual((await call('/student/login', { mobile: '9876543210', password: 'NewB#pass9', instituteId: 'inst_B' })).status, 200);
     assert.strictEqual((await call('/student/login', { mobile: '9876543210', password: 'passA#11', instituteId: 'inst_A' })).status, 200);
+  });
+  await t('multi-institute: deleting the institute-B identity removes only B (profile, secrets, batch membership) and keeps institute A untouched; no collection-group query needed', async () => {
+    reset(); const ph = '9777777777';
+    sdoc('students/' + ph, { name: 'A', instituteId: 'inst_A' }); sdoc('studentSecrets/' + ph, { hash: sha('passA#11') });
+    sdoc('students/inst_B__' + ph, { name: 'B', instituteId: 'inst_B' });
+    await call('/student/register', { mobile: 'inst_B__' + ph, password: 'PassB#22', pin: '1111', instituteId: 'inst_B' });
+    sdoc('institutes/inst_B/batches/b1/members/inst_B__' + ph, { mobile: 'inst_B__' + ph }); sdoc('institutes/inst_A/batches/b1/members/' + ph, { mobile: ph });
+    sdoc('studentRecords/rB', { mobile: 'inst_B__' + ph, score: 1 }); sdoc('studentRecords/rA', { mobile: ph, score: 2 });
+    const bad = await call('/student/delete-account', { mobile: ph, confirmMobile: ph, password: 'passA#11', instituteId: 'inst_B' }); assert.strictEqual(bad.status, 401);   // A ka password B ko delete nahi karta
+    const r = await call('/student/delete-account', { mobile: ph, confirmMobile: ph, password: 'PassB#22', instituteId: 'inst_B' }); assert.strictEqual(r.status, 200, await r.clone().text());
+    assert.ok(!store.has('students/inst_B__' + ph) && !store.has('studentSecrets/inst_B__' + ph) && !store.has('studentRecords/rB') && !store.has('institutes/inst_B/batches/b1/members/inst_B__' + ph));
+    assert.ok(store.has('students/' + ph) && store.has('studentSecrets/' + ph) && store.has('studentRecords/rA') && store.has('institutes/inst_A/batches/b1/members/' + ph), 'institute A must be untouched');
   });
   await t('multi-institute: malformed keys never become odd document paths (they collapse to the plain 10-digit mobile, as before)', async () => {
     reset();

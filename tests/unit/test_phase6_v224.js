@@ -30,9 +30,9 @@ assert(!/9525208263|vishnu1234stm/.test(pitch), 'developer ka contact pitch me n
   assert(s.includes('Ye legal advice nahi hai'), n + ': disclaimer');
   assert(/\[[A-Z_ ]+\]/.test(s), n + ': placeholders');
   assert(s.indexOf('Parishisht') < s.indexOf('<footer>'), n + ': appendix footer se pehle');
-  assert(s.includes('2026-10-15-v1'), n + ': student policy version wahi');
+  assert(s.includes('2026-11-24-v1'), n + ': student policy version wahi');
   assert(s.includes('Draft for review'), n + ': draft notice wahi');
 });
-assert(cfg.includes('privacyVersion: "2026-10-15-v1"') && cfg.includes('termsVersion: "2026-10-15-v1"'), 'app-config version wahi');
+assert(cfg.includes('privacyVersion: "2026-11-24-v1"') && cfg.includes('termsVersion: "2026-11-24-v1"'), 'app-config version wahi');
 
 console.log('phase6 v224 OK');

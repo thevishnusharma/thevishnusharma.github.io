@@ -1429,7 +1429,7 @@ function fsDocumentUrl(pid, path) { return fsUrl(pid) + path.split('/').map(enco
 async function fsQueryMobile(env, collectionId, mobile) {
   const sa = JSON.parse(env.SERVICE_ACCOUNT_JSON), pid = env.PROJECT_ID || sa.project_id, at = await googleAccessToken(sa);
   const where = { fieldFilter: { field: { fieldPath: 'mobile' }, op: 'EQUAL', value: { stringValue: mobile } } };
-  const r = await fetch(fsUrl(pid).slice(0, -1) + ':runQuery', { method: 'POST', headers: { Authorization: 'Bearer ' + at, 'Content-Type': 'application/json' }, body: JSON.stringify({ structuredQuery: { from: [{ collectionId, ...(collectionId === 'members' ? { allDescendants: true } : {}) }], where, limit: 500 } }) });
+  const r = await fetch(fsUrl(pid).slice(0, -1) + ':runQuery', { method: 'POST', headers: { Authorization: 'Bearer ' + at, 'Content-Type': 'application/json' }, body: JSON.stringify({ structuredQuery: { from: [{ collectionId }], where, limit: 500 } }) });
   if (!r.ok) throw new HttpErr(502, 'Firestore query fail ' + r.status);
   return (await r.json()).map((x) => x.document).filter(Boolean);
 }
@@ -1463,29 +1463,40 @@ async function fsDeleteMobileCollection(env, collectionId, mobile) {
   if ((await fsQueryMobile(env, collectionId, mobile)).length) throw new HttpErr(503, 'Linked data zyada hai. Delete process ko dobara chalayein; account abhi active hai.');
   return removed;
 }
+// v327: batch memberships ab collection-group query (members.mobile) se NAHI dhundhte — wo Firestore me alag COLLECTION_GROUP index maangti thi,
+// jo bana hi nahi tha, isliye "Firestore query fail 400" aata tha. Ab: us institute ke batches ki list -> har batch me members/{key} seedha get/delete. Koi index nahi chahiye.
+async function fsListBatchIds(env, instituteId) {
+  const ids = []; let pageToken = '';
+  for (let page = 0; page < 20; page++) {
+    const r = await aiCallRest(env, 'institutes/' + encodeURIComponent(instituteId) + '/batches?pageSize=300&showMissing=true&mask.fieldPaths=name' + (pageToken ? '&pageToken=' + encodeURIComponent(pageToken) : ''));
+    if (r.status === 404) break;
+    if (!r.ok) throw new HttpErr(502, 'Batch list nahi mili (' + r.status + ')');
+    const d = await r.json();
+    (d.documents || []).forEach((x) => { const id = String(fsDocPath(x) || '').split('/').pop(); if (id) ids.push(id); });
+    pageToken = d.nextPageToken || '';
+    if (!pageToken) break;
+  }
+  return ids;
+}
 async function fsDeleteBatchMemberships(env, mobile, instituteId) {
   if (!instituteId) return 0;
   let removed = 0;
-  for (let page = 0; page < 3; page++) {
-    const docs = await fsQueryMobile(env, 'members', mobile);
-    const paths = docs.map((d) => fsDocPath(d)).filter((p) => {
-      const a = p.split('/'); return a.length === 6 && a[0] === 'institutes' && a[1] === instituteId && a[2] === 'batches' && a[4] === 'members' && a[5] === mobile;
-    });
-    if (!paths.length) break;
-    await fsBatchDeleteDocuments(env, paths); removed += paths.length;
-    for (const p of paths) {
-      const batchPath = p.split('/').slice(0, 4).join('/'), batch = await fsGetFields(env, batchPath);
+  const batchIds = await fsListBatchIds(env, instituteId);
+  for (let i = 0; i < batchIds.length; i += 10) {
+    const chunk = batchIds.slice(i, i + 10);
+    const found = (await Promise.all(chunk.map(async (b) => {
+      const batchPath = 'institutes/' + instituteId + '/batches/' + b, memberPath = batchPath + '/members/' + mobile;
+      return (await fsGetFields(env, memberPath)) ? { batchPath, memberPath } : null;
+    }))).filter(Boolean);
+    for (const f of found) {
+      await fsDeleteDocument(env, f.memberPath); removed++;
+      const batch = await fsGetFields(env, f.batchPath);
       if (batch && batch.enrolledCount) {
         const count = Number(batch.enrolledCount.integerValue || batch.enrolledCount.doubleValue || 0);
-        await fsSetFields(env, batchPath, { enrolledCount: Math.max(0, count - 1) }, []);
+        await fsSetFields(env, f.batchPath, { enrolledCount: Math.max(0, count - 1) }, []);
       }
     }
-    if (docs.length < 500) break;
   }
-  const remaining = (await fsQueryMobile(env, 'members', mobile)).map((d) => fsDocPath(d)).some((p) => {
-    const a = p.split('/'); return a.length === 6 && a[0] === 'institutes' && a[1] === instituteId && a[2] === 'batches' && a[4] === 'members' && a[5] === mobile;
-  });
-  if (remaining) throw new HttpErr(503, 'Batch enrollments zyada hain. Delete process ko dobara chalayein; account abhi active hai.');
   return removed;
 }
 async function fsDeleteAiCallResponses(env, mobile, instituteId) {
@@ -1524,9 +1535,10 @@ async function deleteStudentData(env, mobile, instituteId) {
   return removed;
 }
 async function authDeleteAccount(request, env, body) {
-  const mobile = mobileOf(body.mobile);
+  let mobile = mobileOf(body.mobile);
   if (!mobile || body.confirmMobile !== mobile) throw new HttpErr(400, 'Delete confirm karne ke liye sahi 10-digit mobile number dobara likhein.');
   const sa = JSON.parse(env.SERVICE_ACCOUNT_JSON), projectId = env.PROJECT_ID || sa.project_id;
+  if (/^\d{10}$/.test(mobile) && instOf(body.instituteId)) mobile = await studentKeyFor(env, instOf(body.instituteId), mobile);   // v327: multi-institute — us institute wali identity
   let adminEmail = '', isOwner = false, admin = null, fails = null, rateMobileKey = '';
   if (body.idToken) {
     const u = await verifyIdToken(body.idToken, projectId); adminEmail = String(u.email || '').toLowerCase();

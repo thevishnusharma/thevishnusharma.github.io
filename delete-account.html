@@ -11,10 +11,10 @@
   </style>
 </head>
 <body><main class="wrap"><article class="card">
-  <h1>The Vishnu Sharma account/data deletion</h1>
-  <p class="muted">Students can permanently delete their account and linked app data here. Last updated: 15 October 2026.</p>
-  <p>This request deletes the student profile and credential documents, linked test results, scan reports, mistake data, login sessions, profile photo stored in the profile, and batch membership records from the app database. It cannot recall exports already downloaded by an institute or provider backups before their normal expiry. See the <a href="/privacy.html">Privacy Policy</a>.</p>
-  <p class="notice"><strong>Before continuing:</strong> Deletion is permanent. Enter the registered mobile number and account password to verify ownership. Do not send your password to an institute or support contact. If you no longer have access to the account, contact the institute admin using the support information they provided.</p>
+  <h1>Delete my account</h1>
+  <p class="muted">Last updated: 24 November 2026</p>
+  <p>This permanently deletes your account: profile, results, scan reports, mistakes, sessions and batch records. Copies already exported by an institute or held in provider backups may remain for a short time. See the <a href="/privacy.html">Privacy Policy</a>.</p>
+  <p class="notice"><strong>Deletion cannot be undone.</strong> Enter your registered mobile number and password to confirm it is you. Never send your password to anyone. If you are in more than one institute, open this page from that institute's app or link so the right account is deleted. If you cannot sign in, ask your institute admin.</p>
   <form id="delete-form" autocomplete="off">
     <label for="mobile">Registered 10-digit mobile number</label><input id="mobile" name="mobile" type="tel" inputmode="numeric" autocomplete="off" maxlength="10" required>
     <label for="confirm-mobile">Type the same mobile number again</label><input id="confirm-mobile" name="confirm-mobile" type="tel" inputmode="numeric" autocomplete="off" maxlength="10" required>
@@ -36,7 +36,8 @@ document.getElementById("delete-form").addEventListener("submit", async function
   if (!window.confirm("Account aur linked data permanently delete hoga. Ye undo nahi ho sakta. Kya aap continue karna chahte hain?")) return;
   button.disabled = true; button.textContent = "Deletion request process ho rahi hai…"; status.textContent = "Ownership verify ho rahi hai. Is page ko band na karein.";
   try {
-    await window.SnapAuth.deleteMyAccount(mobile, typed, password);
+    var inst = ""; try { var q = new URLSearchParams(location.search).get("inst") || localStorage.getItem("snap_last_inst") || ""; if (/^[A-Za-z0-9_-]{1,64}$/.test(q) && window.SNAP_CONFIG && window.SNAP_CONFIG.multiInstitute === true) inst = q; } catch (e) {}
+    await window.SnapAuth.deleteMyAccount(mobile, typed, password, inst);
     document.getElementById("delete-form").hidden = true;
     status.textContent = "Account aur linked app data delete ho gaya hai.";
   } catch (error) {
