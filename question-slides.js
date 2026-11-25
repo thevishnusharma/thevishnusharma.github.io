@@ -343,7 +343,11 @@
   async function ensureLibs(needPdf, needPptx) {
     if (needPdf && (!window.jspdf || !window.jspdf.jsPDF)) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
     if (!window.html2canvas) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
-    if (needPptx && !window.PptxGenJS) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/PptxGenJS/3.12.0/pptxgen.bundle.js");
+    if (needPptx && !window.PptxGenJS) {
+      // cdnjs ka path lowercase "pptxgenjs" hai (capital se 404); fail ho to jsdelivr
+      try { await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js"); }
+      catch (e) { await loadScript("https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"); }
+    }
     if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (e) {} }
   }
   async function renderImages(seq, th, onProgress) {
