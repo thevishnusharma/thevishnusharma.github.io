@@ -350,6 +350,7 @@ Model Answer: समाजवाद एक आर्थिक व्यवस्
       <button class="btn btn-sm btn-warning" onclick="clearPaper()">🗑️ Clear</button>
       <button class="btn btn-sm btn-primary" style="grid-column: span 2;" onclick="exportPaperFormatWord()">📘 Paper Format Word (Test format)</button>
       <button class="btn btn-sm btn-danger" style="grid-column: span 2;" onclick="exportPaperFormatPDF()">📕 Paper Format PDF (mobile ke liye best)</button>
+      <button class="btn btn-sm btn-primary" style="grid-column: span 2;background:linear-gradient(135deg,#0ea5e9,#2563eb);" onclick="openQuestionSlides()">🖥️ Smart Board Slides (1 question = 1 slide)</button>
       <button id="omr-sheet-btn-qgen" class="btn btn-sm btn-outline" style="grid-column: span 2;" onclick="generateOMRSheetForPaper()">🎯 OMR Sheet (Blank)</button>
       <button class="btn btn-sm btn-success" style="grid-column: span 2;" onclick="savePaperAsDraft()">☁️ Save to Drafts</button>
       <button id="send-back-to-admin-btn" class="btn btn-sm btn-success hidden" style="grid-column: span 2;background:linear-gradient(135deg,#8b5cf6,#6d28d9);" onclick="saveAndReturnToAdmin()">✅ Save &amp; Admin ko Bhejein</button>
@@ -371,6 +372,7 @@ Model Answer: समाजवाद एक आर्थिक व्यवस्
         <button class="btn btn-sm btn-outline" onclick="shuffleQuestions()">🔀 Shuffle</button>
         <button class="btn btn-sm btn-primary" onclick="exportPaperFormatWord()">📘 Paper Format Word</button>
         <button class="btn btn-sm btn-danger" onclick="exportPaperFormatPDF()">📕 Paper Format PDF</button>
+        <button class="btn btn-sm btn-primary" onclick="openQuestionSlides()">🖥️ Slides</button>
       </div>
     </div>
 
@@ -460,6 +462,7 @@ Model Answer: समाजवाद एक आर्थिक व्यवस्
 <script>document.write('<script src="qgen-app.js?v=20261101"><\/script>');</script>
 <script>document.write('<script src="paper-format-word.js?v=' + Date.now() + '"><\/script>');</script>
 <script>document.write('<script src="paper-format-pdf.js?v=' + Date.now() + '"><\/script>');</script>
+<script src="question-slides.js?v=1"></script>
 <script>
 function updateQPreview() {
   var raw = (document.getElementById('qText') || {}).value || '';
