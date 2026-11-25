@@ -809,7 +809,7 @@
     var bg = await bgImage(th), lg = await logoCard(logoUrl);
 
     var objs = [];
-    if (lg) objs.push({ image: { x: 0.3, y: 0.13, w: 0.52, h: 0.52, data: lg } });
+    if (lg) objs.push({ image: { x: 9.2, y: 0.1, w: 0.55, h: 0.55, data: lg } });
     PX.defineSlideMaster({ title: "QSL_BG", background: { data: bg }, objects: objs });
 
     var host = mk("div"); host.style.cssText = "position:fixed;left:-20000px;top:0;width:" + W + "px;pointer-events:none;"; document.body.appendChild(host);
@@ -818,10 +818,10 @@
         var it = seq[i], q = it.q, no = it.no, isSub = q.qType === "subjective";
         var s = PX.addSlide({ masterName: "QSL_BG" });
         var pi = it.type === "b" ? partInfo(seq, i) : {};
-        var chip = it.type === "b" ? ("✍️ प्रश्न " + no + " · हल" + (pi.parts > 1 ? " " + pi.part + "/" + pi.parts : "")) : ((it.type === "a" ? "✅ उत्तर · " : "प्रश्न ") + no + " / " + nQ);
-        s.addText(chip, { x: 6.9, y: 0.18, w: 2.65, h: 0.44, shape: PX.ShapeType.roundRect, rectRadius: 0.5, fill: { color: CARD.hex, transparency: CARD.tr }, line: { color: LINE.hex, width: 1.5, transparency: LINE.tr }, fontFace: FONT, fontSize: 15, bold: true, color: (it.type === "q" ? T : ACC), align: "center", valign: "middle", margin: 0 });
+        var chip = it.type === "b" ? ("✍️ हल" + (pi.parts > 1 ? " " + pi.part + "/" + pi.parts : "")) : "✅ उत्तर";
+        if (it.type !== "q") s.addText(chip, { x: 0.45, y: 0.12, w: 2.3, h: 0.42, shape: PX.ShapeType.roundRect, rectRadius: 0.5, fill: { color: CARD.hex, transparency: CARD.tr }, line: { color: LINE.hex, width: 1.5, transparency: LINE.tr }, fontFace: FONT, fontSize: 15, bold: true, color: (it.type === "q" ? T : ACC), align: "center", valign: "middle", margin: 0 });
 
-        var stemTx = texify(q.text), stem = stemTx.text, y0 = 0.85;
+        var stemTx = texify(q.text), stem = stemTx.text, y0 = 0.3;
         if (it.type === "b") {
           if (state.blankQ) s.addText(toRuns(no + ". " + stem, { fontFace: FONT, fontSize: 15, color: SUBc, bold: true }), { x: 0.45, y: 0.78, w: 9.1, h: 0.62, valign: "top", margin: 0.03, line: { type: "none" } });
         } else if (it.type === "a") {
@@ -840,17 +840,17 @@
           if (stemTx.hard) {                // jatil math: stem ki photo
             var tmp = slideEl(q, no, nQ, th, { type: "q", reveal: false }); host.appendChild(tmp); try { tmp._fit(); } catch (e) {}
             var stEl = tmp.querySelector(".qsl-stem"), cv0 = await window.html2canvas(stEl, { scale: 2, backgroundColor: null, logging: false });
-            imgStem = { data: cv0.toDataURL("image/png"), w: Math.min(9.1, cv0.width / 2 / 1168 * 9.1), h: cv0.height / 2 / 1168 * 9.1 };
+            imgStem = { data: cv0.toDataURL("image/png"), w: Math.min(8.6, cv0.width / 2 / 1168 * 9.1), h: cv0.height / 2 / 1168 * 9.1 };
             host.removeChild(tmp); stemH = imgStem.h; stemFs = 0;
           } else {
-            var pk = pickFont(no + ". " + stem, 9.0, maxStemH, scl(isSub ? [32, 28, 26, 24, 22, 20] : [30, 28, 26, 24, 22, 20, 18], state.qScale));
+            var pk = pickFont(no + ". " + stem, 8.5, maxStemH, scl(isSub ? [32, 28, 26, 24, 22, 20] : [30, 28, 26, 24, 22, 20, 18], state.qScale));
             stemFs = pk.fs; stemH = pk.h;
           }
           if (imgStem) s.addImage({ objectName: GN, data: imgStem.data, x: 0.45, y: stemY, w: imgStem.w, h: imgStem.h });
           else {
             var runs = toRuns(stem, { fontFace: FONT, fontSize: stemFs, color: T, bold: true });
             runs.unshift({ text: no + ". ", options: { fontFace: FONT, fontSize: stemFs, color: ACC, bold: true } });
-            s.addText(runs, { objectName: GN, x: 0.45, y: stemY, w: 9.1, h: stemH, valign: "top", margin: 0.05 });
+            s.addText(runs, { objectName: GN, x: 0.45, y: stemY, w: 8.6, h: stemH, valign: "top", margin: 0.05 });
           }
           if (!isSub) {
             var ops = optList(q), oTop = stemY + stemH + gap, colW = 4.45, rowsY = oTop;
@@ -870,7 +870,6 @@
           }
         }
         if (it.type === "q") {
-          if (q.chapter) s.addText(String(q.chapter), { x: 0.45, y: 5.18, w: 4.5, h: 0.3, fontFace: FONT, fontSize: 11, color: SUBc, valign: "middle", margin: 0 });
           if (isSub) s.addText("📝 Subjective" + (q.marks != null && q.marks !== "" ? " · " + q.marks + " marks" : ""), { x: 6.9, y: 5.15, w: 2.65, h: 0.34, shape: PX.ShapeType.roundRect, rectRadius: 0.5, fill: { color: CARD.hex, transparency: CARD.tr }, line: { color: LINE.hex, width: 1.2, transparency: LINE.tr }, fontFace: FONT, fontSize: 12, bold: true, color: T, align: "center", valign: "middle", margin: 0 });
           // speaker notes: answer + explanation (padhate waqt sirf teacher ko dikhta hai)
           var note = "";
