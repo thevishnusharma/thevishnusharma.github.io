@@ -48,7 +48,8 @@
   }
 
   /* ---- settings (localStorage, kabhi throw nahi) ------------------------ */
-  var state = { theme: "navy", custom: "#0b3d91", image: "", answers: "none", blanks: 0, blankQ: true };
+  var state = { theme: "navy", custom: "#0b3d91", image: "", answers: "none", blanks: 0, blankQ: true, qScale: 100, oScale: 100, aScale: 100, group: true };
+  function clampScale(v) { v = parseInt(v, 10); return isNaN(v) ? 100 : Math.max(50, Math.min(160, v)); }
   function loadState() {
     try {
       var s = JSON.parse(localStorage.getItem(LS_KEY) || "null");
@@ -58,10 +59,14 @@
         if (s.answers) state.answers = s.answers;
         if (typeof s.blanks === "number") state.blanks = Math.max(0, Math.min(5, s.blanks));
         if (typeof s.blankQ === "boolean") state.blankQ = s.blankQ;
+        if (s.qScale != null) state.qScale = clampScale(s.qScale);
+        if (s.oScale != null) state.oScale = clampScale(s.oScale);
+        if (s.aScale != null) state.aScale = clampScale(s.aScale);
+        if (typeof s.group === "boolean") state.group = s.group;
       }
     } catch (e) {}
   }
-  function saveState() { try { localStorage.setItem(LS_KEY, JSON.stringify({ theme: state.theme, custom: state.custom, answers: state.answers, blanks: state.blanks, blankQ: state.blankQ })); } catch (e) {} }
+  function saveState() { try { localStorage.setItem(LS_KEY, JSON.stringify({ theme: state.theme, custom: state.custom, answers: state.answers, blanks: state.blanks, blankQ: state.blankQ, qScale: state.qScale, oScale: state.oScale, aScale: state.aScale, group: state.group })); } catch (e) {} }
   function currentTheme() {
     if (state.theme === "image" && state.image) return imageTheme(state.image);
     if (state.theme === "custom") return customTheme(state.custom);
@@ -190,7 +195,7 @@
     }
     var body = mk("div", "qsl-body"); sl.appendChild(body);
     var box = mk("div"); box.style.margin = "0"; body.appendChild(box);   // question UPAR se shuru (neeche solution likhne ki jagah bachti hai)
-    var stem = mk("div", "qsl-stem"); stem.setAttribute("data-fs", isAns ? "34" : (isSub ? "50" : "44"));
+    var stem = mk("div", "qsl-stem"); stem.setAttribute("data-fs", String((isAns ? 34 : (isSub ? 50 : 44)) * state.qScale / 100));
     stem.innerHTML = '<span class="qsl-qn" style="color:' + th.accent + '">' + no + ".</span>" + fmt(q.text);
     box.appendChild(stem);
 
@@ -211,7 +216,7 @@
       box.appendChild(optsWrap);
     }
     if (isAns || (o.reveal && isSub)) {
-      ansBox = mk("div", "qsl-ans"); ansBox.setAttribute("data-fs", "34");
+      ansBox = mk("div", "qsl-ans"); ansBox.setAttribute("data-fs", String(34 * state.aScale / 100));
       ansBox.style.background = isAns || isSub ? "rgba(22,163,74,.92)" : th.card; ansBox.style.color = "#fff";
       var inner = "";
       if (isSub) {
@@ -241,13 +246,13 @@
 
   // text ko box me fit karna: font chhota karte jao jab tak body overflow na kare
   function fit(sl, body, stem, optsWrap, ansBox) {
-    var sf = parseFloat(stem.getAttribute("data-fs")) || 44, of = 32, af = parseFloat(ansBox && ansBox.getAttribute("data-fs")) || 34;
+    var sf = parseFloat(stem.getAttribute("data-fs")) || 44, of = 32 * state.oScale / 100, af = parseFloat(ansBox && ansBox.getAttribute("data-fs")) || 34;
     for (var s = 1; s >= 0.36; s -= 0.04) {
       stem.style.fontSize = (sf * s).toFixed(1) + "px";
       if (optsWrap) {
         optsWrap.style.fontSize = (of * s).toFixed(1) + "px";
         optsWrap.style.marginTop = Math.max(10, 26 * s) + "px"; optsWrap.style.gap = Math.max(8, 16 * s) + "px " + Math.max(10, 22 * s) + "px";
-        var bs = Math.max(30, 50 * s); [].forEach.call(optsWrap.querySelectorAll(".qsl-badge"), function (b) { b.style.width = b.style.height = bs + "px"; b.style.fontSize = (bs * 0.55) + "px"; });
+        var bs = Math.max(30, 50 * s * state.oScale / 100); [].forEach.call(optsWrap.querySelectorAll(".qsl-badge"), function (b) { b.style.width = b.style.height = bs + "px"; b.style.fontSize = (bs * 0.55) + "px"; });
       }
       if (ansBox) ansBox.style.fontSize = (af * s).toFixed(1) + "px";
       if (body.scrollHeight <= body.clientHeight + 1) break;
@@ -572,6 +577,7 @@
       try { await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js"); }
       catch (e) { await loadScript("https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"); }
     }
+    if (needPptx && state.group && !window.JSZip) { try { await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"); } catch (e) {} }
     if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (e) {} }
   }
   async function renderImages(seq, th, onProgress) {
@@ -713,6 +719,7 @@
     String(text).split("\n").forEach(function (ln) { n += Math.max(1, Math.ceil(ln.length / cpl)); });
     return n;
   }
+  function scl(sizes, pct) { return sizes.map(function (z) { return Math.max(8, Math.round(z * pct / 100)); }); }
   function pickFont(text, widthIn, maxH, sizes) {
     for (var i = 0; i < sizes.length; i++) { var h = lineCount(text, sizes[i], widthIn) * sizes[i] * 1.32 / 72 + 0.12; if (h <= maxH) return { fs: sizes[i], h: h }; }
     var f = sizes[sizes.length - 1]; return { fs: f, h: lineCount(text, f, widthIn) * f * 1.32 / 72 + 0.12 };
@@ -742,9 +749,61 @@
     finally { document.body.removeChild(d); }
   }
 
+  /* ---- PowerPoint me "prashn + options" ko ek GROUP banana ------------------
+     PptxGenJS group nahi banata, isliye .pptx ke andar slide XML me "QSL_GRP" naam wale
+     shapes ko <p:grpSp> me lapet dete hain. Group par click karke corner se kheenchne par
+     question + options SAATH me chhote/bade hote hain; double-click karke andar ka text edit bhi hota hai. */
+  async function groupShapes(blob) {
+    if (!window.JSZip) return blob;
+    try {
+      var zip = await window.JSZip.loadAsync(blob);
+      var PNS = "http://schemas.openxmlformats.org/presentationml/2006/main", ANS = "http://schemas.openxmlformats.org/drawingml/2006/main";
+      var names = Object.keys(zip.files).filter(function (n) { return /^ppt\/slides\/slide\d+\.xml$/.test(n); });
+      for (var k = 0; k < names.length; k++) {
+        var xml = await zip.file(names[k]).async("string");
+        var doc = new DOMParser().parseFromString(xml, "application/xml");
+        if (doc.getElementsByTagName("parsererror").length) continue;
+        var tree = doc.getElementsByTagNameNS(PNS, "spTree")[0]; if (!tree) continue;
+        var maxId = 1, ids = doc.getElementsByTagNameNS(PNS, "cNvPr");
+        for (var a = 0; a < ids.length; a++) maxId = Math.max(maxId, parseInt(ids[a].getAttribute("id"), 10) || 0);
+        var mem = [];
+        for (var c = tree.firstChild; c; c = c.nextSibling) {
+          if (c.nodeType !== 1 || (c.localName !== "sp" && c.localName !== "pic")) continue;
+          var nv = c.getElementsByTagNameNS(PNS, "cNvPr")[0];
+          if (nv && nv.getAttribute("name") === "QSL_GRP") mem.push(c);
+        }
+        if (mem.length < 2) continue;
+        var x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity, ok = true;
+        mem.forEach(function (m) {
+          var xf = m.getElementsByTagNameNS(ANS, "xfrm")[0], off = xf && xf.getElementsByTagNameNS(ANS, "off")[0], ext = xf && xf.getElementsByTagNameNS(ANS, "ext")[0];
+          if (!off || !ext) { ok = false; return; }
+          var x = +off.getAttribute("x"), y = +off.getAttribute("y"), w = +ext.getAttribute("cx"), h = +ext.getAttribute("cy");
+          x1 = Math.min(x1, x); y1 = Math.min(y1, y); x2 = Math.max(x2, x + w); y2 = Math.max(y2, y + h);
+        });
+        if (!ok || !isFinite(x1)) continue;
+        function el(ns, tag) { return doc.createElementNS(ns, tag); }
+        var g = el(PNS, "p:grpSp"), nvG = el(PNS, "p:nvGrpSpPr"), cnv = el(PNS, "p:cNvPr");
+        cnv.setAttribute("id", String(maxId + 1)); cnv.setAttribute("name", "Prashn + Options (group)");
+        nvG.appendChild(cnv); nvG.appendChild(el(PNS, "p:cNvGrpSpPr")); nvG.appendChild(el(PNS, "p:nvPr")); g.appendChild(nvG);
+        var gp = el(PNS, "p:grpSpPr"), xf2 = el(ANS, "a:xfrm");
+        [["a:off", "x", x1, "y", y1], ["a:ext", "cx", x2 - x1, "cy", y2 - y1], ["a:chOff", "x", x1, "y", y1], ["a:chExt", "cx", x2 - x1, "cy", y2 - y1]].forEach(function (d) {
+          var e = el(ANS, d[0]); e.setAttribute(d[1], String(Math.round(d[2]))); e.setAttribute(d[3], String(Math.round(d[4]))); xf2.appendChild(e);
+        });
+        gp.appendChild(xf2); g.appendChild(gp);
+        tree.insertBefore(g, mem[0]);
+        mem.forEach(function (m, i) {
+          var nv2 = m.getElementsByTagNameNS(PNS, "cNvPr")[0]; nv2.setAttribute("name", i === 0 ? "Prashn" : "Option " + i);
+          g.appendChild(m);
+        });
+        zip.file(names[k], new XMLSerializer().serializeToString(doc));
+      }
+      return await zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.presentationml.presentation", compression: "DEFLATE" });
+    } catch (e) { console.warn("group fail, bina group ke de rahe hain", e); return blob; }
+  }
+
   async function makeEditablePptx(qs, th, onProgress) {
     var PX = new window.PptxGenJS(); PX.layout = "LAYOUT_16x9"; PX.title = baseName();
-    var FONT = "Nirmala UI";
+    var FONT = "Nirmala UI", GN = state.group ? "QSL_GRP" : undefined;
     var seq = sequence(qs, state.answers, state.blanks), nQ = qs.length;
     var T = cssColor(th.text).hex, SUBc = cssColor(th.sub).hex, ACC = cssColor(th.accent).hex, CARD = cssColor(th.card), LINE = cssColor(th.line);
     var bg = await bgImage(th), lg = await logoCard(logoUrl);
@@ -774,10 +833,10 @@
             ans = "✅ सही उत्तर: (" + (LET[q.ans] || "?") + ")  " + (oo ? texify(oo.t).text : "");
             var e0 = explanationOf(q); if (e0) ans += "\n" + texify(e0).text;
           }
-          var pf = pickFont(ans, 8.7, 3.8, [28, 24, 22, 20, 18, 16]);
+          var pf = pickFont(ans, 8.7, 3.8, scl([28, 24, 22, 20, 18, 16], state.aScale));
           s.addText(toRuns(ans, { fontFace: FONT, fontSize: pf.fs, color: "FFFFFF", bold: true }), { x: 0.45, y: 0.95, w: 9.1, h: Math.min(3.9, pf.h + 0.4), shape: PX.ShapeType.roundRect, rectRadius: 0.12, fill: { color: "16A34A", transparency: 8 }, valign: "top", margin: 0.18 });
         } else {
-          var gap = 0.2, optsRows = isSub ? 0 : 2, maxStemH = isSub ? 4.1 : 2.0;
+          var gap = 0.2, optsRows = isSub ? 0 : 2, maxStemH = (isSub ? 4.1 : 2.0) * Math.max(1, state.qScale / 100);
           var stemY = y0, stemH, stemFs, imgStem = null;
           if (stemTx.hard) {                // jatil math: stem ki photo
             var tmp = slideEl(q, no, nQ, th, { type: "q", reveal: false }); host.appendChild(tmp); try { tmp._fit(); } catch (e) {}
@@ -785,30 +844,30 @@
             imgStem = { data: cv0.toDataURL("image/png"), w: Math.min(9.1, cv0.width / 2 / 1168 * 9.1), h: cv0.height / 2 / 1168 * 9.1 };
             host.removeChild(tmp); stemH = imgStem.h; stemFs = 0;
           } else {
-            var pk = pickFont(no + ". " + stem, 9.0, maxStemH, isSub ? [32, 28, 26, 24, 22, 20] : [30, 28, 26, 24, 22, 20, 18]);
+            var pk = pickFont(no + ". " + stem, 9.0, maxStemH, scl(isSub ? [32, 28, 26, 24, 22, 20] : [30, 28, 26, 24, 22, 20, 18], state.qScale));
             stemFs = pk.fs; stemH = pk.h;
           }
-          if (imgStem) s.addImage({ data: imgStem.data, x: 0.45, y: stemY, w: imgStem.w, h: imgStem.h });
+          if (imgStem) s.addImage({ objectName: GN, data: imgStem.data, x: 0.45, y: stemY, w: imgStem.w, h: imgStem.h });
           else {
             var runs = toRuns(stem, { fontFace: FONT, fontSize: stemFs, color: T, bold: true });
             runs.unshift({ text: no + ". ", options: { fontFace: FONT, fontSize: stemFs, color: ACC, bold: true } });
-            s.addText(runs, { x: 0.45, y: stemY, w: 9.1, h: stemH, valign: "top", margin: 0.05 });
+            s.addText(runs, { objectName: GN, x: 0.45, y: stemY, w: 9.1, h: stemH, valign: "top", margin: 0.05 });
           }
           if (!isSub) {
             var ops = optList(q), oTop = stemY + stemH + gap, colW = 4.45, rowsY = oTop;
             for (var r = 0; r < ops.length; r += 2) {
               var pair = [ops[r], ops[r + 1]].filter(Boolean), rowH = 0.7;
-              var fz = 20; pair.forEach(function (op) { var p2 = pickFont(texify(op.t).text, colW - 0.9, 1.1, [20, 18, 16, 14]); fz = Math.min(fz, p2.fs); rowH = Math.max(rowH, p2.h + 0.22); });
+              var fz = Math.round(20 * state.oScale / 100); pair.forEach(function (op) { var p2 = pickFont(texify(op.t).text, colW - 0.9, 1.1 * Math.max(1, state.oScale / 100), scl([20, 18, 16, 14], state.oScale)); fz = Math.min(fz, p2.fs); rowH = Math.max(rowH, p2.h + 0.22); });
               pair.forEach(function (op, k) {
                 var good = it.reveal && q.ans === op.i;
                 s.addText([{ text: (LET[op.i] || (op.i + 1)) + "   ", options: { bold: true, color: good ? "FFFFFF" : ACC, fontFace: FONT, fontSize: fz } }, { text: texify(op.t).text, options: { color: good ? "FFFFFF" : T, bold: true, fontFace: FONT, fontSize: fz } }],
-                  { x: 0.45 + k * (colW + 0.2), y: rowsY, w: colW, h: rowH, shape: PX.ShapeType.roundRect, rectRadius: 0.15, fill: good ? { color: "16A34A" } : { color: CARD.hex, transparency: CARD.tr }, line: { color: good ? "BBF7D0" : LINE.hex, width: 1.5, transparency: good ? 0 : LINE.tr }, valign: "middle", margin: [0, 0.15, 0, 0.18] });
+                  { objectName: GN, x: 0.45 + k * (colW + 0.2), y: rowsY, w: colW, h: rowH, shape: PX.ShapeType.roundRect, rectRadius: 0.15, fill: good ? { color: "16A34A" } : { color: CARD.hex, transparency: CARD.tr }, line: { color: good ? "BBF7D0" : LINE.hex, width: 1.5, transparency: good ? 0 : LINE.tr }, valign: "middle", margin: [0, 0.15, 0, 0.18] });
               });
               rowsY += rowH + 0.14;
             }
           } else if (it.reveal && q.modelAnswer) {
-            var ma = texify(q.modelAnswer).text, pm = pickFont(ma, 8.7, 1.8, [22, 20, 18, 16]);
-            s.addText(toRuns("✅ Model Answer\n" + ma, { fontFace: FONT, fontSize: pm.fs, color: "FFFFFF", bold: true }), { x: 0.45, y: stemY + stemH + 0.2, w: 9.1, h: pm.h + 0.5, shape: PX.ShapeType.roundRect, rectRadius: 0.12, fill: { color: "16A34A", transparency: 8 }, valign: "top", margin: 0.15 });
+            var ma = texify(q.modelAnswer).text, pm = pickFont(ma, 8.7, 1.8, scl([22, 20, 18, 16], state.aScale));
+            s.addText(toRuns("✅ Model Answer\n" + ma, { fontFace: FONT, fontSize: pm.fs, color: "FFFFFF", bold: true }), { objectName: GN, x: 0.45, y: stemY + stemH + 0.2, w: 9.1, h: pm.h + 0.5, shape: PX.ShapeType.roundRect, rectRadius: 0.12, fill: { color: "16A34A", transparency: 8 }, valign: "top", margin: 0.15 });
           }
         }
         if (it.type === "q") {
@@ -824,7 +883,8 @@
         await sleep(0);
       }
     } finally { try { document.body.removeChild(host); } catch (e) {} }
-    return PX.write({ outputType: "blob" });
+    var outBlob = await PX.write({ outputType: "blob" });
+    return state.group ? await groupShapes(outBlob) : outBlob;
   }
 
   var busy = false;
@@ -888,6 +948,9 @@
         '<label style="font-size:13px;display:flex;align-items:center;gap:6px;">Apna rang <input type="color" id="qslColor" style="width:42px;height:32px;border:1px solid #ccc;border-radius:6px;padding:0;"></label>' +
         '<label style="font-size:13px;display:flex;align-items:center;gap:6px;">Apni photo <input type="file" id="qslImg" accept="image/*" style="font-size:12px;max-width:190px;"></label>' +
       '</div>' +
+      '<div style="font-weight:700;font-size:14px;margin:14px 0 4px;">🔠 Text ka size <span style="font-weight:500;color:#666">(slide, PDF aur PowerPoint — sab me lagega)</span></div>' +
+      '<div id="qslScales" style="display:grid;gap:6px;font-size:13px;"></div>' +
+      '<label style="font-size:13px;display:flex;align-items:flex-start;gap:6px;margin-top:8px;"><input type="checkbox" id="qslGroup" style="margin-top:3px"> <span>PowerPoint me <b>question + options ek group</b> banayein (ek saath chhota/bada kar sakein; double-click se text edit bhi hoga)</span></label>' +
       '<div style="font-weight:700;font-size:14px;margin:14px 0 6px;">✅ Answer</div>' +
       '<div style="display:grid;gap:6px;font-size:13px;">' +
         '<label><input type="radio" name="qslAns" value="none"> Sirf question (answer baad me Slideshow me "✅ Answer" button se dikhayein)</label>' +
@@ -957,6 +1020,20 @@
       r.checked = r.value === state.answers;
       r.onchange = function () { if (r.checked) { state.answers = r.value; saveState(); } };
     });
+    var scWrap = bx.querySelector("#qslScales");
+    [["qScale", "📝 Question"], ["oScale", "🔘 Options"], ["aScale", "✅ Answer / Solution"]].forEach(function (d) {
+      var row = mk("div"); row.style.cssText = "display:flex;align-items:center;gap:8px;";
+      row.innerHTML = '<span style="width:130px;flex:none;">' + d[1] + '</span><input type="range" min="50" max="160" step="5" style="flex:1;min-width:0;"><b style="width:46px;text-align:right;"></b>';
+      var rg = row.querySelector("input"), lb = row.querySelector("b");
+      rg.value = state[d[0]]; lb.textContent = state[d[0]] + "%";
+      rg.oninput = function () { state[d[0]] = clampScale(rg.value); lb.textContent = state[d[0]] + "%"; saveState(); drawPreview(); };
+      scWrap.appendChild(row);
+    });
+    var rs = mk("button", "", "↺ Size reset (100%)"); rs.type = "button";
+    rs.style.cssText = "justify-self:start;border:1px solid #ccc;background:#f5f5f5;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;";
+    rs.onclick = function () { state.qScale = state.oScale = state.aScale = 100; saveState(); [].forEach.call(scWrap.querySelectorAll("input"), function (i) { i.value = 100; }); [].forEach.call(scWrap.querySelectorAll("b"), function (b) { b.textContent = "100%"; }); drawPreview(); };
+    scWrap.appendChild(rs);
+    var gchk = bx.querySelector("#qslGroup"); gchk.checked = !!state.group; gchk.onchange = function () { state.group = gchk.checked; saveState(); };
     var bs = bx.querySelector("#qslBlanks"), bq = bx.querySelector("#qslBlankQ");
     bs.value = String(state.blanks); bq.checked = !!state.blankQ;
     bs.onchange = function () { state.blanks = parseInt(bs.value, 10) || 0; saveState(); };
