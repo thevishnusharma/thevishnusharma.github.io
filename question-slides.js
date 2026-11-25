@@ -280,6 +280,160 @@
     return { type: it.type, reveal: reveal, part: pi.part, parts: pi.parts, showQ: state.blankQ };
   }
 
+
+  /* ---- likhne ki parat (smart board / laptop) -------------------------------
+     Slide ke upar canvas: pen, highlighter, eraser, text, undo, clear, rang, motai.
+     Mouse, ungli aur stylus teeno chalte hain. Har slide ka apna likha hua alag yaad rehta hai
+     (Slideshow band hone tak). Coordinates slide ke 1280x720 me — isliye har screen par sahi jagah. */
+  var INK_COLORS = ["#111827", "#ffffff", "#ef4444", "#facc15", "#22c55e", "#3b82f6", "#f97316"];
+  function makeInk(th0) {
+    var store = {}, bak = {}, curId = null, tool = "pen", size = 5, lastPen = 0, drawing = null, tbox = null;
+    var color = th0 && th0.dark ? "#fde047" : "#dc2626";
+    var cv = document.createElement("canvas"); cv.width = W * 2; cv.height = H * 2;
+    cv.style.cssText = "position:absolute;left:0;top:0;width:" + W + "px;height:" + H + "px;z-index:10;touch-action:none;cursor:crosshair;";
+    var ctx = cv.getContext("2d");
+    function list() { return store[curId] || (store[curId] = []); }
+    function widthOf(it) { return it.tool === "hl" ? it.size * 4 + 6 : it.tool === "erase" ? it.size * 5 + 12 : it.size; }
+    function applyStyle(it) {
+      ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.lineWidth = widthOf(it);
+      if (it.tool === "erase") { ctx.globalCompositeOperation = "destination-out"; ctx.strokeStyle = "#000"; ctx.globalAlpha = 1; }
+      else { ctx.globalCompositeOperation = "source-over"; ctx.strokeStyle = it.color; ctx.globalAlpha = it.tool === "hl" ? 0.38 : 1; }
+    }
+    function drawItem(it) {
+      ctx.save(); ctx.scale(2, 2);
+      if (it.tool === "text") {
+        ctx.fillStyle = it.color; ctx.font = "600 " + it.fs + "px " + FF; ctx.textBaseline = "top";
+        String(it.text).split("\n").forEach(function (ln, i) { ctx.fillText(ln, it.x, it.y + i * it.fs * 1.35); });
+      } else {
+        applyStyle(it); var p = it.pts;
+        ctx.beginPath(); ctx.moveTo(p[0][0], p[0][1]);
+        if (p.length === 1) { ctx.lineTo(p[0][0] + 0.01, p[0][1]); }
+        else {
+          for (var i = 1; i < p.length - 1; i++) { var mx = (p[i][0] + p[i + 1][0]) / 2, my = (p[i][1] + p[i + 1][1]) / 2; ctx.quadraticCurveTo(p[i][0], p[i][1], mx, my); }
+          ctx.lineTo(p[p.length - 1][0], p[p.length - 1][1]);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    function redraw() { ctx.clearRect(0, 0, cv.width, cv.height); list().forEach(drawItem); }
+    function pt(e) { var r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H]; }
+
+    function commitText() {
+      if (!tbox) return;
+      var t = tbox, v = t.ta.value; tbox = null;
+      if (t.ta.parentNode) t.ta.parentNode.removeChild(t.ta);
+      if (v.trim()) { list().push({ tool: "text", x: t.x, y: t.y, text: v, color: t.color, fs: t.fs }); }
+      redraw();
+    }
+    function cancelText() { if (!tbox) return; var t = tbox; tbox = null; if (t.ta.parentNode) t.ta.parentNode.removeChild(t.ta); }
+    function startText(x, y) {
+      commitText();
+      var fs = 22 + size * 3, ta = document.createElement("textarea");
+      ta.style.cssText = "position:absolute;z-index:12;left:" + x + "px;top:" + y + "px;min-width:260px;width:420px;height:" + Math.round(fs * 1.6) + "px;font:600 " + fs + "px/1.35 " + FF + ";color:" + color + ";background:rgba(128,128,128,.12);border:2px dashed " + color + ";border-radius:8px;padding:0 6px;resize:both;outline:none;overflow:hidden;";
+      ta.addEventListener("input", function () { ta.style.height = "auto"; ta.style.height = Math.max(fs * 1.6, ta.scrollHeight) + "px"; });
+      ta.addEventListener("keydown", function (e) {
+        e.stopPropagation();
+        if (e.key === "Escape") { cancelText(); }
+        else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); commitText(); }
+      });
+      ta.addEventListener("blur", function () { setTimeout(commitText, 0); });
+      cv.parentNode.appendChild(ta); tbox = { ta: ta, x: x, y: y, color: color, fs: fs };
+      setTimeout(function () { ta.focus(); }, 0);
+    }
+
+    function down(e) {
+      if (tool === "nav") return;
+      if (e.pointerType === "touch" && Date.now() - lastPen < 1200) return;      // hath ki hatheli (palm) na likhe
+      if (e.pointerType === "pen") lastPen = Date.now();
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      e.preventDefault();
+      var p = pt(e);
+      if (tool === "text") { startText(p[0], p[1]); return; }
+      commitText();
+      try { cv.setPointerCapture(e.pointerId); } catch (x) {}
+      drawing = { tool: tool, color: color, size: size, pts: [p] };
+      list().push(drawing); delete bak[curId];
+      drawItem(drawing);
+    }
+    function move(e) {
+      if (!drawing) return;
+      e.preventDefault();
+      var evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+      if (!evs.length) evs = [e];
+      evs.forEach(function (ev) { drawing.pts.push(pt(ev)); });
+      if (drawing.tool === "hl") redraw();
+      else {
+        var n = drawing.pts.length, a = drawing.pts[Math.max(0, n - evs.length - 1)];
+        ctx.save(); ctx.scale(2, 2); applyStyle(drawing); ctx.beginPath(); ctx.moveTo(a[0], a[1]);
+        for (var i = n - evs.length; i < n; i++) ctx.lineTo(drawing.pts[i][0], drawing.pts[i][1]);
+        ctx.stroke(); ctx.restore();
+      }
+    }
+    function up() { if (drawing) { drawing = null; redraw(); } }
+    cv.addEventListener("pointerdown", down);
+    cv.addEventListener("pointermove", move);
+    cv.addEventListener("pointerup", up);
+    cv.addEventListener("pointercancel", up);
+    cv.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+
+    // ---- toolbar ----
+    var bar = document.createElement("div"); bar.id = "qslInkBar";
+    bar.style.cssText = "position:absolute;left:50%;top:6px;transform:translateX(-50%);width:max-content;z-index:6;display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;background:rgba(15,23,42,.88);padding:4px 8px;border-radius:14px;max-width:98vw;font-family:system-ui,sans-serif;box-shadow:0 4px 18px rgba(0,0,0,.35);";
+    var toolBtns = {}, colBtns = [], sizeBtns = [];
+    function tbtn(txt, title, fn, w) {
+      var b = document.createElement("button"); b.type = "button"; b.textContent = txt; b.title = title;
+      b.style.cssText = "border:2px solid transparent;cursor:pointer;color:#fff;background:rgba(255,255,255,.10);border-radius:10px;min-width:" + (w || 40) + "px;height:40px;font-size:19px;font-weight:700;padding:0 8px;touch-action:manipulation;white-space:nowrap;";
+      b.addEventListener("click", function (e) { e.stopPropagation(); fn(); });
+      bar.appendChild(b); return b;
+    }
+    function sep() { var d = document.createElement("span"); d.style.cssText = "width:2px;height:26px;background:rgba(255,255,255,.25);margin:0 1px;"; bar.appendChild(d); }
+    function refresh() {
+      Object.keys(toolBtns).forEach(function (k) { toolBtns[k].style.borderColor = k === tool ? "#fbbf24" : "transparent"; toolBtns[k].style.background = k === tool ? "rgba(251,191,36,.25)" : "rgba(255,255,255,.10)"; });
+      colBtns.forEach(function (c) { c.b.style.outline = c.c === color ? "3px solid #fbbf24" : "2px solid rgba(255,255,255,.5)"; });
+      sizeBtns.forEach(function (z) { z.b.style.borderColor = z.v === size ? "#fbbf24" : "transparent"; });
+      cv.style.pointerEvents = tool === "nav" ? "none" : "auto";
+      cv.style.cursor = tool === "text" ? "text" : tool === "erase" ? "cell" : "crosshair";
+    }
+    function setTool(t) { commitText(); tool = t; refresh(); }
+    toolBtns.nav = tbtn("✋", "Slide badlein / swipe (V)", function () { setTool("nav"); });
+    toolBtns.pen = tbtn("✏️", "Pen (P)", function () { setTool("pen"); });
+    toolBtns.hl = tbtn("🖍️", "Highlighter (H)", function () { setTool("hl"); });
+    toolBtns.erase = tbtn("🧽", "Eraser (E)", function () { setTool("erase"); });
+    toolBtns.text = tbtn("🔤", "Text likhein (T) — Ctrl+Enter se pakka", function () { setTool("text"); });
+    sep();
+    INK_COLORS.forEach(function (c) {
+      var b = document.createElement("button"); b.type = "button"; b.title = c;
+      b.style.cssText = "width:28px;height:28px;border-radius:50%;border:0;cursor:pointer;background:" + c + ";touch-action:manipulation;";
+      b.addEventListener("click", function (e) { e.stopPropagation(); color = c; if (tool === "nav" || tool === "erase") tool = "pen"; refresh(); });
+      bar.appendChild(b); colBtns.push({ b: b, c: c });
+    });
+    sep();
+    [[3, "●"], [6, "●"], [12, "●"]].forEach(function (z) {
+      var b = tbtn(z[1], "Motai " + z[0], function () { size = z[0]; refresh(); }, 34);
+      b.style.fontSize = (8 + z[0] * 1.3) + "px"; sizeBtns.push({ b: b, v: z[0] });
+    });
+    sep();
+    function undo() {
+      commitText();
+      var l = list();
+      if (l.length) { l.pop(); }
+      else if (bak[curId]) { store[curId] = bak[curId]; delete bak[curId]; }
+      redraw();
+    }
+    function clearAll() { commitText(); var l = list(); if (!l.length) return; bak[curId] = l.slice(); store[curId] = []; redraw(); }
+    tbtn("↩", "Undo (Ctrl+Z)", undo);
+    tbtn("🗑", "Is slide ka likha saaf karein (undo se wapas aa jata hai)", clearAll);
+    refresh();
+
+    return {
+      cv: cv, bar: bar,
+      setSlide: function (id) { cancelText(); drawing = null; curId = id; redraw(); },
+      undo: undo, clear: clearAll, setTool: setTool,
+      tool: function () { return tool; }, editing: function () { return !!tbox; }
+    };
+  }
+
   /* ---- fullscreen slideshow --------------------------------------------- */
   function startShow() {
     var qs = getQuestions();
@@ -287,14 +441,17 @@
     ensureCss();
     closeDialog();
     logoUrl = getLogo();
-    var seq = sequence(qs, state.answers, state.blanks), idx = 0, revealed = {}, total = qs.length;
+    var seq = sequence(qs, state.answers, state.blanks), idx = 0, revealed = {}, total = qs.length, nid = 1;
+    seq.forEach(function (it) { it.id = nid++; });
     var themeIdx = Math.max(0, THEMES.map(function (t) { return t.id; }).indexOf(state.theme));
     var th = currentTheme();
 
     var ov = mk("div"); ov.id = "qslShow";
-    ov.style.cssText = "position:fixed;inset:0;z-index:100000;overflow:hidden;touch-action:pan-y;user-select:none;-webkit-user-select:none;";
+    ov.style.cssText = "position:fixed;inset:0;z-index:100000;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;";
     var stage = mk("div"); stage.style.cssText = "position:absolute;left:50%;top:50%;width:" + W + "px;height:" + H + "px;transform-origin:center center;";
     ov.appendChild(stage);
+    var ink = makeInk(th);
+    ov.appendChild(ink.bar);
     var bar = mk("div"); bar.style.cssText = "position:absolute;left:0;top:0;height:6px;background:#fbbf24;width:0;transition:width .25s;z-index:3;";
     ov.appendChild(bar);
 
@@ -325,6 +482,7 @@
       var el = buildSlide(it.q, it.no, total, th, slideOpts(seq, idx, reveal));
       stage.appendChild(el);
       try { el._fit(); } catch (e) {}
+      stage.appendChild(ink.cv); ink.setSlide(it.id);
       ov.style.background = th.bg;
       lbl.textContent = (idx + 1) + " / " + seq.length;
       bar.style.width = (((idx + 1) / seq.length) * 100) + "%";
@@ -337,7 +495,7 @@
       while (at + 1 < seq.length && seq[at + 1].no === it.no && seq[at + 1].type === "b") at++;
       if (it.type === "a") at = idx;
       else if (it.type === "q") { at = idx; while (at + 1 < seq.length && seq[at + 1].no === it.no && seq[at + 1].type === "b") at++; }
-      seq.splice(at + 1, 0, { q: it.q, no: it.no, type: "b" });
+      seq.splice(at + 1, 0, { q: it.q, no: it.no, type: "b", id: nid++ });
       idx = at + 1; render();
     }
     function go(d) { var n = idx + d; if (n < 0 || n >= seq.length) return; idx = n; render(); }
@@ -358,7 +516,9 @@
       stage.style.transform = "translate(-50%,-50%) scale(" + s + ")";
     }
     function onKey(e) {
+      if (e.target && (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT")) return;   // text likhte waqt shortcuts band
       var k = e.key;
+      if ((e.ctrlKey || e.metaKey) && (k === "z" || k === "Z")) { e.preventDefault(); ink.undo(); return; }
       if (k === "ArrowRight" || k === "PageDown" || k === " " || k === "ArrowDown" || k === "Enter") { e.preventDefault(); go(1); }
       else if (k === "ArrowLeft" || k === "PageUp" || k === "ArrowUp" || k === "Backspace") { e.preventDefault(); go(-1); }
       else if (k === "Home") { idx = 0; render(); }
@@ -367,6 +527,11 @@
       else if (k === "a" || k === "A") { toggleAns(); }
       else if (k === "b" || k === "B") { cycleBg(); }
       else if (k === "n" || k === "N") { addBlank(); }
+      else if (k === "p" || k === "P") { ink.setTool("pen"); }
+      else if (k === "h" || k === "H") { ink.setTool("hl"); }
+      else if (k === "e" || k === "E") { ink.setTool("erase"); }
+      else if (k === "t" || k === "T") { e.preventDefault(); ink.setTool("text"); }
+      else if (k === "v" || k === "V") { ink.setTool("nav"); }
       else if (k === "f" || k === "F") { toggleFs(); }
       showCtl();
     }
@@ -378,7 +543,7 @@
     ov.addEventListener("touchend", function (e) {
       if (sx === null) return;
       var t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy; sx = null;
-      if (seq[idx].type === "b") return;   // khali slide par ungli/pen se likhte waqt slide na badle
+      if (ink.tool() !== "nav") return;   // likhne wale mode me swipe se slide nahi badalti
       if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) go(dx < 0 ? 1 : -1);
     }, { passive: true });
     ov.addEventListener("mousemove", showCtl);
@@ -471,6 +636,197 @@
     return (s || "Questions") + " Slides";
   }
 
+  /* ---- EDITABLE PowerPoint (.pptx) ------------------------------------------
+     Asli PowerPoint text-boxes: question / options ka size, rang, jagah PowerPoint me badal sakte hain.
+     Background + logo "Slide Master" me hai => PowerPoint me "New Slide" dabane par naya slide
+     bilkul isi theme ke saath (logo + background + likhne ka box) khulta hai.
+     Math (LaTeX) ko PowerPoint ke text me Unicode me badla jaata hai (x², √, ÷ …). Jo math bahut jatil ho,
+     us question ka stem photo ki tarah lagta hai (taaki galat na dikhe). Speaker Notes me answer hai. */
+  var SUP = { "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹", "+": "⁺", "-": "⁻", "−": "⁻", "=": "⁼", "(": "⁽", ")": "⁾", "n": "ⁿ", "i": "ⁱ", "x": "ˣ", "y": "ʸ" };
+  var SUB = { "0": "₀", "1": "₁", "2": "₂", "3": "₃", "4": "₄", "5": "₅", "6": "₆", "7": "₇", "8": "₈", "9": "₉", "+": "₊", "-": "₋", "−": "₋", "=": "₌", "(": "₍", ")": "₎", "n": "ₙ", "a": "ₐ", "e": "ₑ", "i": "ᵢ", "x": "ₓ" };
+  var SYM = { times: "×", div: "÷", pm: "±", mp: "∓", cdot: "·", le: "≤", leq: "≤", ge: "≥", geq: "≥", ne: "≠", neq: "≠", approx: "≈", pi: "π", theta: "θ", alpha: "α", beta: "β", gamma: "γ", delta: "δ", Delta: "Δ", lambda: "λ", mu: "μ", sigma: "σ", Sigma: "Σ", omega: "ω", Omega: "Ω", phi: "φ", infty: "∞", circ: "°", degree: "°", angle: "∠", triangle: "△", perp: "⊥", parallel: "∥", therefore: "∴", because: "∵", rightarrow: "→", to: "→", leftarrow: "←", Rightarrow: "⇒", Leftrightarrow: "⇔", "in": "∈", subset: "⊂", cup: "∪", cap: "∩", ldots: "…", dots: "…", cdots: "…", sin: "sin", cos: "cos", tan: "tan", cot: "cot", sec: "sec", csc: "cosec", log: "log", ln: "ln", lim: "lim", propto: "∝", sim: "∼", cong: "≅", equiv: "≡", prime: "′", ang: "∠" };
+  function mapScript(str, table) {
+    var out = ""; for (var i = 0; i < str.length; i++) { var c = table[str[i]]; if (!c) return null; out += c; } return out;
+  }
+  function grab(s, i) {            // s[i] se '{...}' (nested) ya ek akshar; {txt, next}
+    if (s[i] === "{") {
+      var d = 0, j = i;
+      for (; j < s.length; j++) { if (s[j] === "{") d++; else if (s[j] === "}") { d--; if (d === 0) break; } }
+      return { txt: s.slice(i + 1, j), next: j + 1 };
+    }
+    if (s[i] === "\\") { var m = /^\\[A-Za-z]+/.exec(s.slice(i)); if (m) return { txt: m[0], next: i + m[0].length }; }
+    return { txt: s[i] || "", next: i + 1 };
+  }
+  function wrapIf(t) { return /^[A-Za-z0-9.°²³]+$/.test(t) ? t : "(" + t + ")"; }
+  function mathToUni(s, st) {
+    var out = "", i = 0;
+    while (i < s.length) {
+      var c = s[i];
+      if (c === "\\") {
+        var m = /^\\([A-Za-z]+|.)/.exec(s.slice(i)); var cmd = m ? m[1] : ""; i += m ? m[0].length : 1;
+        if (cmd === "frac" || cmd === "dfrac" || cmd === "tfrac") {
+          var a = grab(s, i); i = a.next; var b = grab(s, i); i = b.next;
+          out += wrapIf(mathToUni(a.txt, st)) + "/" + wrapIf(mathToUni(b.txt, st));
+        } else if (cmd === "sqrt") {
+          var idx = "";
+          if (s[i] === "[") { var e = s.indexOf("]", i); idx = s.slice(i + 1, e); i = e + 1; }
+          var r = grab(s, i); i = r.next; var inner = mathToUni(r.txt, st);
+          out += (idx === "3" ? "∛" : idx === "4" ? "∜" : idx ? (mapScript(idx, SUP) || "") + "√" : "√") + wrapIf(inner);
+        } else if (cmd === "text" || cmd === "mathrm" || cmd === "mathbf" || cmd === "textbf" || cmd === "mathit" || cmd === "operatorname" || cmd === "boldsymbol") {
+          var t = grab(s, i); i = t.next; out += mathToUni(t.txt, st);
+        } else if (cmd === "overline" || cmd === "bar" || cmd === "widehat" || cmd === "hat" || cmd === "overrightarrow" || cmd === "vec") {
+          var o = grab(s, i); i = o.next; var ot = mathToUni(o.txt, st); out += (cmd === "vec" || cmd === "overrightarrow") ? ot + "⃗" : ot + (cmd === "hat" || cmd === "widehat" ? "̂" : "̅");
+        } else if (cmd === "left" || cmd === "right" || cmd === "," || cmd === ";" || cmd === ":" || cmd === "!" || cmd === "displaystyle" || cmd === "limits") {
+          if (cmd === "," || cmd === ";" || cmd === ":") out += " ";
+          if ((cmd === "left" || cmd === "right") && s[i] === ".") i++;
+        } else if (cmd === "quad" || cmd === "qquad" || cmd === " ") { out += "  "; }
+        else if (cmd === "%" || cmd === "{" || cmd === "}" || cmd === "$" || cmd === "&" || cmd === "_" || cmd === "#") { out += cmd; }
+        else if (cmd === "\\") { out += "\n"; }
+        else if (Object.prototype.hasOwnProperty.call(SYM, cmd)) { out += SYM[cmd]; }
+        else { st.hard = true; out += cmd; }
+      } else if (c === "^" || c === "_") {
+        var g = grab(s, i + 1); i = g.next; var gt = mathToUni(g.txt, st), mp = mapScript(gt, c === "^" ? SUP : SUB);
+        out += (c === "^" && (gt === "°" || gt === "∘")) ? "°" : mp !== null ? mp : (c === "^" ? "^" : "_") + wrapIf(gt);
+      } else if (c === "{" || c === "}") { i++; }
+      else if (c === "~") { out += " "; i++; }
+      else { out += c; i++; }
+    }
+    return out;
+  }
+  function texify(str) {            // { text, hard }
+    var st = { hard: false };
+    var t = String(str == null ? "" : str).replace(/\\\(([\s\S]+?)\\\)|\\\[([\s\S]+?)\\\]|\$\$([\s\S]+?)\$\$/g, function (_, a, b, c) { return mathToUni(a || b || c || "", st); });
+    return { text: t, hard: st.hard };
+  }
+  function cssColor(c) {
+    var m = /^#([0-9a-f]{6})$/i.exec(c || "");
+    if (m) return { hex: m[1].toUpperCase(), tr: 0 };
+    m = /rgba?\(([^)]+)\)/.exec(c || "");
+    if (m) {
+      var a = m[1].split(",").map(Number), hex = [a[0], a[1], a[2]].map(function (v) { return ("0" + Math.round(v).toString(16)).slice(-2); }).join("").toUpperCase();
+      return { hex: hex, tr: Math.round((1 - (a.length > 3 ? a[3] : 1)) * 100) };
+    }
+    return { hex: "FFFFFF", tr: 0 };
+  }
+  function lineCount(text, fontPt, widthIn) {
+    var cpl = Math.max(6, Math.floor(widthIn * 72 / (fontPt * 0.55))), n = 0;
+    String(text).split("\n").forEach(function (ln) { n += Math.max(1, Math.ceil(ln.length / cpl)); });
+    return n;
+  }
+  function pickFont(text, widthIn, maxH, sizes) {
+    for (var i = 0; i < sizes.length; i++) { var h = lineCount(text, sizes[i], widthIn) * sizes[i] * 1.32 / 72 + 0.12; if (h <= maxH) return { fs: sizes[i], h: h }; }
+    var f = sizes[sizes.length - 1]; return { fs: f, h: lineCount(text, f, widthIn) * f * 1.32 / 72 + 0.12 };
+  }
+  function toRuns(text, base) {
+    var parts = String(text).split("\n"), runs = [];
+    parts.forEach(function (p, i) { var o = Object.assign({}, base); if (i < parts.length - 1) o.breakLine = true; runs.push({ text: p === "" ? " " : p, options: o }); });
+    return runs;
+  }
+  function loadImg(src) { return new Promise(function (res) { var im = new Image(); im.onload = function () { res(im); }; im.onerror = function () { res(null); }; im.src = src; }); }
+  async function logoCard(src) {
+    if (!src) return "";
+    var im = await loadImg(src); if (!im) return "";
+    var S = 256, cv = document.createElement("canvas"); cv.width = cv.height = S; var c = cv.getContext("2d");
+    c.fillStyle = "#fff"; c.beginPath();
+    if (c.roundRect) c.roundRect(0, 0, S, S, 48); else c.rect(0, 0, S, S);
+    c.fill();
+    var k = Math.min((S - 36) / im.width, (S - 36) / im.height), w = im.width * k, h = im.height * k;
+    c.drawImage(im, (S - w) / 2, (S - h) / 2, w, h);
+    try { return cv.toDataURL("image/png"); } catch (e) { return ""; }
+  }
+  async function bgImage(th) {
+    var d = mk("div"); d.style.cssText = "position:fixed;left:-20000px;top:0;width:" + W + "px;height:" + H + "px;background:" + th.bg + ";";
+    if (th.overlay) { var o = mk("div"); o.style.cssText = "position:absolute;inset:0;background:" + th.overlay + ";"; d.appendChild(o); }
+    document.body.appendChild(d);
+    try { var cv = await window.html2canvas(d, { scale: 1.5, backgroundColor: null, useCORS: true, logging: false, width: W, height: H }); return cv.toDataURL("image/jpeg", 0.9); }
+    finally { document.body.removeChild(d); }
+  }
+
+  async function makeEditablePptx(qs, th, onProgress) {
+    var PX = new window.PptxGenJS(); PX.layout = "LAYOUT_16x9"; PX.title = baseName();
+    var FONT = "Nirmala UI";
+    var seq = sequence(qs, state.answers, state.blanks), nQ = qs.length;
+    var T = cssColor(th.text).hex, SUBc = cssColor(th.sub).hex, ACC = cssColor(th.accent).hex, CARD = cssColor(th.card), LINE = cssColor(th.line);
+    var bg = await bgImage(th), lg = await logoCard(logoUrl);
+
+    var objs = [];
+    if (lg) objs.push({ image: { x: 0.3, y: 0.13, w: 0.52, h: 0.52, data: lg } });
+    objs.push({ placeholder: { options: { name: "body", type: "body", x: 0.45, y: 0.9, w: 9.1, h: 3.9, fontFace: FONT, fontSize: 26, bold: true, color: T, valign: "top", margin: 0.05 }, text: "यहाँ प्रश्न / हल लिखें" } });
+    PX.defineSlideMaster({ title: "QSL_BG", background: { data: bg }, objects: objs });
+
+    var host = mk("div"); host.style.cssText = "position:fixed;left:-20000px;top:0;width:" + W + "px;pointer-events:none;"; document.body.appendChild(host);
+    try {
+      for (var i = 0; i < seq.length; i++) {
+        var it = seq[i], q = it.q, no = it.no, isSub = q.qType === "subjective";
+        var s = PX.addSlide({ masterName: "QSL_BG" });
+        var pi = it.type === "b" ? partInfo(seq, i) : {};
+        var chip = it.type === "b" ? ("✍️ प्रश्न " + no + " · हल" + (pi.parts > 1 ? " " + pi.part + "/" + pi.parts : "")) : ((it.type === "a" ? "✅ उत्तर · " : "प्रश्न ") + no + " / " + nQ);
+        s.addText(chip, { x: 6.9, y: 0.18, w: 2.65, h: 0.44, shape: PX.ShapeType.roundRect, rectRadius: 0.5, fill: { color: CARD.hex, transparency: CARD.tr }, line: { color: LINE.hex, width: 1.5, transparency: LINE.tr }, fontFace: FONT, fontSize: 15, bold: true, color: (it.type === "q" ? T : ACC), align: "center", valign: "middle", margin: 0 });
+
+        var stemTx = texify(q.text), stem = stemTx.text, y0 = 0.85;
+        if (it.type === "b") {
+          if (state.blankQ) s.addText(toRuns(no + ". " + stem, { fontFace: FONT, fontSize: 15, color: SUBc, bold: true }), { x: 0.45, y: 0.78, w: 9.1, h: 0.62, valign: "top", margin: 0.03, line: { type: "none" } });
+        } else if (it.type === "a") {
+          var ans = "", ex = "";
+          if (isSub) ans = "✅ Model Answer\n" + (q.modelAnswer ? texify(q.modelAnswer).text : "(model answer nahi diya gaya)");
+          else {
+            var oo = optList(q).filter(function (o) { return o.i === q.ans; })[0];
+            ans = "✅ सही उत्तर: (" + (LET[q.ans] || "?") + ")  " + (oo ? texify(oo.t).text : "");
+            var e0 = explanationOf(q); if (e0) ans += "\n" + texify(e0).text;
+          }
+          var pf = pickFont(ans, 8.7, 3.8, [28, 24, 22, 20, 18, 16]);
+          s.addText(toRuns(ans, { fontFace: FONT, fontSize: pf.fs, color: "FFFFFF", bold: true }), { x: 0.45, y: 0.95, w: 9.1, h: Math.min(3.9, pf.h + 0.4), shape: PX.ShapeType.roundRect, rectRadius: 0.12, fill: { color: "16A34A", transparency: 8 }, valign: "top", margin: 0.18 });
+        } else {
+          var gap = 0.2, optsRows = isSub ? 0 : 2, maxStemH = isSub ? 4.1 : 2.0;
+          var stemY = y0, stemH, stemFs, imgStem = null;
+          if (stemTx.hard) {                // jatil math: stem ki photo
+            var tmp = slideEl(q, no, nQ, th, { type: "q", reveal: false }); host.appendChild(tmp); try { tmp._fit(); } catch (e) {}
+            var stEl = tmp.querySelector(".qsl-stem"), cv0 = await window.html2canvas(stEl, { scale: 2, backgroundColor: null, logging: false });
+            imgStem = { data: cv0.toDataURL("image/png"), w: Math.min(9.1, cv0.width / 2 / 1168 * 9.1), h: cv0.height / 2 / 1168 * 9.1 };
+            host.removeChild(tmp); stemH = imgStem.h; stemFs = 0;
+          } else {
+            var pk = pickFont(no + ". " + stem, 9.0, maxStemH, isSub ? [32, 28, 26, 24, 22, 20] : [30, 28, 26, 24, 22, 20, 18]);
+            stemFs = pk.fs; stemH = pk.h;
+          }
+          if (imgStem) s.addImage({ data: imgStem.data, x: 0.45, y: stemY, w: imgStem.w, h: imgStem.h });
+          else {
+            var runs = toRuns(stem, { fontFace: FONT, fontSize: stemFs, color: T, bold: true });
+            runs.unshift({ text: no + ". ", options: { fontFace: FONT, fontSize: stemFs, color: ACC, bold: true } });
+            s.addText(runs, { x: 0.45, y: stemY, w: 9.1, h: stemH, valign: "top", margin: 0.05 });
+          }
+          if (!isSub) {
+            var ops = optList(q), oTop = stemY + stemH + gap, colW = 4.45, rowsY = oTop;
+            for (var r = 0; r < ops.length; r += 2) {
+              var pair = [ops[r], ops[r + 1]].filter(Boolean), rowH = 0.7;
+              var fz = 20; pair.forEach(function (op) { var p2 = pickFont(texify(op.t).text, colW - 0.9, 1.1, [20, 18, 16, 14]); fz = Math.min(fz, p2.fs); rowH = Math.max(rowH, p2.h + 0.22); });
+              pair.forEach(function (op, k) {
+                var good = it.reveal && q.ans === op.i;
+                s.addText([{ text: (LET[op.i] || (op.i + 1)) + "   ", options: { bold: true, color: good ? "FFFFFF" : ACC, fontFace: FONT, fontSize: fz } }, { text: texify(op.t).text, options: { color: good ? "FFFFFF" : T, bold: true, fontFace: FONT, fontSize: fz } }],
+                  { x: 0.45 + k * (colW + 0.2), y: rowsY, w: colW, h: rowH, shape: PX.ShapeType.roundRect, rectRadius: 0.15, fill: good ? { color: "16A34A" } : { color: CARD.hex, transparency: CARD.tr }, line: { color: good ? "BBF7D0" : LINE.hex, width: 1.5, transparency: good ? 0 : LINE.tr }, valign: "middle", margin: [0, 0.15, 0, 0.18] });
+              });
+              rowsY += rowH + 0.14;
+            }
+          } else if (it.reveal && q.modelAnswer) {
+            var ma = texify(q.modelAnswer).text, pm = pickFont(ma, 8.7, 1.8, [22, 20, 18, 16]);
+            s.addText(toRuns("✅ Model Answer\n" + ma, { fontFace: FONT, fontSize: pm.fs, color: "FFFFFF", bold: true }), { x: 0.45, y: stemY + stemH + 0.2, w: 9.1, h: pm.h + 0.5, shape: PX.ShapeType.roundRect, rectRadius: 0.12, fill: { color: "16A34A", transparency: 8 }, valign: "top", margin: 0.15 });
+          }
+        }
+        if (it.type === "q") {
+          if (q.chapter) s.addText(String(q.chapter), { x: 0.45, y: 5.18, w: 4.5, h: 0.3, fontFace: FONT, fontSize: 11, color: SUBc, valign: "middle", margin: 0 });
+          if (isSub) s.addText("📝 Subjective" + (q.marks != null && q.marks !== "" ? " · " + q.marks + " marks" : ""), { x: 6.9, y: 5.15, w: 2.65, h: 0.34, shape: PX.ShapeType.roundRect, rectRadius: 0.5, fill: { color: CARD.hex, transparency: CARD.tr }, line: { color: LINE.hex, width: 1.2, transparency: LINE.tr }, fontFace: FONT, fontSize: 12, bold: true, color: T, align: "center", valign: "middle", margin: 0 });
+          // speaker notes: answer + explanation (padhate waqt sirf teacher ko dikhta hai)
+          var note = "";
+          if (isSub) note = q.modelAnswer ? "Model Answer: " + texify(q.modelAnswer).text : "";
+          else { var co = optList(q).filter(function (o) { return o.i === q.ans; })[0]; note = "सही उत्तर: (" + (LET[q.ans] || "?") + ") " + (co ? texify(co.t).text : ""); var ee = explanationOf(q); if (ee) note += "\n" + texify(ee).text; }
+          if (note) s.addNotes(note);
+        }
+        if (onProgress) onProgress(i + 1, seq.length);
+        await sleep(0);
+      }
+    } finally { try { document.body.removeChild(host); } catch (e) {} }
+    return PX.write({ outputType: "blob" });
+  }
+
   var busy = false;
   async function makeFile(kind) {
     if (busy) { toastMsg("⏳ Slides abhi ban rahi hain, ruko..."); return; }
@@ -481,9 +837,15 @@
     btns.forEach(function (b) { b.disabled = true; });
     try {
       toastMsg("⏳ Slides ban rahi hain, thoda ruko...");
-      await ensureLibs(kind === "pdf", kind === "pptx");
+      await ensureLibs(kind === "pdf", kind !== "pdf");
       logoUrl = getLogo();
-      var seq = sequence(qs, state.answers, state.blanks), th = currentTheme();
+      var th = currentTheme();
+      if (kind === "pptx") {
+        var eb = await makeEditablePptx(qs, th, function (d, t) { toastMsg("⏳ Slide " + d + "/" + t); });
+        await deliver(eb, baseName() + ".pptx");
+        return;
+      }
+      var seq = sequence(qs, state.answers, state.blanks);
       var imgs = await renderImages(seq, th, function (d, t) { toastMsg("⏳ Slide " + d + "/" + t); });
       if (kind === "pdf") {
         var pdf = new window.jspdf.jsPDF({ orientation: "landscape", unit: "px", format: [W, H], compress: true, hotfixes: ["px_scaling"] });
@@ -493,7 +855,7 @@
         var px = new window.PptxGenJS(); px.layout = "LAYOUT_16x9"; px.title = baseName();
         imgs.forEach(function (im) { var s = px.addSlide(); s.addImage({ data: im, x: 0, y: 0, w: 10, h: 5.625 }); });
         var out = await px.write({ outputType: "blob" });
-        await deliver(out, baseName() + ".pptx");
+        await deliver(out, baseName() + " (photo).pptx");
       }
     } catch (err) {
       console.error(err);
@@ -542,11 +904,12 @@
         '<button data-act="show" style="padding:13px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:700;font-size:15px;">▶ Slideshow chalayein (fullscreen, smart board ke liye)</button>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
           '<button data-act="pdf" style="padding:11px;border:0;border-radius:10px;background:#dc2626;color:#fff;font-weight:700;">📕 PDF download</button>' +
-          '<button data-act="pptx" style="padding:11px;border:0;border-radius:10px;background:#ea580c;color:#fff;font-weight:700;">📊 PowerPoint (.pptx)</button>' +
+          '<button data-act="pptx" style="padding:11px;border:0;border-radius:10px;background:#ea580c;color:#fff;font-weight:700;">📊 PowerPoint (edit ho sakta hai) ⭐</button>' +
         '</div>' +
+        '<button data-act="pptximg" style="padding:8px;border:1px solid #ea580c;border-radius:10px;background:#fff;color:#c2410c;font-weight:600;font-size:12px;">🖼️ PowerPoint (photo style — math bilkul exact, par text edit nahi hota)</button>' +
         '<button data-act="close" style="padding:10px;border:0;border-radius:10px;background:#eee;font-weight:600;">Band karein</button>' +
       '</div>' +
-      '<div style="font-size:12px;color:#666;margin-top:10px;line-height:1.5;">Slideshow keys: → / Space = agla, ← = pichla, A = answer, N = khali slide, B = background badlo, F = fullscreen, Esc = band. Touch board par swipe ya niche ke bade button.</div>';
+      '<div style="font-size:12px;color:#666;margin-top:10px;line-height:1.5;">PowerPoint (edit ho sakta hai): question/option ka size PowerPoint me badal sakte hain; naya slide "New Slide" se isi background + logo ke saath khulta hai; answer Speaker Notes me. Math ko ¹ ² √ ÷ jaise symbols me badla jaata hai.<br>Slideshow keys: → / Space = agla, ← = pichla, A = answer, N = khali slide, B = background badlo, F = fullscreen, Esc = band. Touch board par swipe ya niche ke bade button.</div>';
     ov.appendChild(bx); document.body.appendChild(ov);
 
     var grid = bx.querySelector("#qslThemes");
@@ -610,5 +973,5 @@
 
   loadState();
   window.openQuestionSlides = openDialog;
-  window.QuestionSlides = { open: openDialog, start: startShow, themes: THEMES, _slideEl: buildSlide, _sequence: sequence };
+  window.QuestionSlides = { open: openDialog, start: startShow, themes: THEMES, _slideEl: buildSlide, _sequence: sequence, _pptx: function (qs, th) { logoUrl = getLogo(); return makeEditablePptx(qs, th || currentTheme()); }, _texify: texify };
 })();
