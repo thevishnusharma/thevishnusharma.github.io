@@ -389,6 +389,7 @@ async function adminFromRequest(request, env) {
   const f = await adminFields(env, email);
   const active = !!f && !(f.active && f.active.booleanValue === false);
   if (!active && owners.indexOf(email) < 0) throw new HttpErr(403, 'Sirf admin');
+  if (owners.indexOf(email) < 0 && f && f.otpRequired && f.otpRequired.booleanValue === true && !otpVerifiedToken(user)) throw new HttpErr(403, 'Email OTP verify karein (dobara login karke code daalein).');   // v330
   return { email, instituteId: (f && f.instituteId && f.instituteId.stringValue) || '' };
 }
 
@@ -1333,6 +1334,145 @@ async function studentKeyFor(env, inst, phone) {
 }
 const GENERIC_BAD = 'Mobile number ya password galat hai.';
 
+
+/* ===== v330: EMAIL OTP (free) — student (naya device / pehla login / password reset) aur admin (har login) =====
+   Setup (koi bhi EK free tareeka):
+     A) Brevo (300 email/din free): Variables BREVO_API_KEY (secret) + OTP_FROM (Brevo me verify kiya hua sender email) [+ OTP_FROM_NAME]
+     B) Google Apps Script Web App (free Gmail se): Variables OTP_WEBHOOK_URL + OTP_WEBHOOK_SECRET (Apps_Script_Email_OTP.gs dekhein)
+   Dono me se kuch set na ho to OTP apne aap band rehta hai (login kabhi nahi rukta). Owner Security Center me studentOtp / adminOtp switch (default ON).
+   Code 6 ank, 10 minute, 5 galat koshish, 60 second cooldown. Code sirf HMAC hash ke roop me KV me (10 min). */
+const OTP_TTL_S = 600, OTP_TRIES = 5, TRUST_S = 30 * 86400;
+const MAIL_RE = /^[^\s@,;<>]{1,64}@[^\s@,;<>]{1,190}\.[A-Za-z]{2,24}$/;
+const randHex = (n) => Array.from(crypto.getRandomValues(new Uint8Array(n))).map((x) => x.toString(16).padStart(2, '0')).join('');
+function otpAvailable(env) { return !!env.BANK_KV && !!env.SERVICE_ACCOUNT_JSON && ((!!env.BREVO_API_KEY && !!env.OTP_FROM) || (!!env.OTP_WEBHOOK_URL && !!env.OTP_WEBHOOK_SECRET)); }
+const maskEmail = (e) => { const [u, d] = String(e).split('@'); return (u.slice(0, 2) + '***@' + (d || '')).slice(0, 60); };
+async function hmacHex(env, msg) {
+  const sec = env.OTP_SECRET || String(JSON.parse(env.SERVICE_ACCOUNT_JSON).private_key || '');
+  const key = await crypto.subtle.importKey('raw', te.encode('otp:' + sec), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return Array.from(new Uint8Array(await crypto.subtle.sign('HMAC', key, te.encode(msg)))).map((x) => x.toString(16).padStart(2, '0')).join('');
+}
+async function signBlob(env, obj) { const p = b64u(te.encode(JSON.stringify(obj))); return p + '.' + await hmacHex(env, 'blob:' + p); }
+async function readBlob(env, tok, types) {
+  const [p, sig] = String(tok || '').split('.');
+  if (!p || !sig || !ctEq(await hmacHex(env, 'blob:' + p), sig)) throw new HttpErr(401, 'Session ka samay khatam ho gaya — dobara login karein.');
+  let o; try { o = JSON.parse(td.decode(unb64u(p))); } catch (e) { throw new HttpErr(401, 'Session galat hai — dobara login karein.'); }
+  if (!o || Date.now() > o.exp || types.indexOf(o.t) < 0) throw new HttpErr(401, 'Session ka samay khatam ho gaya — dobara login karein.');
+  return o;
+}
+let otpCfgCache = { at: 0, v: null, env: null };
+async function otpSettings(env) {
+  if (!otpAvailable(env)) return { available: false, student: false, admin: false };
+  const now = Date.now();
+  if (otpCfgCache.v && otpCfgCache.env === env && now - otpCfgCache.at < 60000) return otpCfgCache.v;
+  let f = null; try { f = await fsGetFields(env, 'config/privacy'); } catch (e) {}
+  const off = (k) => !!(f && f[k] && f[k].booleanValue === false);
+  const v = { available: true, student: !off('studentOtp'), admin: !off('adminOtp') };
+  otpCfgCache = { at: now, v, env }; return v;
+}
+async function sendOtpEmail(env, to, code, why) {
+  const subject = 'Aapka verification code: ' + code;
+  const text = 'The Vishnu Sharma — aapka ' + why + ' verification code ' + code + ' hai. Ye 10 minute tak chalega. Ye code kisi ko na batayein. Agar aapne ye nahi maanga, is email ko ignore karein.';
+  if (env.BREVO_API_KEY && env.OTP_FROM) {
+    const r = await fetch('https://api.brevo.com/v3/smtp/email', { method: 'POST', headers: { 'api-key': env.BREVO_API_KEY, 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ sender: { email: env.OTP_FROM, name: env.OTP_FROM_NAME || 'The Vishnu Sharma' }, to: [{ email: to }], subject, textContent: text }) });
+    if (!r.ok) throw new Error('brevo ' + r.status);
+    return;
+  }
+  const r = await fetch(env.OTP_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ secret: env.OTP_WEBHOOK_SECRET, to, subject, text }) });
+  if (!r.ok) throw new Error('webhook ' + r.status);
+  let j = {}; try { j = await r.json(); } catch (e) {}
+  if (j && j.ok === false) throw new Error('webhook rejected');
+}
+// code banao + bhejo. Cooldown 60s, per-subject 5/ghanta, per-IP 30/ghanta.
+async function otpIssue(request, env, { k, email, purpose, why }) {
+  const kv = authKV(env), ip = request.headers.get('CF-Connecting-IP') || '0', rk = 'rl:otps:k:' + k, ri = 'rl:otps:ip:' + ip;
+  await rlCheck(env, [[rk, 5], [ri, 30]]);
+  if (await kv.get('otpcd:' + k)) throw new HttpErr(429, 'Naya code 1 minute baad mangwayein.');
+  const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0'), id = randHex(12);
+  await kv.put('otp:' + id, JSON.stringify({ h: await hmacHex(env, id + ':' + code), k, email, purpose, tries: 0, exp: Date.now() + OTP_TTL_S * 1000 }), { expirationTtl: OTP_TTL_S + 60 });
+  await kv.put('otpcd:' + k, '1', { expirationTtl: 60 }); await rlFail(env, [[rk, 5, 3600], [ri, 30, 3600]]);
+  try { await sendOtpEmail(env, email, code, why); }
+  catch (e) { console.log('[otp] mail fail', e && e.message); await kv.delete('otp:' + id); await kv.delete('otpcd:' + k); throw new HttpErr(502, 'Email bhej nahi paaye. Thodi der baad try karein.'); }
+  return { otpId: id, sentTo: maskEmail(email), expiresIn: OTP_TTL_S };
+}
+async function otpCheck(env, id, code, k, purpose) {
+  const kv = authKV(env), key = 'otp:' + String(id || '').replace(/[^a-f0-9]/g, '').slice(0, 24);
+  const rec = await kv.get(key, 'json');
+  if (!rec || rec.k !== k || rec.purpose !== purpose || Date.now() > rec.exp) throw new HttpErr(400, 'Code galat ya purana hai. Naya code mangwayein.');
+  rec.tries = (rec.tries || 0) + 1;
+  if (rec.tries > OTP_TRIES) { await kv.delete(key); throw new HttpErr(429, 'Bahut galat koshish. Naya code mangwayein.'); }
+  await kv.put(key, JSON.stringify(rec), { expirationTtl: Math.max(60, Math.ceil((rec.exp - Date.now()) / 1000) + 60) });
+  const given = String(code || '').replace(/\D/g, '');
+  if (given.length !== 6 || !ctEq(await hmacHex(env, String(id) + ':' + given), rec.h)) throw new HttpErr(400, 'Code galat hai.');
+  await kv.delete(key);
+  return rec;
+}
+async function revokeTrusted(env, k) {          // password badalne par saare bharosemand device hata do
+  const kv = authKV(env); let cursor;
+  for (let i = 0; i < 10; i++) { const l = await kv.list({ prefix: 'td:' + k + ':', cursor }); for (const x of l.keys || []) await kv.delete(x.name); if (l.list_complete || !l.cursor) break; cursor = l.cursor; }
+}
+// ---- student ----
+async function authOtpSend(request, env, body) {
+  const cfg = await otpSettings(env); if (!cfg.student) throw new HttpErr(503, 'Email verification abhi chalu nahi hai.');
+  const ch = await readBlob(env, body.challenge, ['lg', 'rs']), k = ch.k;
+  const sec = await fsGetFields(env, 'studentSecrets/' + k);
+  let email = sFld(sec, 'email');
+  if (!email) {                                  // pehli baar: login kar chuka (password sahi) student apna email jodta hai; reset me ye raasta nahi
+    if (ch.t !== 'lg') throw new HttpErr(400, 'Is account par email nahi hai.');
+    email = String(body.email || '').trim().toLowerCase();
+    if (!MAIL_RE.test(email) || email.length > 254) throw new HttpErr(400, 'Sahi email likhein.');
+  }
+  return { ok: true, ...(await otpIssue(request, env, { k, email, purpose: ch.t, why: ch.t === 'rs' ? 'password reset' : 'login' })) };
+}
+async function authOtpVerify(request, env, body) {
+  const cfg = await otpSettings(env); if (!cfg.student) throw new HttpErr(503, 'Email verification abhi chalu nahi hai.');
+  const ch = await readBlob(env, body.challenge, ['lg', 'rs']), k = ch.k;
+  const rec = await otpCheck(env, body.otpId, body.code, k, ch.t);
+  if (ch.t === 'rs') return { ok: true, proof: await signBlob(env, { t: 'rp', k, exp: Date.now() + 10 * 60000 }) };
+  const sec = await fsGetFields(env, 'studentSecrets/' + k);
+  if (sFld(sec, 'email') !== rec.email) await fsSetFields(env, 'studentSecrets/' + k, { email: rec.email, emailVerified: true, emailAt: new Date() }, []);
+  let deviceToken = '';
+  if (body.remember !== false) { deviceToken = randHex(32); await authKV(env).put('td:' + k + ':' + await sha256hex(deviceToken), '1', { expirationTtl: TRUST_S }); }
+  const st = await fsGetFields(env, 'students/' + k);
+  if (!st) throw new HttpErr(401, GENERIC_BAD);
+  return { ...(await studentLoginResponse(env, k, st, sec)), deviceToken };
+}
+async function studentLoginResponse(env, mobile, st, sec) {
+  const instituteId = sFld(st, 'instituteId'), classId = sFld(st, 'classId');
+  const hasPin = !!(sec && (sFld(sec, 'pin') || sFld(sec, 'pinHash'))) || (st.hasPin && st.hasPin.booleanValue === true) || !!sFld(st, 'pinHash');
+  return { ok: true, token: await mintCustomToken(env, 's_' + mobile, { role: 'student', mobile, instituteId }), student: { name: sFld(st, 'name'), mobile, phone: mobile.slice(-10), instituteId: instituteId || null, classId: classId || null, hasPin } };
+}
+// ---- admin (Firebase email login ke BAAD) ----
+async function addOtpAuthClaim(env, sa, pid, uid, authTime) {
+  const at = await googleAccessToken(sa, 'https://www.googleapis.com/auth/identitytoolkit'), base = 'https://identitytoolkit.googleapis.com/v1/projects/' + pid;
+  const H = { Authorization: 'Bearer ' + at, 'Content-Type': 'application/json' };
+  const lr = await fetch(base + '/accounts:lookup', { method: 'POST', headers: H, body: JSON.stringify({ localId: [uid] }) });
+  if (!lr.ok) throw new HttpErr(502, 'Account padh nahi paaye (' + lr.status + ')');
+  const u = ((await lr.json()).users || [])[0]; let claims = {}; try { claims = JSON.parse((u && u.customAttributes) || '{}'); } catch (e) {}
+  const list = (Array.isArray(claims.otpAuth) ? claims.otpAuth : []).filter((x) => Number.isFinite(x)).slice(-4);
+  if (list.indexOf(authTime) < 0) list.push(authTime);
+  claims.otpAuth = list;                           // is login-session (auth_time) ko OTP-verified likho; purane claims (snapRole etc.) jas ke tas
+  const ur = await fetch(base + '/accounts:update', { method: 'POST', headers: H, body: JSON.stringify({ localId: uid, customAttributes: JSON.stringify(claims) }) });
+  if (!ur.ok) throw new HttpErr(502, 'Verification save nahi hui (' + ur.status + ')');
+}
+const otpVerifiedToken = (u) => Array.isArray(u.otpAuth) && u.otpAuth.indexOf(u.auth_time) >= 0;
+async function handleAdminOtp(request, env, body, action) {
+  if (!env.SERVICE_ACCOUNT_JSON) throw new HttpErr(500, 'SERVICE_ACCOUNT_JSON secret set nahi hai');
+  const sa = JSON.parse(env.SERVICE_ACCOUNT_JSON), projectId = env.PROJECT_ID || sa.project_id;
+  const user = await verifyIdToken(body.idToken, projectId), email = String(user.email || '').toLowerCase();
+  if (!email) throw new HttpErr(401, 'Admin login chahiye');
+  const isAdm = await isAdminEmail(env, projectId, await googleAccessToken(sa), email);
+  const cfg = await otpSettings(env), verified = otpVerifiedToken(user);
+  if (action === 'config') return { ok: true, required: !!(isAdm && cfg.admin), verified };
+  if (!isAdm) throw new HttpErr(403, 'Sirf admin');
+  if (!cfg.admin) throw new HttpErr(503, 'Admin email verification abhi chalu nahi hai.');
+  if (!Number.isFinite(user.auth_time)) throw new HttpErr(401, 'Dobara login karein.');
+  const k = 'a:' + user.sub;
+  if (action === 'send') return { ok: true, ...(await otpIssue(request, env, { k, email, purpose: 'ad', why: 'admin login' })) };
+  if (action === 'verify') { await otpCheck(env, body.otpId, body.code, k, 'ad'); await addOtpAuthClaim(env, sa, projectId, user.sub, user.auth_time); return { ok: true }; }
+  throw new HttpErr(404, 'Unknown admin otp endpoint');
+}
+
 async function authLogin(request, env, body) {
   let mobile = mobileOf(body.mobile); const password = typeof body.password === 'string' ? body.password : '';
   if (!mobile || !password || password.length > 200) throw new HttpErr(400, 'Sahi mobile number aur password likhein.');
@@ -1358,9 +1498,14 @@ async function authLogin(request, env, body) {
   } else if (sec && pwIter(sFld(sec, 'pw')) < pbkTarget(env)) {
     await fsSetFields(env, 'studentSecrets/' + mobile, { pw: await pwMake(env, password), updatedAt: new Date() }, []);   // iteration upgrade
   }
-  const instituteId = sFld(st, 'instituteId'), classId = sFld(st, 'classId');
-  const hasPin = !!(sec && (sFld(sec, 'pin') || sFld(sec, 'pinHash'))) || (st.hasPin && st.hasPin.booleanValue === true) || !!sFld(st, 'pinHash');
-  return { ok: true, token: await mintCustomToken(env, 's_' + mobile, { role: 'student', mobile, instituteId }), student: { name: sFld(st, 'name'), mobile, phone: mobile.slice(-10), instituteId: instituteId || null, classId: classId || null, hasPin } };
+  // v330: email OTP — naya device / pehla login (email abhi jura nahi) par; bharosemand device (30 din) par nahi
+  const cfgO = await otpSettings(env);
+  if (cfgO.student) {
+    const email = sFld(sec, 'email'), dt = typeof body.deviceToken === 'string' ? body.deviceToken : '';
+    const trusted = !!(email && /^[a-f0-9]{64}$/.test(dt) && await authKV(env).get('td:' + mobile + ':' + await sha256hex(dt)));
+    if (!trusted) return { ok: true, otpRequired: true, needEmail: !email, maskedEmail: email ? maskEmail(email) : '', challenge: await signBlob(env, { t: 'lg', k: mobile, exp: Date.now() + 15 * 60000 }) };
+  }
+  return await studentLoginResponse(env, mobile, st, sec);
 }
 async function authRegister(request, env, body) {
   const mobile = mobileOf(body.mobile), password = body.password, pin = String(body.pin || '');
@@ -1402,7 +1547,13 @@ async function authResetWithPin(request, env, body) {
   let ok = false;
   if (sec && st) { if (sFld(sec, 'pin')) ok = await pwCheck(sFld(sec, 'pin'), pin); else if (sFld(sec, 'pinHash')) ok = ctEq(await sha256hex(pin), sFld(sec, 'pinHash')); }
   if (!ok) { await rlFail(env, [[rp, 5, 900], [ri, 20, 3600]]); throw new HttpErr(401, 'Mobile number ya Security PIN galat hai (ya PIN set nahi hai).'); }
+  const cfgR = await otpSettings(env), remail = sFld(sec, 'email');          // v330: email jura ho to password reset par bhi OTP
+  if (cfgR.student && remail) {
+    let pr = null; if (body.proof) { try { pr = await readBlob(env, body.proof, ['rp']); } catch (e) { pr = null; } }
+    if (!pr || pr.k !== mobile) return { ok: true, otpRequired: true, needEmail: false, maskedEmail: maskEmail(remail), challenge: await signBlob(env, { t: 'rs', k: mobile, exp: Date.now() + 15 * 60000 }) };
+  }
   await fsSetFields(env, 'studentSecrets/' + mobile, { pw: await pwMake(env, np), pin: await pwMake(env, pin), updatedAt: new Date() }, ['hash', 'pinHash']);
+  await revokeTrusted(env, mobile);
   await fsSetFields(env, 'students/' + mobile, { hasPin: true }, ['hash', 'pinHash']);
   await rlClear(env, [rp, 'rl:m:' + mobile]);
   return { ok: true };
@@ -1614,6 +1765,11 @@ async function handleStudentAuth(request, env, pathname) {
       : pathname === '/student/admin-reset' ? await authAdminReset(request, env, body)
       : pathname === '/student/delete-account' ? await authDeleteAccount(request, env, body)
       : pathname === '/student/institutes' ? await authInstitutes(request, env)
+      : pathname === '/student/otp-send' ? await authOtpSend(request, env, body)
+      : pathname === '/student/otp-verify' ? await authOtpVerify(request, env, body)
+      : pathname === '/admin/otp-config' ? await handleAdminOtp(request, env, body, 'config')
+      : pathname === '/admin/otp-send' ? await handleAdminOtp(request, env, body, 'send')
+      : pathname === '/admin/otp-verify' ? await handleAdminOtp(request, env, body, 'verify')
       : (() => { throw new HttpErr(404, 'Unknown student endpoint'); })();
     return out(r);
   } catch (e) { return out({ ok: false, error: e.message || String(e), ...(e.retryAfter ? { retryAfter: e.retryAfter } : {}) }, e.status || 500); }
@@ -1820,7 +1976,7 @@ const worker = {
   async route(request, env, ctx, pathname) {
     try {
       if (pathname.indexOf('/apk/') === 0) return await handleApk(request, env, ctx, pathname);   // v288: tez APK download (Cloudflare edge cache)
-      if (pathname.indexOf('/student/') === 0) return await handleStudentAuth(request, env, pathname);
+      if (pathname.indexOf('/student/') === 0 || pathname.indexOf('/admin/otp-') === 0) return await handleStudentAuth(request, env, pathname);
       if (pathname === '/bank' || pathname === '/bank/meta' || pathname === '/bank/chunk') return await handleBank(request, env, pathname);
       if (pathname.indexOf('/files/') === 0) return await handleFiles(request, env, pathname, ctx);
       if (pathname === '/readlog') return json(await handleReadLog(request, env));

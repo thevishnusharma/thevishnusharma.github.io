@@ -166,8 +166,19 @@ service cloud.firestore {
         : get(/databases/$(database)/documents/institutes/$(adminInstituteId())).data.active != false;
     }
 
+    // v330: Email OTP (admin). Owner ne kisi admin ke liye `admins/{email}.otpRequired = true` kiya ho to wo admin tabhi kuch kar sakta hai jab
+    // is login-session (token ka auth_time) ko Worker ne `otpAuth` claim me OTP-verified likha ho. Sirf password chori hone par bhi nayi login-session
+    // verified nahi hoti. Wahi `admins/{email}` doc jo adminDocActive() padhta hai (koi extra read nahi). Owner exempt (taaki use switch off karne ka raasta rahe).
+    function adminDocOtpRequired() {
+      return exists(/databases/$(database)/documents/admins/$(request.auth.token.email)) &&
+        get(/databases/$(database)/documents/admins/$(request.auth.token.email)).data.get('otpRequired', false) == true;
+    }
+    function adminOtpOk() {
+      return isOwner() || !adminDocOtpRequired() ||
+        (request.auth.token.get('otpAuth', []) is list && request.auth.token.auth_time in request.auth.token.get('otpAuth', []));
+    }
     function isAdmin() {
-      return isAdminEmailAllowed() && adminInstituteActive();
+      return isAdminEmailAllowed() && adminInstituteActive() && adminOtpOk();
     }
 
     // ── FIX (v133 — cross-institute admin isolation) ────────────────
@@ -1255,7 +1266,9 @@ service cloud.firestore {
       allow create: if isAdmin() && request.auth.token.email == email &&
         request.resource.data.instituteId.matches('^legacy_.*');
       allow update: if isAdmin() && request.auth.token.email == email &&
-        resource.data.instituteId == request.resource.data.instituteId;
+        resource.data.instituteId == request.resource.data.instituteId &&
+        // v330: admin apni OTP-zabardasti khud band nahi kar sakta (sirf Owner)
+        resource.data.get('otpRequired', false) == request.resource.data.get('otpRequired', false);
     }
 
     // ── OWNER PANEL: institute-removal OTP/confirm-link gate (v26) ──

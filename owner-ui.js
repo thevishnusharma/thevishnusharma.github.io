@@ -94,7 +94,9 @@
     ["recordsLockdown", "Results privacy", "Student ke result sirf wahi student / uske institute ka admin padh sake"],
     ["studentDataLockdown", "Student data lock", "Mistakes, OMR reports, admit card, PIN, DP sirf apne session se (doosre ke mobile se nahi)"],
     ["secretsLockdown", "Secrets Worker-only", "Password/PIN hash ab client se kabhi nahi — sirf Worker. ⚠️ serverAuth ON ke BAAD"],
-    ["profileLockdown", "Profile lock", "Student ka naam/mobile/photo sirf apna session/admin padh sake. ⚠️ serverAuth ON ke BAAD"]
+    ["profileLockdown", "Profile lock", "Student ka naam/mobile/photo sirf apna session/admin padh sake. ⚠️ serverAuth ON ke BAAD"],
+    ["studentOtp", "Student email OTP", "Naye device / pehle login / password reset par email code (device 30 din yaad). Email service Worker me set ho tabhi chalta hai"],
+    ["adminOtp", "Admin & Owner email OTP", "Har admin/owner login par email code. Email service Worker me set ho tabhi chalta hai"]
   ];
   window.ouiSecurity = function () {
     var db = ownerGetDb(), ref = db.collection("config").doc("privacy"), old = document.getElementById("oa-sec");
@@ -108,10 +110,34 @@
       var cur = d.exists ? d.data() : {}, serverAuth = !!(window.SNAP_CONFIG && window.SNAP_CONFIG.serverAuth), h = "";
       h += '<div style="font-size:.76rem;margin:6px 0 10px;color:' + (serverAuth ? "#166534" : "#b45309") + '">Worker login (serverAuth): <b>' + (serverAuth ? "ON ✅" : "OFF ⚠️ — password/PIN brute-force rok nahi, app-config.js me ON karein") + "</b></div>";
       SEC.forEach(function (s) {
-        h += '<label style="display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f1f5f9"><input type="checkbox" data-k="' + s[0] + '" ' + (cur[s[0]] !== false ? "checked" : "") + ' style="margin-top:3px;width:18px;height:18px"><span><b style="font-size:.84rem">' + s[1] + '</b><br><span style="font-size:.74rem;color:#64748b">' + s[2] + "</span></span></label>";
+        h += '<label style="display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f1f5f9"><input type="checkbox" data-k="' + s[0] + '" ' + (cur[s[0]] === undefined ? (s[3] !== false) : cur[s[0]] === true) ? "checked" : "" + ' style="margin-top:3px;width:18px;height:18px"><span><b style="font-size:.84rem">' + s[1] + '</b><br><span style="font-size:.74rem;color:#64748b">' + s[2] + "</span></span></label>";
       });
+      h += '<div id="oa-sec-otp" style="margin-top:12px;padding:10px;border:1px solid #e2e8f0;border-radius:12px;font-size:.78rem;color:#334155"><b>Admin OTP zabardasti (rules me)</b><br><span id="oa-sec-otp-st">Check ho raha hai…</span><div style="display:flex;gap:8px;margin-top:8px"><button type="button" id="oa-otp-on" style="flex:1;padding:9px;border:0;border-radius:10px;background:#0f766e;color:#fff;font-weight:700">Sabhi admins par lagu</button><button type="button" id="oa-otp-off" style="flex:1;padding:9px;border:0;border-radius:10px;background:#e2e8f0;font-weight:700">Hatayein</button></div><div style="color:#64748b;margin-top:6px">Lagu hone ke baad har admin ko ek baar logout/login karke email code daalna hoga; tab tak password se akela koi kaam nahi karega. Owner par ye zabardasti nahi (OFF karne ka raasta bana rehta hai).</div></div>';
       h += '<div style="display:flex;gap:8px;margin-top:14px"><button type="button" id="oa-sec-max" style="flex:1;padding:12px;border:0;border-radius:12px;background:#0f766e;color:#fff;font-weight:700">Max Security (safe 2)</button><button type="button" id="oa-sec-save" style="flex:1;padding:12px;border:0;border-radius:12px;background:#4f46e5;color:#fff;font-weight:700">Save</button></div><div style="font-size:.7rem;color:#64748b;margin-top:8px">Ab sab switch default ON hain. Kuch atke to yahin se wo switch OFF karke Save — turant purana behaviour.</div>';
       document.getElementById("oa-sec-b").innerHTML = h;
+      (function otpPanel() {
+        var st = document.getElementById("oa-sec-otp-st");
+        var admins = db.collection("admins");
+        function count() { return admins.get().then(function (q) { var n = 0, on = 0; q.forEach(function (d) { n++; if ((d.data() || {}).otpRequired === true) on++; }); return { n: n, on: on, q: q }; }); }
+        function paint() {
+          count().then(function (c) { st.textContent = "Abhi " + c.on + " / " + c.n + " admins par zabardasti lagu hai."; }, function () { st.textContent = "Padh nahi paaye."; });
+          try { var u = ownerGetAuth().currentUser; if (u && window.SnapAuth && SnapAuth.post) u.getIdToken().then(function (t) { return SnapAuth.post("/admin/otp-config", { idToken: t }); }).then(function (c) { st.textContent += c.required ? "  ✅ Email OTP chalu (Worker)" : "  ⚠️ Email OTP band: Worker me email service set nahi, ya switch OFF"; }, function () {}); } catch (e) {}
+        }
+        function setAll(v) {
+          if (v && !confirm("Sabhi admins par email OTP zabardasti lagu karein? Unhe ek baar logout/login karke code daalna hoga.")) return;
+          count().then(function (c) {
+            var docs = c.q.docs, i = 0;
+            (function next() {
+              if (i >= docs.length) { toast(v ? "Admin OTP zabardasti lagu" : "Admin OTP zabardasti hata"); paint(); return; }
+              var b = db.batch(); docs.slice(i, i + 400).forEach(function (d) { b.update(d.ref, { otpRequired: v }); }); i += 400;
+              b.commit().then(next, function (e) { toast("Nahi hua: " + (e && (e.code || e.message))); });
+            })();
+          });
+        }
+        document.getElementById("oa-otp-on").onclick = function () { setAll(true); };
+        document.getElementById("oa-otp-off").onclick = function () { setAll(false); };
+        paint();
+      })();
       var save = function () {
         var p = { updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
         w.querySelectorAll("input[data-k]").forEach(function (i) { p[i.getAttribute("data-k")] = i.checked; });
