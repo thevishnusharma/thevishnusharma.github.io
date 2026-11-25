@@ -1325,6 +1325,21 @@ service cloud.firestore {
       allow read, update, delete: if isOwner();
     }
 
+    // ── Owner customer system (Owner app > Customers) ─────────────
+    // Sirf Owner padh / likh sakta hai. Student / Admin / anonymous ko kuch nahi.
+    match /ownerCustomers/{id} {
+      allow read, delete: if isOwner();
+      allow create, update: if isOwner()
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
+        && request.resource.data.institute is string
+        && request.resource.data.institute.size() > 0 && request.resource.data.institute.size() <= 120
+        && request.resource.data.mobile is string
+        && request.resource.data.mobile.matches('^[6-9][0-9]{9}$')
+        && request.resource.data.get('card', '') is string
+        && request.resource.data.get('card', '').size() < 400000;
+    }
+
     // ── Website reviews (Owner app se approve / hide / pin / reply) ─
     // Naya review hamesha pending hota hai. Site par sirf approved dikhte hain.
     match /reviews/{id} {

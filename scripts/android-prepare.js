@@ -9,7 +9,10 @@ let m = fs.readFileSync(mf, 'utf8');
 const perms = ['android.permission.INTERNET', 'android.permission.ACCESS_NETWORK_STATE', 'android.permission.CAMERA', 'android.permission.RECORD_AUDIO', 'android.permission.POST_NOTIFICATIONS'];
 const feats = ['<uses-feature android:name="android.hardware.camera" android:required="false" />',
                '<uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />',
-               '<uses-feature android:name="android.hardware.microphone" android:required="false" />'];
+               '<uses-feature android:name="android.hardware.microphone" android:required="false" />',
+               '<uses-feature android:name="android.hardware.location.gps" android:required="false" />'];
+// Owner app (customer system): GPS location permission (APP_URL owner-app.html wale build me hi)
+if (/owner-app\.html/.test(process.env.APP_URL || '')) perms.push('android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION');
 let add = '';
 perms.forEach(p => { if (!m.includes(p)) add += `    <uses-permission android:name="${p}" />\n`; });
 feats.forEach(f => { if (!m.includes(f.slice(0, 60))) add += `    ${f}\n`; });
