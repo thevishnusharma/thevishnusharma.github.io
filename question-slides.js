@@ -645,7 +645,7 @@
   /* ---- EDITABLE PowerPoint (.pptx) ------------------------------------------
      Asli PowerPoint text-boxes: question / options ka size, rang, jagah PowerPoint me badal sakte hain.
      Background + logo "Slide Master" me hai => PowerPoint me "New Slide" dabane par naya slide
-     bilkul isi theme ke saath (logo + background + likhne ka box) khulta hai.
+     bilkul isi theme ke saath (logo + background) khulta hai.
      Math (LaTeX) ko PowerPoint ke text me Unicode me badla jaata hai (x², √, ÷ …). Jo math bahut jatil ho,
      us question ka stem photo ki tarah lagta hai (taaki galat na dikhe). Speaker Notes me answer hai. */
   var SUP = { "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹", "+": "⁺", "-": "⁻", "−": "⁻", "=": "⁼", "(": "⁽", ")": "⁾", "n": "ⁿ", "i": "ⁱ", "x": "ˣ", "y": "ʸ" };
@@ -810,7 +810,6 @@
 
     var objs = [];
     if (lg) objs.push({ image: { x: 0.3, y: 0.13, w: 0.52, h: 0.52, data: lg } });
-    objs.push({ placeholder: { options: { name: "body", type: "body", x: 0.45, y: 0.9, w: 9.1, h: 3.9, fontFace: FONT, fontSize: 26, bold: true, color: T, valign: "top", margin: 0.05 }, text: "यहाँ प्रश्न / हल लिखें" } });
     PX.defineSlideMaster({ title: "QSL_BG", background: { data: bg }, objects: objs });
 
     var host = mk("div"); host.style.cssText = "position:fixed;left:-20000px;top:0;width:" + W + "px;pointer-events:none;"; document.body.appendChild(host);
