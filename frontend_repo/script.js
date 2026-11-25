@@ -240,7 +240,7 @@ function renderCreateDraftsSection(){
   cnt&&(cnt.textContent=mine.length?`(${mine.length})`:"");
   list.innerHTML=mine.length?mine.map(([id,t])=>_draftCardHtml(id,t,false)).join(""):'<p class="muted-text">Koi draft nahi hai. Paper Generator me "Save to Drafts" dabane par draft yahan aa jayega.</p>';
   if(leg){
-    const old=all.filter(([,t])=>!t.instituteId);
+    const old=[]; /* security: bina-institute-tag drafts kisi aur institute ko kabhi na dikhayein */
     leg.innerHTML=old.length?`<details><summary style="cursor:pointer;font-size:.82rem;color:#92400e;font-weight:700;">⚠️ Purane drafts (institute tag nahi) — ${old.length}</summary><small style="display:block;margin:6px 0;color:#6b7280;">Ye drafts purane Paper Generator se bane the, isliye aapki list me nahi aate. Apna draft pehchaan kar "Mere institute me lo" dabayein.</small>${old.map(([id,t])=>_draftCardHtml(id,t,true)).join("")}</details>`:"";
   }
 }
