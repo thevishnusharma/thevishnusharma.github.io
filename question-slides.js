@@ -48,7 +48,7 @@
   }
 
   /* ---- settings (localStorage, kabhi throw nahi) ------------------------ */
-  var state = { theme: "navy", custom: "#0b3d91", image: "", answers: "none" };
+  var state = { theme: "navy", custom: "#0b3d91", image: "", answers: "none", blanks: 0, blankQ: true };
   function loadState() {
     try {
       var s = JSON.parse(localStorage.getItem(LS_KEY) || "null");
@@ -56,10 +56,12 @@
         if (s.theme) state.theme = s.theme;
         if (s.custom) state.custom = s.custom;
         if (s.answers) state.answers = s.answers;
+        if (typeof s.blanks === "number") state.blanks = Math.max(0, Math.min(5, s.blanks));
+        if (typeof s.blankQ === "boolean") state.blankQ = s.blankQ;
       }
     } catch (e) {}
   }
-  function saveState() { try { localStorage.setItem(LS_KEY, JSON.stringify({ theme: state.theme, custom: state.custom, answers: state.answers })); } catch (e) {} }
+  function saveState() { try { localStorage.setItem(LS_KEY, JSON.stringify({ theme: state.theme, custom: state.custom, answers: state.answers, blanks: state.blanks, blankQ: state.blankQ })); } catch (e) {} }
   function currentTheme() {
     if (state.theme === "image" && state.image) return imageTheme(state.image);
     if (state.theme === "custom") return customTheme(state.custom);
@@ -102,6 +104,29 @@
     try { var P = window.__PFW; inst = (P && P.instituteName && P.instituteName("The Vishnu Sharma")) || "The Vishnu Sharma"; } catch (e) { inst = "The Vishnu Sharma"; }
     return subj ? inst + "  •  " + subj : inst;
   }
+  // institute ka logo (branding.js ke SnapBrand se). Institute na ho to default Vishnu logo; institute ho par logo na ho to kuch nahi.
+  function getLogo() {
+    var wins = [window];
+    try { if (window.parent && window.parent !== window) wins.push(window.parent); } catch (e) {}
+    try { if (window.top && window.top !== window) wins.push(window.top); } catch (e) {}
+    for (var i = 0; i < wins.length; i++) {
+      try {
+        var sb = wins[i].SnapBrand;
+        if (sb && typeof sb.ident === "function") {
+          var d = sb.ident();
+          if (d && d.logo && /^data:image\//.test(d.logo)) return d.logo;
+          if (d && d.brand) return "";
+          return "vishnu-logo.png";
+        }
+      } catch (e) {}
+    }
+    try {
+      var last = localStorage.getItem("snap_brand_last"), b = last && JSON.parse(localStorage.getItem("snap_brand_" + last) || "null");
+      if (b && b.name) return /^data:image\//.test(b.logoDataUrl || "") ? b.logoDataUrl : "";
+    } catch (e) {}
+    return "vishnu-logo.png";
+  }
+  var logoUrl = "";
   var LET = ["A", "B", "C", "D", "E"];
   function optList(q) {
     var o = (q && q.opts) || [], out = [];
@@ -117,10 +142,11 @@
     ".qsl-slide{position:relative;box-sizing:border-box;width:" + W + "px;height:" + H + "px;overflow:hidden;font-family:" + FF + ";}",
     ".qsl-slide *{box-sizing:border-box;}",
     ".qsl-ov{position:absolute;inset:0;}",
-    ".qsl-top{position:absolute;left:56px;right:56px;top:22px;height:46px;display:flex;align-items:center;justify-content:space-between;font-size:22px;font-weight:600;}",
-    ".qsl-brand{opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:900px;}",
+    ".qsl-top{position:absolute;left:44px;right:56px;top:16px;height:58px;display:flex;align-items:center;justify-content:space-between;font-size:22px;font-weight:600;}",
+    ".qsl-logo{height:54px;width:54px;object-fit:contain;border-radius:12px;background:#fff;padding:4px;box-shadow:0 2px 8px rgba(0,0,0,.25);}",
+    ".qsl-qs{position:absolute;left:56px;right:56px;top:86px;font-size:26px;font-weight:600;line-height:1.35;opacity:.9;max-height:72px;overflow:hidden;padding-bottom:10px;border-bottom:2px dashed currentColor;}",
     ".qsl-no{font-weight:800;font-size:26px;padding:4px 18px;border-radius:999px;white-space:nowrap;}",
-    ".qsl-body{position:absolute;left:56px;right:56px;top:84px;bottom:62px;display:flex;flex-direction:column;overflow:hidden;}",
+    ".qsl-body{position:absolute;left:56px;right:56px;top:86px;bottom:62px;display:flex;flex-direction:column;overflow:hidden;}",
     ".qsl-stem{font-weight:700;line-height:1.38;word-wrap:break-word;overflow-wrap:break-word;}",
     ".qsl-qn{font-weight:800;margin-right:12px;}",
     ".qsl-opts{display:grid;grid-template-columns:1fr 1fr;gap:16px 22px;margin-top:26px;}",
@@ -141,19 +167,29 @@
   // o = { type:"q"|"a", reveal:bool }
   function slideEl(q, no, total, th, o) {
     o = o || {};
-    var isSub = q.qType === "subjective", isAns = o.type === "a";
+    var isSub = q.qType === "subjective", isAns = o.type === "a", isBlank = o.type === "b";
     var sl = mk("div", "qsl-slide");
     sl.style.background = th.bg; sl.style.color = th.text;
     if (th.overlay) sl.appendChild((function () { var d = mk("div", "qsl-ov"); d.style.background = th.overlay; return d; })());
 
     var top = mk("div", "qsl-top");
-    top.appendChild(mk("span", "qsl-brand", esc(brandText())));
-    var no_ = mk("span", "qsl-no", (isAns ? "✅ उत्तर · " : "प्रश्न ") + no + " / " + total);
-    no_.style.background = th.card; no_.style.border = "2px solid " + th.line; no_.style.color = isAns ? th.accent : th.text;
+    var lg = o.logo === undefined ? logoUrl : o.logo;
+    if (lg) { var li = mk("img", "qsl-logo"); li.src = lg; li.alt = ""; top.appendChild(li); } else { top.appendChild(mk("span", "")); }
+    var chipTxt = isBlank ? ("✍️ प्रश्न " + no + " · हल" + (o.parts > 1 ? " " + o.part + "/" + o.parts : "")) : ((isAns ? "✅ उत्तर · " : "प्रश्न ") + no + " / " + total);
+    var no_ = mk("span", "qsl-no", chipTxt);
+    no_.style.background = th.card; no_.style.border = "2px solid " + th.line; no_.style.color = (isAns || isBlank) ? th.accent : th.text;
     top.appendChild(no_); sl.appendChild(top);
 
+    if (isBlank) {
+      if (o.showQ) {
+        var qs_ = mk("div", "qsl-qs"); qs_.style.color = th.sub;
+        qs_.innerHTML = "<b style='color:" + th.accent + "'>" + no + ".</b> " + fmt(q.text);
+        sl.appendChild(qs_); mathify(qs_);
+      }
+      sl._fit = function () {}; return sl;
+    }
     var body = mk("div", "qsl-body"); sl.appendChild(body);
-    var box = mk("div"); box.style.margin = "auto 0"; body.appendChild(box);   // auto margin = safe centering (overflow neeche ki taraf)
+    var box = mk("div"); box.style.margin = "0"; body.appendChild(box);   // question UPAR se shuru (neeche solution likhne ki jagah bachti hai)
     var stem = mk("div", "qsl-stem"); stem.setAttribute("data-fs", isAns ? "34" : (isSub ? "50" : "44"));
     stem.innerHTML = '<span class="qsl-qn" style="color:' + th.accent + '">' + no + ".</span>" + fmt(q.text);
     box.appendChild(stem);
@@ -224,13 +260,24 @@
   }
 
   /* ---- slide sequence --------------------------------------------------- */
-  function sequence(qs, answersMode) {
+  function sequence(qs, answersMode, blanks) {
     var seq = [];
     qs.forEach(function (q, i) {
       seq.push({ q: q, no: i + 1, type: "q", reveal: answersMode === "inline" });
+      for (var b = 0; b < (blanks || 0); b++) seq.push({ q: q, no: i + 1, type: "b" });   // solution likhne ke khali slides
       if (answersMode === "after") seq.push({ q: q, no: i + 1, type: "a", reveal: true });
     });
     return seq;
+  }
+  // khali slide ka "hal 2/3" — us question ke kitne khali slides hain aur ye kaunsa
+  function partInfo(seq, i) {
+    var it = seq[i], part = 0, parts = 0;
+    for (var k = 0; k < seq.length; k++) if (seq[k].no === it.no && seq[k].type === "b") { parts++; if (k <= i) part++; }
+    return { part: part, parts: parts };
+  }
+  function slideOpts(seq, i, reveal) {
+    var it = seq[i], pi = it.type === "b" ? partInfo(seq, i) : {};
+    return { type: it.type, reveal: reveal, part: pi.part, parts: pi.parts, showQ: state.blankQ };
   }
 
   /* ---- fullscreen slideshow --------------------------------------------- */
@@ -239,7 +286,8 @@
     if (!qs.length) { alert("Pehle paper mein kam se kam ek question add karein."); return; }
     ensureCss();
     closeDialog();
-    var seq = sequence(qs, state.answers), idx = 0, revealed = {}, total = qs.length;
+    logoUrl = getLogo();
+    var seq = sequence(qs, state.answers, state.blanks), idx = 0, revealed = {}, total = qs.length;
     var themeIdx = Math.max(0, THEMES.map(function (t) { return t.id; }).indexOf(state.theme));
     var th = currentTheme();
 
@@ -252,7 +300,7 @@
 
     function btn(txt, title, fn, big) {
       var b = mk("button", "", txt); b.type = "button"; b.title = title;
-      b.style.cssText = "border:0;cursor:pointer;color:#fff;background:rgba(15,23,42,.82);border-radius:14px;min-width:" + (big ? 76 : 56) + "px;height:56px;font-size:" + (big ? 30 : 20) + "px;font-weight:700;padding:0 16px;font-family:system-ui,sans-serif;touch-action:manipulation;";
+      b.style.cssText = "border:0;cursor:pointer;color:#fff;background:rgba(15,23,42,.82);border-radius:14px;min-width:" + (big ? 76 : 56) + "px;height:56px;font-size:" + (big ? 30 : 20) + "px;font-weight:700;padding:0 16px;font-family:system-ui,sans-serif;touch-action:manipulation;white-space:nowrap;";
       b.addEventListener("click", function (e) { e.stopPropagation(); fn(); });
       return b;
     }
@@ -261,10 +309,11 @@
     var lbl = mk("div"); lbl.style.cssText = "color:#fff;background:rgba(15,23,42,.82);border-radius:14px;height:56px;min-width:96px;display:flex;align-items:center;justify-content:center;font:700 20px system-ui,sans-serif;padding:0 14px;";
     var bNext = btn("▶", "Agla (→ / Space)", function () { go(1); }, true);
     var bAns = btn("✅ Answer", "Answer dikhao / chhupao (A)", function () { toggleAns(); });
+    var bBlank = btn("➕ खाली", "Is ke baad ek khali slide jodein — solution likhne ke liye (N)", function () { addBlank(); });
     var bBg = btn("🎨", "Background badlein (B)", function () { cycleBg(); });
     var bFs = btn("⛶", "Fullscreen (F)", function () { toggleFs(); });
     var bX = btn("✕", "Band karein (Esc)", function () { close(); });
-    [bPrev, lbl, bNext, bAns, bBg, bFs, bX].forEach(function (b) { ctl.appendChild(b); });
+    [bPrev, lbl, bNext, bAns, bBlank, bBg, bFs, bX].forEach(function (b) { ctl.appendChild(b); });
     ov.appendChild(ctl);
     document.body.appendChild(ov);
 
@@ -273,18 +322,26 @@
       var it = seq[idx];
       var reveal = it.reveal || !!revealed[key(idx)];
       stage.innerHTML = "";
-      var el = buildSlide(it.q, it.no, total, th, { type: it.type, reveal: reveal });
+      var el = buildSlide(it.q, it.no, total, th, slideOpts(seq, idx, reveal));
       stage.appendChild(el);
       try { el._fit(); } catch (e) {}
       ov.style.background = th.bg;
       lbl.textContent = (idx + 1) + " / " + seq.length;
       bar.style.width = (((idx + 1) / seq.length) * 100) + "%";
       bPrev.style.opacity = idx === 0 ? ".35" : "1"; bNext.style.opacity = idx === seq.length - 1 ? ".35" : "1";
-      bAns.style.display = it.type === "a" ? "none" : "";
+      bAns.style.display = it.type === "q" ? "" : "none";
       bAns.textContent = reveal ? "🙈 Answer" : "✅ Answer";
     }
+    function addBlank() {
+      var it = seq[idx], at = idx;
+      while (at + 1 < seq.length && seq[at + 1].no === it.no && seq[at + 1].type === "b") at++;
+      if (it.type === "a") at = idx;
+      else if (it.type === "q") { at = idx; while (at + 1 < seq.length && seq[at + 1].no === it.no && seq[at + 1].type === "b") at++; }
+      seq.splice(at + 1, 0, { q: it.q, no: it.no, type: "b" });
+      idx = at + 1; render();
+    }
     function go(d) { var n = idx + d; if (n < 0 || n >= seq.length) return; idx = n; render(); }
-    function toggleAns() { if (seq[idx].type === "a") return; var k = key(idx); revealed[k] = !(revealed[k] || seq[idx].reveal); if (seq[idx].reveal) seq[idx].reveal = false; render(); }
+    function toggleAns() { if (seq[idx].type !== "q") return; var k = key(idx); revealed[k] = !(revealed[k] || seq[idx].reveal); if (seq[idx].reveal) seq[idx].reveal = false; render(); }
     function cycleBg() {
       themeIdx = (themeIdx + 1) % THEMES.length; th = THEMES[themeIdx]; render();
       toastMsg("🎨 Background: " + th.name);
@@ -309,6 +366,7 @@
       else if (k === "Escape") { close(); }
       else if (k === "a" || k === "A") { toggleAns(); }
       else if (k === "b" || k === "B") { cycleBg(); }
+      else if (k === "n" || k === "N") { addBlank(); }
       else if (k === "f" || k === "F") { toggleFs(); }
       showCtl();
     }
@@ -320,6 +378,7 @@
     ov.addEventListener("touchend", function (e) {
       if (sx === null) return;
       var t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy; sx = null;
+      if (seq[idx].type === "b") return;   // khali slide par ungli/pen se likhte waqt slide na badle
       if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) go(dx < 0 ? 1 : -1);
     }, { passive: true });
     ov.addEventListener("mousemove", showCtl);
@@ -353,12 +412,12 @@
   async function renderImages(seq, th, onProgress) {
     var host = mk("div"); host.style.cssText = "position:fixed;left:-20000px;top:0;width:" + W + "px;pointer-events:none;";
     document.body.appendChild(host);
-    var imgs = [];
+    var imgs = [], nQ = seq.filter(function (s) { return s.type === "q"; }).length;
     try {
       for (var i = 0; i < seq.length; i++) {
         var it = seq[i];
         var stage = mk("div"); stage.style.cssText = "position:absolute;left:0;top:0;";
-        var el = buildSlide(it.q, it.no, seq.filter(function (s) { return s.type === "q"; }).length, th, { type: it.type, reveal: it.reveal });
+        var el = buildSlide(it.q, it.no, nQ, th, slideOpts(seq, i, it.reveal));
         stage.appendChild(el); host.appendChild(stage);
         try { el._fit(); } catch (e) {}
         var cv = await window.html2canvas(el, { scale: 2, backgroundColor: null, useCORS: true, logging: false, width: W, height: H, windowWidth: W, windowHeight: H, scrollX: 0, scrollY: 0 });
@@ -423,7 +482,8 @@
     try {
       toastMsg("⏳ Slides ban rahi hain, thoda ruko...");
       await ensureLibs(kind === "pdf", kind === "pptx");
-      var seq = sequence(qs, state.answers), th = currentTheme();
+      logoUrl = getLogo();
+      var seq = sequence(qs, state.answers, state.blanks), th = currentTheme();
       var imgs = await renderImages(seq, th, function (d, t) { toastMsg("⏳ Slide " + d + "/" + t); });
       if (kind === "pdf") {
         var pdf = new window.jspdf.jsPDF({ orientation: "landscape", unit: "px", format: [W, H], compress: true, hotfixes: ["px_scaling"] });
@@ -450,6 +510,7 @@
     var qs = getQuestions();
     if (!qs.length) { alert("Pehle paper mein kam se kam ek question add karein."); return; }
     closeDialog();
+    logoUrl = getLogo();
     var nSub = qs.filter(function (q) { return q.qType === "subjective"; }).length, nMcq = qs.length - nSub;
 
     var ov = mk("div"); ov.id = "qslDlg";
@@ -471,6 +532,12 @@
         '<label><input type="radio" name="qslAns" value="after"> Har question ke baad alag "Answer" slide</label>' +
         '<label><input type="radio" name="qslAns" value="inline"> Question wale slide par hi sahi answer highlight</label>' +
       '</div>' +
+      '<div style="font-weight:700;font-size:14px;margin:14px 0 6px;">✍️ Solution likhne ke liye khali slides</div>' +
+      '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;">' +
+        '<label>Har question ke baad <select id="qslBlanks" style="padding:4px 6px;font-size:13px;"><option value="0">0 (nahi)</option><option value="1">1 khali slide</option><option value="2">2 khali slides</option><option value="3">3 khali slides</option><option value="4">4 khali slides</option></select></label>' +
+        '<label><input type="checkbox" id="qslBlankQ"> khali slide par question chhota dikhayein</label>' +
+      '</div>' +
+      '<div style="font-size:12px;color:#666;margin-top:4px;">Slideshow me kabhi bhi "➕ खाली" (ya N key) se ek aur khali slide jod sakte hain.</div>' +
       '<div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:14px;">' +
         '<button data-act="show" style="padding:13px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:700;font-size:15px;">▶ Slideshow chalayein (fullscreen, smart board ke liye)</button>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
@@ -479,7 +546,7 @@
         '</div>' +
         '<button data-act="close" style="padding:10px;border:0;border-radius:10px;background:#eee;font-weight:600;">Band karein</button>' +
       '</div>' +
-      '<div style="font-size:12px;color:#666;margin-top:10px;line-height:1.5;">Slideshow keys: → / Space = agla, ← = pichla, A = answer, B = background badlo, F = fullscreen, Esc = band. Touch board par swipe ya niche ke bade button.</div>';
+      '<div style="font-size:12px;color:#666;margin-top:10px;line-height:1.5;">Slideshow keys: → / Space = agla, ← = pichla, A = answer, N = khali slide, B = background badlo, F = fullscreen, Esc = band. Touch board par swipe ya niche ke bade button.</div>';
     ov.appendChild(bx); document.body.appendChild(ov);
 
     var grid = bx.querySelector("#qslThemes");
@@ -527,6 +594,10 @@
       r.checked = r.value === state.answers;
       r.onchange = function () { if (r.checked) { state.answers = r.value; saveState(); } };
     });
+    var bs = bx.querySelector("#qslBlanks"), bq = bx.querySelector("#qslBlankQ");
+    bs.value = String(state.blanks); bq.checked = !!state.blankQ;
+    bs.onchange = function () { state.blanks = parseInt(bs.value, 10) || 0; saveState(); };
+    bq.onchange = function () { state.blankQ = bq.checked; saveState(); };
     bx.addEventListener("click", function (e) {
       var a = e.target && e.target.getAttribute && e.target.getAttribute("data-act"); if (!a) return;
       if (a === "close") closeDialog();
