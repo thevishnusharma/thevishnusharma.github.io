@@ -33,7 +33,7 @@ global.fetch = async (url, init = {}) => {
   const p = decodeURIComponent(m[1]);
   if ((!init.method || init.method === 'GET') && !store.has(p) && Array.from(store.keys()).some((k) => k.startsWith(p + '/'))) {   // collection LIST (showMissing: parent doc na ho tab bhi child ids)
     const ids = [...new Set(Array.from(store.keys()).filter((k) => k.startsWith(p + '/')).map((k) => k.slice(p.length + 1).split('/')[0]))];
-    return new Response(JSON.stringify({ documents: ids.map((id) => ({ name: 'projects/demo-test/databases/(default)/documents/' + p + '/' + id })) }));
+    return new Response(JSON.stringify({ documents: ids.map((id) => ({ name: 'projects/demo-test/databases/(default)/documents/' + p + '/' + id, ...(store.has(p + '/' + id) ? { fields: enc(store.get(p + '/' + id)) } : {}) })) }));
   }
   if (!init.method || init.method === 'GET') { const d = store.get(p); return d ? new Response(JSON.stringify({ fields: enc(d) })) : new Response('{}', { status: 404 }); }
   if (init.method === 'PATCH') {
@@ -108,9 +108,9 @@ global.fetch = async (url, init = {}) => {
     sdoc('institutes/inst_A/batches/batch_1', { enrolledCount: 1 });
     sdoc('institutes/inst_A/batches/batch_1/members/9444444444', { mobile: '9444444444', instituteId: 'inst_A' });
     sdoc('institutes/inst_B/batches/batch_1/members/9444444444', { mobile: '9444444444', instituteId: 'inst_B' });
-    const bad = await call('/student/delete-account', { mobile: '9444444444', confirmMobile: '9444444444', password: 'wrong-pass' });
+    const bad = await call('/student/delete-account', { mobile: '9444444444', confirmMobile: '9444444444', password: 'wrong-pass', instituteId: 'inst_A' });
     assert.strictEqual(bad.status, 401); assert.ok(store.has('students/9444444444'));
-    const r = await call('/student/delete-account', { mobile: '9444444444', confirmMobile: '9444444444', password: 'Delete#77' });
+    const r = await call('/student/delete-account', { mobile: '9444444444', confirmMobile: '9444444444', password: 'Delete#77', instituteId: 'inst_A' });
     assert.strictEqual(r.status, 200, await r.clone().text()); const deleted = await r.json(); assert.deepStrictEqual(deleted.removed, { records: 1, scanReports: 1, sessions: 1, batchMemberships: 1 });
     assert.ok(!store.has('students/9444444444')); assert.ok(!store.has('studentSecrets/9444444444'));
     assert.ok(!store.has('studentRecords/result_1')); assert.ok(!store.has('studentScanReports/report_1'));
@@ -118,14 +118,14 @@ global.fetch = async (url, init = {}) => {
     assert.ok(!store.has('institutes/inst_A/batches/batch_1/members/9444444444'));
     assert.ok(store.has('institutes/inst_B/batches/batch_1/members/9444444444'), 'foreign institute membership must be preserved');
     assert.strictEqual(store.get('institutes/inst_A/batches/batch_1').enrolledCount, 0);
-    const unknown = await call('/student/delete-account', { mobile: '9555555555', confirmMobile: '9555555555', password: 'wrong-pass' });
+    const unknown = await call('/student/delete-account', { mobile: '9555555555', confirmMobile: '9555555555', password: 'wrong-pass', instituteId: 'inst_A' });
     assert.strictEqual(unknown.status, 401); assert.strictEqual((await unknown.json()).error, 'Mobile number ya password galat hai.');
   });
   await t('large deletion is resumable and does not remove the account until linked records are drained', async () => {
     reset(); const mobile = '9666666666'; sdoc('students/' + mobile, { name: 'G', instituteId: 'inst_A' });
     await call('/student/register', { mobile, password: 'Delete#88', pin: '2468' });
     for (let i = 0; i < 1501; i++) sdoc('studentRecords/large_' + i, { mobile, score: i });
-    const body = { mobile, confirmMobile: mobile, password: 'Delete#88' };
+    const body = { mobile, confirmMobile: mobile, password: 'Delete#88', instituteId: 'inst_A' };
     const first = await call('/student/delete-account', body); assert.strictEqual(first.status, 503); assert.ok(store.has('students/' + mobile));
     assert.strictEqual(Array.from(store.keys()).filter((p) => p.startsWith('studentRecords/')).length, 1);
     const second = await call('/student/delete-account', body); assert.strictEqual(second.status, 200, await second.clone().text());
@@ -193,6 +193,33 @@ global.fetch = async (url, init = {}) => {
     const r = await call('/student/delete-account', { mobile: ph, confirmMobile: ph, password: 'PassB#22', instituteId: 'inst_B' }); assert.strictEqual(r.status, 200, await r.clone().text());
     assert.ok(!store.has('students/inst_B__' + ph) && !store.has('studentSecrets/inst_B__' + ph) && !store.has('studentRecords/rB') && !store.has('institutes/inst_B/batches/b1/members/inst_B__' + ph));
     assert.ok(store.has('students/' + ph) && store.has('studentSecrets/' + ph) && store.has('studentRecords/rA') && store.has('institutes/inst_A/batches/b1/members/' + ph), 'institute A must be untouched');
+  });
+  await t('v329 STRICT delete: institute is mandatory, an account of ANOTHER institute is never deleted, even with the right password', async () => {
+    reset(); const ph = '9888888888';
+    sdoc('students/inst_A__' + ph, { name: 'A', instituteId: 'inst_A' }); sdoc('students/inst_B__' + ph, { name: 'B', instituteId: 'inst_B' });
+    await call('/student/register', { mobile: 'inst_A__' + ph, password: 'Same#pass1', pin: '1111', instituteId: 'inst_A' });
+    await call('/student/register', { mobile: 'inst_B__' + ph, password: 'Same#pass1', pin: '2222', instituteId: 'inst_B' });     // same number + same password, 2 institutes
+    const noInst = await call('/student/delete-account', { mobile: ph, confirmMobile: ph, password: 'Same#pass1' }); assert.strictEqual(noInst.status, 400);
+    assert.ok(store.has('students/inst_A__' + ph) && store.has('students/inst_B__' + ph), 'nothing deleted without an institute');
+    const wrongKey = await call('/student/delete-account', { mobile: 'inst_A__' + ph, confirmMobile: 'inst_A__' + ph, password: 'Same#pass1', instituteId: 'inst_B' }); assert.strictEqual(wrongKey.status, 400);
+    assert.ok(store.has('students/inst_A__' + ph) && store.has('students/inst_B__' + ph));
+    const ok = await call('/student/delete-account', { mobile: ph, confirmMobile: ph, password: 'Same#pass1', instituteId: 'inst_B' }); assert.strictEqual(ok.status, 200, await ok.clone().text());
+    assert.ok(!store.has('students/inst_B__' + ph) && !store.has('studentSecrets/inst_B__' + ph), 'B deleted');
+    assert.ok(store.has('students/inst_A__' + ph) && store.has('studentSecrets/inst_A__' + ph), 'A untouched');
+  });
+  await t('v329 STRICT delete: a legacy (plain-key) account of institute A cannot be deleted by choosing institute B', async () => {
+    reset(); const ph = '9899999999';
+    sdoc('students/' + ph, { name: 'A', instituteId: 'inst_A' }); sdoc('studentSecrets/' + ph, { hash: sha('passA#11') });
+    const r = await call('/student/delete-account', { mobile: ph, confirmMobile: ph, password: 'passA#11', instituteId: 'inst_B' }); assert.strictEqual(r.status, 401);
+    assert.ok(store.has('students/' + ph) && store.has('studentSecrets/' + ph), 'legacy A account must survive');
+    const r2 = await call('/student/delete-account', { mobile: ph, confirmMobile: ph, password: 'passA#11', instituteId: 'inst_A' }); assert.strictEqual(r2.status, 200, await r2.clone().text());
+    assert.ok(!store.has('students/' + ph));
+  });
+  await t('v329: /student/institutes lists only active, non-demo institutes with id + name (nothing else)', async () => {
+    reset(); sdoc('institutes/inst_A', { name: 'Alpha Coaching', active: true, secretField: 'x' }); sdoc('institutes/inst_B', { name: 'Beta', active: false }); sdoc('institutes/inst_D', { name: 'Demo', isDemo: true }); sdoc('institutes/inst_C', { name: 'Gamma' });
+    const r = await call('/student/institutes', {}); const j = await r.json(); assert.strictEqual(r.status, 200);
+    assert.deepStrictEqual(j.institutes.map((i) => i.id).sort(), ['inst_A', 'inst_C']);
+    assert.ok(j.institutes.every((i) => Object.keys(i).sort().join() === 'id,name'), 'only id + name');
   });
   await t('multi-institute: malformed keys never become odd document paths (they collapse to the plain 10-digit mobile, as before)', async () => {
     reset();

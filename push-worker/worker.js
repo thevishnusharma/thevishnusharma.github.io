@@ -1538,7 +1538,14 @@ async function authDeleteAccount(request, env, body) {
   let mobile = mobileOf(body.mobile);
   if (!mobile || body.confirmMobile !== mobile) throw new HttpErr(400, 'Delete confirm karne ke liye sahi 10-digit mobile number dobara likhein.');
   const sa = JSON.parse(env.SERVICE_ACCOUNT_JSON), projectId = env.PROJECT_ID || sa.project_id;
-  if (/^\d{10}$/.test(mobile) && instOf(body.instituteId)) mobile = await studentKeyFor(env, instOf(body.instituteId), mobile);   // v327: multi-institute — us institute wali identity
+  // v329 STRICT: khud ka account delete (password se) SIRF saaf bataye gaye institute ka. Koi andaza/yaad rakha hua institute nahi:
+  // institute na ho -> 400; account us institute ka na ho -> 401 (kisi aur institute ka account kabhi nahi hatega).
+  const delInst = instOf(body.instituteId);
+  if (!body.idToken) {
+    if (!delInst) throw new HttpErr(400, 'Pehle institute chunein — kaun se institute ka account delete karna hai.');
+    if (KEY_RE.test(mobile)) { if (!mobile.startsWith(delInst + '__')) throw new HttpErr(400, 'Ye account is institute ka nahi hai.'); }
+    else mobile = await studentKeyFor(env, delInst, mobile);
+  } else if (/^\d{10}$/.test(mobile) && delInst) mobile = await studentKeyFor(env, delInst, mobile);
   let adminEmail = '', isOwner = false, admin = null, fails = null, rateMobileKey = '';
   if (body.idToken) {
     const u = await verifyIdToken(body.idToken, projectId); adminEmail = String(u.email || '').toLowerCase();
@@ -1558,6 +1565,7 @@ async function authDeleteAccount(request, env, body) {
     throw new HttpErr(404, 'Student account nahi mila.');
   }
   const instituteId = sFld(st, 'instituteId');
+  if (!body.idToken && instituteId && instituteId !== delInst) { await rlFail(env, fails); throw new HttpErr(401, GENERIC_BAD); }   // v329: account kisi aur institute ka -> kuch nahi hatega
   if (body.idToken && !isOwner && (!instituteId || sFld(admin, 'instituteId') !== instituteId)) throw new HttpErr(403, 'Aap sirf apne institute ke student ko delete kar sakte hain.');
   if (!body.idToken) {
     const password = body.password;
@@ -1570,6 +1578,25 @@ async function authDeleteAccount(request, env, body) {
   }
   const removed = await deleteStudentData(env, mobile, instituteId);
   return { ok: true, deleted: true, removed };
+}
+// v329: delete page ke liye institutes ki list (sirf id + naam; active, demo nahi) — registration dropdown me ye pehle se public hai
+async function authInstitutes(request, env) {
+  const ip = request.headers.get('CF-Connecting-IP') || '0', k = 'rl:inst:ip:' + ip;
+  await rlCheck(env, [[k, 60]]); await rlFail(env, [[k, 60, 3600]]);
+  const list = []; let pageToken = '';
+  for (let page = 0; page < 5; page++) {
+    const r = await aiCallRest(env, 'institutes?pageSize=300&mask.fieldPaths=name&mask.fieldPaths=active&mask.fieldPaths=isDemo' + (pageToken ? '&pageToken=' + encodeURIComponent(pageToken) : ''));
+    if (!r.ok) throw new HttpErr(502, 'Institutes list nahi mili (' + r.status + ')');
+    const d = await r.json();
+    (d.documents || []).forEach((x) => {
+      const f = x.fields || {}, id = String(fsDocPath(x) || '').split('/').pop();
+      if (!id || (f.active && f.active.booleanValue === false) || (f.isDemo && f.isDemo.booleanValue === true)) return;
+      list.push({ id, name: (f.name && f.name.stringValue) || id });
+    });
+    pageToken = d.nextPageToken || ''; if (!pageToken) break;
+  }
+  list.sort((a, b) => a.name.localeCompare(b.name));
+  return { ok: true, institutes: list };
 }
 async function handleStudentAuth(request, env, pathname) {
   let origin = '';
@@ -1586,6 +1613,7 @@ async function handleStudentAuth(request, env, pathname) {
       : pathname === '/student/reset-with-pin' ? await authResetWithPin(request, env, body)
       : pathname === '/student/admin-reset' ? await authAdminReset(request, env, body)
       : pathname === '/student/delete-account' ? await authDeleteAccount(request, env, body)
+      : pathname === '/student/institutes' ? await authInstitutes(request, env)
       : (() => { throw new HttpErr(404, 'Unknown student endpoint'); })();
     return out(r);
   } catch (e) { return out({ ok: false, error: e.message || String(e), ...(e.retryAfter ? { retryAfter: e.retryAfter } : {}) }, e.status || 500); }

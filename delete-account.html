@@ -14,8 +14,9 @@
   <h1>Delete my account</h1>
   <p class="muted">Last updated: 24 November 2026</p>
   <p>This permanently deletes your account: profile, results, scan reports, mistakes, sessions and batch records. Copies already exported by an institute or held in provider backups may remain for a short time. See the <a href="/privacy.html">Privacy Policy</a>.</p>
-  <p class="notice"><strong>Deletion cannot be undone.</strong> Enter your registered mobile number and password to confirm it is you. Never send your password to anyone. If you are in more than one institute, open this page from that institute's app or link so the right account is deleted. If you cannot sign in, ask your institute admin.</p>
+  <p class="notice"><strong>Deletion cannot be undone.</strong> Enter your registered mobile number and password to confirm it is you. Never send your password to anyone. Choose the institute whose account you want to delete — only that institute's account is deleted. If you cannot sign in, ask your institute admin.</p>
   <form id="delete-form" autocomplete="off">
+    <label for="institute">Institute</label><select id="institute" name="institute" required><option value="">Loading institutes…</option></select>
     <label for="mobile">Registered 10-digit mobile number</label><input id="mobile" name="mobile" type="tel" inputmode="numeric" autocomplete="off" maxlength="10" required>
     <label for="confirm-mobile">Type the same mobile number again</label><input id="confirm-mobile" name="confirm-mobile" type="tel" inputmode="numeric" autocomplete="off" maxlength="10" required>
     <label for="password">Account password</label><input id="password" name="password" type="password" autocomplete="new-password" required>
@@ -26,20 +27,32 @@
 </article></main>
 <script src="/app-config.js"></script><script src="/server-auth.js"></script>
 <script>
+/* v329: institute HAMESHA saaf chuna jaata hai (link/app se tay ya dropdown se). Koi yaad rakha hua/andaza wala institute nahi. */
+var instSel = document.getElementById("institute"), names = {}, locked = "";
+try { var q = new URLSearchParams(location.search).get("inst") || (window.SNAP_CONFIG && window.SNAP_CONFIG.instituteId) || ""; if (/^[A-Za-z0-9_-]{1,64}$/.test(q)) locked = q; } catch (e) {}
+(window.SnapAuth ? window.SnapAuth.institutes() : Promise.reject(new Error("x"))).then(function (list) {
+  list.forEach(function (i) { names[i.id] = i.name; });
+  instSel.innerHTML = '<option value="">— Select institute —</option>' + list.map(function (i) { return '<option value="' + String(i.id).replace(/[&<>"']/g, "") + '">' + String(i.name).replace(/[&<>"']/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }) + "</option>"; }).join("");
+  if (locked) { if (!names[locked]) { names[locked] = locked; instSel.insertAdjacentHTML("beforeend", '<option value="' + locked + '">' + locked + "</option>"); } instSel.value = locked; instSel.disabled = true; }
+}).catch(function () {
+  instSel.innerHTML = '<option value="">Could not load institutes — refresh and try again</option>';
+  if (locked) { names[locked] = locked; instSel.innerHTML = '<option value="' + locked + '">' + locked + "</option>"; instSel.value = locked; instSel.disabled = true; }
+});
 document.getElementById("delete-form").addEventListener("submit", async function (event) {
   event.preventDefault();
   var mobile = document.getElementById("mobile").value.replace(/\D/g, "").slice(-10);
   var typed = document.getElementById("confirm-mobile").value.replace(/\D/g, "").slice(-10);
-  var password = document.getElementById("password").value;
+  var password = document.getElementById("password").value, inst = instSel.value;
   var status = document.getElementById("status"), button = document.getElementById("submit");
+  if (!inst) { status.textContent = "Please select the institute whose account you want to delete."; return; }
   if (!/^\d{10}$/.test(mobile) || typed !== mobile || !password) { status.textContent = "Please re-check your mobile number and password."; return; }
-  if (!window.confirm("Account aur linked data permanently delete hoga. Ye undo nahi ho sakta. Kya aap continue karna chahte hain?")) return;
+  var iname = names[inst] || inst;
+  if (!window.confirm("Sirf \"" + iname + "\" institute ka account aur linked data permanently delete hoga. Ye undo nahi ho sakta. Kya aap continue karna chahte hain?")) return;
   button.disabled = true; button.textContent = "Deletion request process ho rahi hai…"; status.textContent = "Ownership verify ho rahi hai. Is page ko band na karein.";
   try {
-    var inst = ""; try { var q = new URLSearchParams(location.search).get("inst") || localStorage.getItem("snap_last_inst") || ""; if (/^[A-Za-z0-9_-]{1,64}$/.test(q) && window.SNAP_CONFIG && window.SNAP_CONFIG.multiInstitute === true) inst = q; } catch (e) {}
     await window.SnapAuth.deleteMyAccount(mobile, typed, password, inst);
     document.getElementById("delete-form").hidden = true;
-    status.textContent = "Account aur linked app data delete ho gaya hai.";
+    status.textContent = "Done: your account in \"" + iname + "\" and its linked data have been deleted.";
   } catch (error) {
     status.textContent = "Delete request complete nahi hui: " + (error && error.message || "Connection error") + ". Aap details check karke dobara try kar sakte hain.";
     button.disabled = false; button.textContent = "Permanently delete account and data";

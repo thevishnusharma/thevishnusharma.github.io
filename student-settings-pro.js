@@ -247,12 +247,15 @@
     ev.preventDefault();
     var s = typeof window.getStudentSession === "function" ? window.getStudentSession() : null;
     var mobile = String(s && s.mobile || ""), typed = String($("ssp-delete-confirm") && $("ssp-delete-confirm").value || "").replace(/\D/g, ""), password = String($("ssp-delete-password") && $("ssp-delete-password").value || "");
-    if (!/^\d{10}$/.test(mobile) || typed !== mobile || !password) { toast("Please re-check your mobile number and password."); return; }
+    var phone = window.SnapKey ? SnapKey.phone(mobile) : mobile, inst = String(s && s.instituteId || ""), appInst = String(window.SNAP_CONFIG && SNAP_CONFIG.instituteId || "");
+    if (!/^\d{10}$/.test(phone) || typed !== phone || !password) { toast("Please re-check your mobile number and password."); return; }
+    /* v329: institute ka apna app hai (APK) to sirf usi institute ka account is app se delete hoga */
+    if (appInst && inst && appInst !== inst) { toast("Ye account is app ke institute ka nahi hai — delete nahi hoga."); return; }
     if (!confirm("Your account and linked data will be permanently deleted. This cannot be undone. Do you want to continue?")) return;
     var b = f.querySelector('button[type="submit"]'); if (b) { b.disabled = true; b.textContent = "⏳ Deleting account and data..."; }
     Promise.resolve().then(function () {
       if (!window.SnapAuth || !SnapAuth.deleteMyAccount) throw new Error("Secure deletion service failed to load.");
-      return SnapAuth.deleteMyAccount(mobile, typed, password);
+      return SnapAuth.deleteMyAccount(mobile, phone, password, inst || appInst);
     }).then(function () {
       try {
         var saved = JSON.parse(localStorage.getItem("savya_records") || "[]");
