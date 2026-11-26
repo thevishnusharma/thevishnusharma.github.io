@@ -75,16 +75,21 @@
 
   /* ---------- v324: Drive email verify (Owner, ek click) ----------
      Email likho -> Google popup (email pehle se bhara) -> wahi account chunte hi verified. Us institute ka data sirf usi Google Drive me jayega. */
+  /* v342: Owner ab admin ka Gmail/password ya Google login KIYE BINA ek click me Drive email "approve" karta hai.
+     Sirf institutes/{id}.driveVerifiedEmail likha jaata hai (sirf Owner likh sakta hai, rules me). Asli suraksha admin ke connect par hoti hai:
+     admin sirf wahi Google account jod sakta hai (drive-upload.js connect/acctGuard + firestore rules driveEmail == driveVerifiedEmail). */
   window.ouiDriveVerify = function (id) {
-    var a = _ownerInstitutesCache[id] || {}, sd = window.SnapDrive, db = ownerGetDb();
-    if (!sd || !sd.verifyEmail) { toast("Drive module load ho raha hai — 2 second baad dobara dabayein"); return; }
+    var a = _ownerInstitutesCache[id] || {}, db = ownerGetDb(), FV = firebase.firestore.FieldValue;
     var cur = String(a.driveVerifiedEmail || "");
-    var v = prompt("Is institute ke Google Drive ka email likhein (verify karne par data sirf usi Drive me save hoga).\n" + (cur ? "Abhi verified: " + cur + "\nHatane ke liye khaali chhodkar OK dabayein." : "Google popup me isi email se login karna hoga."), cur || a.driveEmail || "");
+    var v = prompt("Is institute ke admin ka Google/Gmail likhein. Sirf wahi account apna Drive jod payega (aapko unka password/login nahi chahiye).\n" + (cur ? "Abhi approved: " + cur + "\nHatane ke liye khaali chhodkar OK dabayein." : ""), cur || a.driveEmail || "");
     if (v === null) return;
-    v = v.trim();
-    if (!v) { if (cur && confirm("Verified Drive email hata dein? Phir admin koi bhi Google account jod payega.")) sd.clearVerified(id, db).then(function () { toast("Verified email hata diya"); }, function (e) { toast("Nahi hua: " + (e && (e.code || e.message))); }); return; }
-    toast("Google popup me " + v + " se login karein…");
-    sd.verifyEmail(id, v, db).then(function (r) { toast("✅ Verified: " + r.email); }, function (e) { alert("Verify nahi hua: " + (e && e.message || e)); });
+    v = v.trim().toLowerCase();
+    var upd = function (patch, ok) { db.collection("institutes").doc(id).update(patch).then(function () { toast(ok); }, function (e) { alert("Nahi hua: " + (e && (e.code || e.message) || e)); }); };
+    if (!v) { if (cur && confirm("Approved Drive email hata dein? Phir admin koi bhi Google account jod payega.")) upd({ driveVerifiedEmail: "", driveVerifiedAt: FV.delete() }, "Approved email hata diya"); return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v) || v.length > 100) { toast("Sahi Gmail/Google email likhein"); return; }
+    var patch = { driveVerifiedEmail: v, driveVerifiedAt: FV.serverTimestamp() };
+    if (a.driveConnected === true && String(a.driveEmail || "").toLowerCase() !== v) { patch.driveConnected = false; patch.driveEmail = ""; }
+    upd(patch, "✅ Approved: " + v + " — ab admin isi account se Drive jodega");
   };
 
 
