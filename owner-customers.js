@@ -81,11 +81,15 @@ $('occ-add').addEventListener('click',function(){openForm(null)});
 $('occ-q').addEventListener('input',function(){query=this.value.trim().toLowerCase();renderList()});
 
 /* ---------- data ---------- */
+function who(){try{var u=ownerGetAuth().currentUser;return u?(u.isAnonymous?'anonymous (owner login drop ho gaya)':u.email):'koi login nahi'}catch(e){return '?'}}
+function fetchAll(){
+ var q=function(){return db().collection(COL).orderBy('createdAt','desc').limit(500).get()};
+ return q().catch(function(e){if(e&&e.code==='permission-denied'){var a=ownerGetAuth();if(a&&a.currentUser)return a.currentUser.getIdToken(true).then(q)}throw e})}
 function load(){
  var L=$('occ-list');if(!all.length)L.textContent='Loading...';
- db().collection(COL).orderBy('createdAt','desc').limit(500).get().then(function(s){
+ fetchAll().then(function(s){
   all=[];s.forEach(function(d){all.push(Object.assign({id:d.id},d.data()))});renderList();updateHere()
- }).catch(function(e){L.textContent=(e&&e.code==='permission-denied')?'Customers load nahi hue: Firestore rules mein ownerCustomers ka naya rule abhi publish nahi hua. Firebase Console > Firestore > Rules mein latest firestore.rules publish karein, phir yahan Refresh karein.':'Load nahi hua: '+(e.message||e);L.style.cssText='padding:4px 18px 14px;font-size:.8rem;color:#b91c1c;line-height:1.5'})}
+ }).catch(function(e){L.textContent=(e&&e.code==='permission-denied')?'Permission nahi mili. Is waqt login: '+who()+'. Agar ye Owner email (thevishnusharmaapp@gmail.com) nahi hai to Settings se Logout karke Owner email se dobara login karein. Agar sahi hai to Firestore rules (ownerCustomers) ya Firebase project check karein.':'Load nahi hua: '+(e.message||e);L.style.cssText='padding:4px 18px 14px;font-size:.8rem;color:#b91c1c;line-height:1.5'})}
 function byId(id){for(var i=0;i<all.length;i++)if(all[i].id===id)return all[i]}
 function isDue(c){return c.followUp&&c.followUp<=today()&&c.status!=='converted'}
 function updateHere(){
@@ -229,9 +233,9 @@ function openForm(c){
   var ref=db().collection(COL),p;
   if(edit)p=ref.doc(c.id).update(data);
   else{data.createdAt=firebase.firestore.FieldValue.serverTimestamp();data.visits=[{type:'visit',date:today(),note:'Pehli visit, location save ki',at:Date.now()}];p=ref.add(data)}
-  p.then(function(r){var id=edit?c.id:r.id;pg.close();return load2(id)}).catch(function(e){sv.disabled=false;sv.textContent='Customer Save Karein';er.textContent='Save nahi hua: '+(e.message||e)})}}
+  p.then(function(r){var id=edit?c.id:r.id;pg.close();return load2(id)}).catch(function(e){sv.disabled=false;sv.textContent='Customer Save Karein';er.textContent='Save nahi hua: '+(e.message||e)+' (login: '+who()+')'})}}
 function load2(openId){
- return db().collection(COL).orderBy('createdAt','desc').limit(500).get().then(function(s){all=[];s.forEach(function(d){all.push(Object.assign({id:d.id},d.data()))});renderList();if(openId&&byId(openId))openDetail(openId)})}
+ return fetchAll().then(function(s){all=[];s.forEach(function(d){all.push(Object.assign({id:d.id},d.data()))});renderList();if(openId&&byId(openId))openDetail(openId)})}
 
 /* ---------- details ---------- */
 function openDetail(id){
