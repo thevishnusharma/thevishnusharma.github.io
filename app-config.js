@@ -25,7 +25,7 @@ window.SNAP_CONFIG = {
   version: "1.4.120",
   workerUrl: "https://vishnupush.thevishnusharmaapp.workers.dev",   // Cloudflare Worker (bank + push + owner alerts)
   ownFiles: false,                                                    // DEPRECATED (v216): Cloudflare R2 "SnapFiles" band hai aur rahega — file upload ab Google Drive se. Code abhi rakha hai, aage hatega.
-  googleClientId: "1009250922801-16aubac9rbmnlvpru734phg5c3e8c4rn.apps.googleusercontent.com",                                                 // <-- yahan Google OAuth Web Client ID daalein (DRIVE_SETUP_HINDI.md dekhein). Khaali = Drive upload band
+  googleClientId: "664674204531-7in3b6378nludpsjoomt429ql22hl3ms.apps.googleusercontent.com",                                                 // <-- yahan Google OAuth Web Client ID daalein (DRIVE_SETUP_HINDI.md dekhein). Khaali = Drive upload band
   branding2: true,                                                    // v221: gehri branding — splash, login card, result sheet, print header, "Powered by". false = purana look (kill-switch)
   demo: true,                                                         // v220: Owner Panel "Demo Institute" (seed/reset). false = buttons chhup jate hain (kill-switch)
   onboarding: true,                                                   // v219: Owner Panel "Naya Institute" wizard + Drive status/banner. false = purana single form (kill-switch)
