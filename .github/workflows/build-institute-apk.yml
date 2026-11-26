@@ -17,7 +17,7 @@ on:
         default: ""
         type: string
       live_mode:
-        description: "true = website update apne-aap app me aayega"
+        description: "(ab ignore hota hai) app hamesha bundled mode me banti hai"
         required: false
         default: "true"
         type: string
@@ -66,7 +66,8 @@ jobs:
         env:
           APP_ID: ${{ steps.inst.outputs.package }}
           APP_NAME: ${{ steps.inst.outputs.app_name }}
-          APP_URL: ${{ inputs.live_mode != 'false' && format('{0}?inst={1}', vars.APP_URL || 'https://thevishnusharma.github.io/', inputs.institute_id) || '' }}
+          # Bundled mode: live_mode input ignore hota hai (Worker 'true' bhejta hai). APP_URL hamesha khaali = app apni files se chalti hai.
+          APP_URL: ''
         run: npx cap add android
 
       - name: Mic permission (AI voice call)

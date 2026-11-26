@@ -16,8 +16,8 @@ jobs:
       OWNER_APP: "1"
       APP_ID: com.thevishnusharma.owner
       APP_NAME: The Vishnu Sharma Owner
-      # Live mode: app seedha website kholti hai (owner-app.html) -> website update = owner app update, APK dobara nahi banana padega
-      APP_URL: ${{ format('{0}owner-app.html', vars.APP_URL || 'https://thevishnusharma.github.io/') }}
+      # Bundled mode: APP_URL khaali = Owner app apni files (APK ke andar) se chalti hai. Update ke liye APK dobara banana padega.
+      APP_URL: ''
       HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_ALIAS != '' && secrets.ANDROID_KEY_PASSWORD != '' }}
       KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
