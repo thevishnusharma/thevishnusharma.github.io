@@ -85,7 +85,7 @@ function load(){
  var L=$('occ-list');if(!all.length)L.textContent='Loading...';
  db().collection(COL).orderBy('createdAt','desc').limit(500).get().then(function(s){
   all=[];s.forEach(function(d){all.push(Object.assign({id:d.id},d.data()))});renderList();updateHere()
- }).catch(function(e){L.textContent='Load nahi hua: '+(e.message||e)+' (latest Firestore rules publish karein aur Owner se login rakhein)'})}
+ }).catch(function(e){L.textContent=(e&&e.code==='permission-denied')?'Customers load nahi hue: Firestore rules mein ownerCustomers ka naya rule abhi publish nahi hua. Firebase Console > Firestore > Rules mein latest firestore.rules publish karein, phir yahan Refresh karein.':'Load nahi hua: '+(e.message||e);L.style.cssText='padding:4px 18px 14px;font-size:.8rem;color:#b91c1c;line-height:1.5'})}
 function byId(id){for(var i=0;i<all.length;i++)if(all[i].id===id)return all[i]}
 function isDue(c){return c.followUp&&c.followUp<=today()&&c.status!=='converted'}
 function updateHere(){
@@ -109,7 +109,7 @@ function renderList(){
   return [c.name,c.institute,c.mobile,c.address].join(' ').toLowerCase().indexOf(query)>-1});
  rows.forEach(function(c){c._d=here&&hasLoc(c)?km(here,c):null});
  if(filter==='near')rows=rows.filter(function(c){return c._d!=null}).sort(function(a,b){return a._d-b._d});
- var L=$('occ-list');L.textContent='';
+ var L=$('occ-list');L.textContent='';L.style.cssText='';
  if(!rows.length){var e=el('div','empty-state',all.length?'Koi customer nahi mila.':'Abhi koi customer nahi. Pehla customer jodein.');e.style.cssText='text-align:center;color:#64748b;padding:24px;font-size:.85rem';L.appendChild(e);return}
  rows.forEach(function(c){
   var b=el('button','occ-c');b.type='button';
