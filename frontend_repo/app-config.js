@@ -2,7 +2,7 @@
    The Vishnu Sharma — APP CONFIG (Owner/Developer ek hi jagah se badle)
    Yahan jo likhoge wahi Student app aur Admin app dono ke
    Help & Support / About me dikhega. Khaali ("") chhodne par wo
-   option apne-aap chhup jata hai.
+   option apne aap chhup jata hai.
    ============================================================ */
 window.SNAP_CONFIG = {
   appName: "The Vishnu Sharma",
@@ -10,10 +10,11 @@ window.SNAP_CONFIG = {
   ownBackend: {
     enabled: true,
     url: "https://thevishnusharma-backend.onrender.com",
-    collections: ["questionBank", "deletedQuestions", "seedExclusions", "draftQuestions", "pdfDrafts"]
+    collections: ["questionBank", "deletedQuestions", "seedExclusions", "draftQuestions", "pdfDrafts"],
+    persistCache: ["questionBank"]   // v250: in collections ki list device (IndexedDB) me save rehti hai; app khulne par sirf badle hue docs aate hain. [] = band (purana: har baar poora load)
   },
   bankAutoFix: false,  // v226 READS FIX: true karne par admin login par question-bank ki auto class-tag / chapter-merge / ID-migration chalti hai (har question par 2 reads+write+delete — bahut mehngi). Default false. Ek baar chalane ke liye console me: runBankAutoFixNow()
-  serverAuth: false,   // Phase 4: true karne par login/register/PIN Worker se (salted hash + rate limit). Pehle docs/PHASE4_AUTH.md padhein.
+  serverAuth: true,    // Phase 4 (v326: ON): login/register/PIN Worker se (salted hash + rate limit). Worker + secrets deploy hone zaroori — docs/PHASE4_AUTH.md
   appCheck: {
     enabled: true,
     webSiteKey: "",           // Firebase Console > App Check > Web app reCAPTCHA v3 site key; public site key only
@@ -21,13 +22,16 @@ window.SNAP_CONFIG = {
     tokenAutoRefresh: true
   },
   tagline: "Smart Practice • Better Result",
-  version: "1.4.29",
+  version: "1.4.120",
   workerUrl: "https://vishnupush.thevishnusharmaapp.workers.dev",   // Cloudflare Worker (bank + push + owner alerts)
   ownFiles: false,                                                    // DEPRECATED (v216): Cloudflare R2 "SnapFiles" band hai aur rahega — file upload ab Google Drive se. Code abhi rakha hai, aage hatega.
-  googleClientId: "1009250922801-16aubac9rbmnlvpru734phg5c3e8c4rn.apps.googleusercontent.com",                                                 // <-- yahan Google OAuth Web Client ID daalein (DRIVE_SETUP_HINDI.md dekhein). Khaali = Drive upload band
+  googleClientId: "664674204531-7in3b6378nludpsjoomt429ql22hl3ms.apps.googleusercontent.com",                                                 // <-- yahan Google OAuth Web Client ID daalein (DRIVE_SETUP_HINDI.md dekhein). Khaali = Drive upload band
   branding2: true,                                                    // v221: gehri branding — splash, login card, result sheet, print header, "Powered by". false = purana look (kill-switch)
   demo: true,                                                         // v220: Owner Panel "Demo Institute" (seed/reset). false = buttons chhup jate hain (kill-switch)
   onboarding: true,                                                   // v219: Owner Panel "Naya Institute" wizard + Drive status/banner. false = purana single form (kill-switch)
+  multiInstitute: true,                                               // v325: true karne par ek hi mobile alag-alag institute me alag identity se register/login kar sakta hai (false = bilkul purana behaviour)
+  instituteId: "",                                                    // v325: institute ka apna app/build ho to uska id yahan (login me institute auto); web par ?inst=<id> link se bhi
+  driveVerifyRequired: true,                                          // v324: true karne par jab tak Owner Drive email verify na kare, us institute ka FILE upload/connect band (links/YouTube chalte rahenge). false = verify ho to enforce, na ho to purana behaviour
   driveRequired: false,                                               // v219: true karne par (aur googleClientId set hone par) Drive na jure institute ka FILE upload band; links/YouTube chalte rahenge
   catalog: true,                                                      // v218: batch ki list chhote catalog se (reads kam). false = purana tareeka (poore items padhna)
   youtubeLive: true,                                                  // v217: live class = YouTube embed (ytId). false = Phase 0 wala purana link-prompt (kill-switch)
@@ -55,7 +59,7 @@ window.SNAP_CONFIG = {
   },
   appLock: true,                                                      // institute-APK / ?inst= link lock + "app band hai" screen (kill-switch)
   ownerAlertEmail: "thevishnusharmaapp@gmail.com",                         // is email se login par owner app me alerts ka push aata hai
-  build: "243",
+  build: "341",
   ownerName: "Vishnu Sharma",
   supportPhone: "9525208263",
   supportWhatsapp: "9525208263",          // WhatsApp number (khaali = phone wala use hoga)
@@ -64,13 +68,13 @@ window.SNAP_CONFIG = {
   website: "https://thevishnusharma.github.io",
   privacyUrl: "/privacy.html",            // Privacy Policy
   termsUrl: "/terms.html",                // Terms & Conditions
-  privacyVersion: "2026-10-15-v1",
-  termsVersion: "2026-10-15-v1",
+  privacyVersion: "2026-11-24-v1",
+  termsVersion: "2026-11-24-v1",
   adminFaqs: [
     ["Naya test kaise banayein?", "Admin Dashboard → Tests → Naya Test. Questions Question Bank se chunein, time/marks set karein aur Publish karein."],
     ["Students ko notification kaise bhejein?", "Dashboard → 🔔 Notification. Title aur message likhkar 'Students ko bhejein' dabayein. App band hone par bhi students ko mil jata hai."],
     ["Student ka password bhool gaya?", "Records / Students list me us student ko chunkar Password Reset karein."],
     ["Nayi class ya subject kaise jodein?", "Owner se contact karein — class list institute ke hisaab se Owner Panel se set hoti hai."],
-    ["Data ya result nahi dikh raha?", "Settings → App & Data → 'Cache saaf karke refresh' dabayein. Login bana rahega."]
+    ["Data ya result nahi dikh raha?", "Settings → App & Data → 'Clear cache and refresh' dabayein. Login bana rahega."]
   ]
 };
