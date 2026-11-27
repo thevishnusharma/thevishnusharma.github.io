@@ -822,6 +822,15 @@ function vPay(m) {
     if (ag && !ag.querySelector("[data-bm]")) { var d = document.createElement("button"); d.type = "button"; d.className = "cd-card cd-purple"; d.dataset.bm = "1"; d.innerHTML = '<div class="cd-card-top"><div class="cd-icon-circle">🎓</div><span class="cd-badge">New</span></div><div class="cd-card-title">Batch Management</div><div class="cd-card-sub">Batches, live classes, recordings, notes</div><div class="cd-card-bottom"><span class="cd-arrow-btn">→</span></div>'; d.onclick = openAdmin; ag.appendChild(d); }
   }
   setInterval(function () { if (!document.hidden) hook(); }, 2500);
+  /* Layout-jump fix: Batch tab + My Batches card ko 2.5s interval ka wait kiye bina, nav/dashboard bante hi laga do
+     (pehle dashboard dikhne ke ~2s baad tab/card judte the aur screen kood jati thi). */
+  (function () {
+    var q = false;
+    function run() { q = false; try { hook(); } catch (e) {} }
+    function sched() { if (q) return; q = true; (window.requestAnimationFrame || setTimeout)(run); }
+    try { new MutationObserver(sched).observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
+    sched();
+  })();
   /* v199: app khulne ke baad (idle me) batches pehle se load — taaki Batch dabate hi sab ready mile.
      Sirf unke liye jinhone Batch pehle kabhi khola hai (saved data hai), aur 10 min me ek hi baar. */
   var PF = { t: 0, busy: false };

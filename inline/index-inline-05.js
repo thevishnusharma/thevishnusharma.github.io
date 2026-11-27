@@ -47,7 +47,12 @@
       }
       function tick() {
         var waited = Date.now() - t0;
-        if (waited >= SPLASH_DURATION_MS && (window.__stylesReady || waited >= 8000)) hideSplash();
+        // Login-flash fix: pehle se login (student/admin) hai to dashboard dikhne tak splash rakho (max 3.5s),
+        // warna splash hatte hi 1 second login screen dikhti thi phir dashboard aata tha.
+        var hasSess = false;
+        try { hasSess = !!(localStorage.getItem("savya_student_session") || localStorage.getItem("savya_admin_logged_in")); } catch (e) {}
+        var dashReady = !hasSess || waited >= 3500 || ["student-dashboard-home", "admin-dashboard-home"].some(function (i) { var d = document.getElementById(i); return d && d.offsetParent !== null; });
+        if (waited >= SPLASH_DURATION_MS && (window.__stylesReady || waited >= 8000) && dashReady) hideSplash();
         else setTimeout(tick, 50);
       }
       setTimeout(tick, SPLASH_DURATION_MS);
