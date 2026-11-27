@@ -1094,6 +1094,19 @@ service cloud.firestore {
           }
         }
 
+        // ── v314: Smart Attendance ──
+        // attendanceSessions: ek class ki poori P/A/L — sirf admin padh/likh sakta hai.
+        match /attendanceSessions/{sid} {
+          allow read, write: if isSignedIn() && isAdmin() && instituteId == adminInstituteId();
+        }
+        // attendanceStudents/{mobile}_{YYYYMM}: har student ka apna mahina — student sirf APNA padhe, likhta sirf admin.
+        match /attendanceStudents/{aid} {
+          allow read: if isSignedIn() && (
+            (isAdmin() && instituteId == adminInstituteId()) ||
+            (sessMobile() != null && aid.split('_')[0] == sessMobile() && isBatchMember(instituteId, batchId)));
+          allow create, update, delete: if isSignedIn() && isAdmin() && instituteId == adminInstituteId();
+        }
+
         // ── v168: Progress (student apna "dekh liya" record) ──
         match /progress/{mobile} {
           allow read, write: if isSignedIn() && (
@@ -1159,6 +1172,11 @@ service cloud.firestore {
         allow read: if isSignedIn() && (!instStrict(instituteId) || isInstStudent(instituteId) || (isAdmin() && instituteId == adminInstituteId()));
         allow create, update: if isAdmin() && instituteId == adminInstituteId();
         allow delete: if false;
+      }
+
+      // v314: nfcCards/{UID} — NFC card -> student. Sirf us institute ka admin.
+      match /nfcCards/{uid} {
+        allow read, write: if isSignedIn() && isAdmin() && instituteId == adminInstituteId();
       }
 
       match /notifications/{nid} {
