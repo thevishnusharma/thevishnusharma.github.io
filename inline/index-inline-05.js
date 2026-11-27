@@ -10,17 +10,17 @@
     var col = /^#[0-9a-f]{6}$/i.test(b.brandColor || "") ? b.brandColor : "";
     el.style.background = col ? "linear-gradient(160deg," + sh(col, 0.55) + "," + sh(col, 0.2) + ")" : "#060513";
     el.style.flexDirection = "column"; el.style.gap = "14px"; el.style.textAlign = "center"; el.style.padding = "24px";
-    var im = el.querySelector("img"); if (im) im.style.display = "none";
+    var im = el.querySelector("#sp-default") || el.querySelector("img"); if (im) im.style.display = "none";
     if (/^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(b.logoDataUrl || "")) {
-      var lg = document.createElement("img"); lg.src = b.logoDataUrl; lg.alt = ""; lg.style.cssText = "width:112px;height:112px;object-fit:contain;border-radius:24px;background:#fff;padding:8px;box-shadow:0 8px 30px rgba(0,0,0,.35);"; el.appendChild(lg);
+      var lg = document.createElement("img"); lg.src = b.logoDataUrl; lg.alt = ""; lg.className = "sp-logo"; lg.style.cssText = "width:112px;height:112px;object-fit:contain;border-radius:24px;background:#fff;padding:8px;box-shadow:0 8px 30px rgba(0,0,0,.35);"; el.appendChild(lg);
     }
-    var nm = document.createElement("div"); nm.textContent = b.name; nm.style.cssText = "color:#fff;font:800 1.5rem/1.25 system-ui,sans-serif;"; el.appendChild(nm);
-    if (b.tagline) { var tg = document.createElement("div"); tg.textContent = b.tagline; tg.style.cssText = "color:rgba(255,255,255,.8);font:500 .95rem/1.3 system-ui,sans-serif;"; el.appendChild(tg); }
+    var nm = document.createElement("div"); nm.textContent = b.name; nm.className = "sp-name"; nm.style.cssText = "color:#fff;font:800 1.5rem/1.25 system-ui,sans-serif;"; el.appendChild(nm);
+    if (b.tagline) { var tg = document.createElement("div"); tg.textContent = b.tagline; tg.className = "sp-tag"; tg.style.cssText = "color:rgba(255,255,255,.8);font:500 .95rem/1.3 system-ui,sans-serif;"; el.appendChild(tg); }
   } catch (e) {}
 })();
 
   (function () {
-    var SPLASH_DURATION_MS = 400; // PERF FIX v126: pehle 2200ms tha —
+    var SPLASH_DURATION_MS = 1200; // animation (logo + naam likhna + tagline) poori dikhe; uske baad home ready hote hi hatta hai // PERF FIX v126: pehle 2200ms tha —
     // jabardasti har visit par 2.2s+ wait karwata tha chahe content
     // turant ready ho. LCP/Speed Index dono is fixed delay ki wajah se
     // seedha 2.2s+ se start hote the. Ab sirf ek chhota "brand flash"
@@ -43,7 +43,7 @@
         var el = document.getElementById("app-splash-screen");
         if (!el) return;
         el.style.opacity = "0";
-        setTimeout(function () { el.remove(); }, 500);
+        setTimeout(function () { el.remove(); }, 450);
       }
       function tick() {
         var waited = Date.now() - t0;

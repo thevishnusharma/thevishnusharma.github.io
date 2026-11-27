@@ -170,8 +170,23 @@
      hai, phir kuch second baad khud fade-out ho ke home screen dikha
      deti hai. Isse hata na jaaye — sirf image (splash-screen.jpg) ya
      duration change karni ho to neeche ka JS timing (2200ms) badlein. -->
-<div id="app-splash-screen" style="position:fixed;inset:0;z-index:99999;background:#060513;display:flex;align-items:center;justify-content:center;transition:opacity .5s ease;">
-  <img src="splash-screen.jpg" alt="The Vishnu Sharma" fetchpriority="high" style="width:100%;height:100%;object-fit:cover;" />
+<div id="app-splash-screen" style="position:fixed;inset:0;z-index:99999;background:#060513;display:flex;align-items:center;justify-content:center;transition:opacity .4s ease;">
+  <style>
+    /* Animated splash: logo pehle aata hai -> naam likhta hua khulta hai -> tagline fade. Total ~1.2s. */
+    #app-splash-screen .sp-box{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;padding:24px}
+    #app-splash-screen .sp-logo{width:132px;height:132px;object-fit:contain;animation:spLogo .5s cubic-bezier(.2,.8,.2,1) both}
+    #app-splash-screen .sp-name{color:#f3c64a;font:800 1.35rem/1.2 system-ui,sans-serif;letter-spacing:.14em;animation:spReveal .55s .35s cubic-bezier(.2,.7,.2,1) both}
+    #app-splash-screen .sp-tag{color:rgba(255,255,255,.75);font:500 .9rem/1.3 system-ui,sans-serif;animation:spFade .4s .85s both}
+    @keyframes spLogo{from{opacity:0;transform:scale(.78)}to{opacity:1;transform:scale(1)}}
+    @keyframes spReveal{from{clip-path:inset(0 100% 0 0);opacity:.2}to{clip-path:inset(0 0 0 0);opacity:1}}
+    @keyframes spFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    @media (prefers-reduced-motion:reduce){#app-splash-screen .sp-logo,#app-splash-screen .sp-name,#app-splash-screen .sp-tag{animation:none}}
+  </style>
+  <div id="sp-default" class="sp-box">
+    <img class="sp-logo" src="vishnu-logo.png" alt="" fetchpriority="high" />
+    <div class="sp-name">THE VISHNU SHARMA</div>
+    <div class="sp-tag">Keep learning, keep growing</div>
+  </div>
 </div>
 <script src="inline/index-inline-05.js"></script>
 
