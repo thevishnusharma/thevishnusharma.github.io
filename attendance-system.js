@@ -111,7 +111,7 @@
     var now = Date.now(), jobs = sessions.filter(function (s) { return s.status === "open" && now > s.startMs + cfg.autoMin * 6e4; });
     return Promise.all(jobs.map(function (s) {
       return roster(c, s.batchId).then(function (ro) { return commit(c, s.batchId, { classId: s.classId, batchId: s.batchId, instituteId: s.instituteId, title: s.title, subject: s.subject, teacher: s.teacher, startMs: s.startMs, endMs: s.endMs, date: s.date, ym: s.ym }, ro, s.marks || {}, s.via || {}, "auto"); })
-        .then(function (r) { s.status = "auto"; s.counts = r.counts; s.marks = r.marks; }).catch(function (x) { console.warn("[attendance] auto-finalize", x); });
+        .then(function (r) { s.status = "auto"; s.counts = r.counts; s.marks = r.marks; if (now - s.endMs < 6 * 36e5) pushBatch(c, s.batchId, { classId: s.classId, title: s.title, subject: s.subject, startMs: s.startMs }); }).catch(function (x) { console.warn("[attendance] auto-finalize", x); });
     }));
   }
 
@@ -242,11 +242,12 @@
   function submit(auto) {
     if (!M || M.busy) return; var t = tally();
     if (!auto && t.u && !M.c.sure(t.u + " student unmarked hain — wo ABSENT gine jaayenge. Submit karein?")) return;
-    M.busy = true; stopNfc(); var c = M.c, mm = M;
+    M.busy = true; stopNfc(); var c = M.c, mm = M, wasSub = !!M.sub;
     var a = document.querySelector("#att-mark .att-acts"); a && (a.innerHTML = '<span class="att-note">Save ho raha hai…</span>');
     commit(c, M.b, M.base, M.ro, M.marks, M.via, auto ? "auto" : "submitted").then(function (r) {
       mm.marks = r.marks; mm.sub = true; mm.edit = false; mm.subStatus = auto ? "auto" : "submitted"; mm.busy = false; mm.dirty = false;
       c.toast("✅ Attendance " + (auto ? "auto-submit" : "submit") + " ho gayi — P " + r.counts.p + " • A " + r.counts.a + " • L " + r.counts.l);
+      if (!wasSub) pushBatch(c, mm.b, mm.base);
       if (M === mm) { body(); foot(); } if (EXT.attRefresh) EXT.attRefresh();
     }).catch(function (x) { mm.busy = false; c.toast("Save nahi hua: " + (x && (x.code || x.message) || x)); if (M === mm) foot(); });
   }
@@ -501,6 +502,104 @@
       var fb = box.querySelector("[data-full]"); fb && (fb.onclick = function () { St.full = !St.full; EXT.studentTabs.attendance.render(b, box, c); });
     }).catch(function (x) { box.innerHTML = '<div class="att-empty">' + (x && x.code === "permission-denied" ? "Attendance abhi available nahi hai — admin se sampark karein." : "Load nahi hua") + "</div>"; });
   } };
+
+  /* ---------------- batch ko push (sab ko ek jaisa message; kisi ka Present/Absent yahan nahi jaata) ---------------- */
+  function pushBatch(c, b, base) {
+    try {
+      var V = window.SnapV169; if (!V || !V.notifyBatch) return;
+      V.notifyBatch(b, "attendance", "📋 Attendance lag gayi", (base.subject || base.title || "Class") + " (" + tm(base.startMs) + ") — apna Present/Absent status app me dekhein");
+    } catch (x) { console.warn("[attendance] push", x); }
+  }
+
+  /* =====================================================================
+     STUDENT HOME: batch ke andar + My Batches cards par apni attendance
+     (kitni class chali, kitni attend ki, Present / Absent / Late, kitne din aaya)
+     ===================================================================== */
+  var SS = { cache: {} };
+  function myMobile(c) { var s = c.sess && c.sess(); return s && s.mobile ? String(s.mobile) : ""; }
+  function monthKeys(c, b) {
+    var now = new Date(), st = b && b.createdAt ? c.ms(b.createdAt) : 0, from = st ? new Date(st) : new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    var floor = new Date(now.getFullYear(), now.getMonth() - 11, 1); if (from < floor) from = floor;
+    var out = [], d = new Date(from.getFullYear(), from.getMonth(), 1);
+    while (d <= now && out.length < 12) { out.push(d.getFullYear() + p2(d.getMonth() + 1)); d = new Date(d.getFullYear(), d.getMonth() + 1, 1); }
+    return out;
+  }
+  function loadMy(c, b, force) {
+    var m = myMobile(c); if (!m) return Promise.reject({ code: "no-session" });
+    var key = m + "|" + b.id, z = SS.cache[key];
+    if (!force && z && Date.now() - z.t < 90000) return Promise.resolve(z.v);
+    if (z && z.p) return z.p;
+    var p = Promise.all(monthKeys(c, b).map(function (k) {
+      return bsub(c, b.id, "attendanceStudents").doc(m + "_" + k).get().then(function (d) { return d.exists ? d.data().days || {} : {}; })
+        .catch(function (x) { if (x && x.code === "permission-denied") throw x; return {}; });
+    })).then(function (parts) {
+      var ents = [], seen = {};
+      parts.forEach(function (mp) { Object.keys(mp).forEach(function (k) { var v = mp[k]; if (seen[k]) return; seen[k] = 1; ents.push({ id: k, s: v.s, d: v.d, st: v.st || 0, t: v.t, k: v.k }); }); });
+      ents.sort(function (a, z2) { return z2.st - a.st; });
+      var P = 0, A = 0, L = 0, days = {}, pdays = {};
+      ents.forEach(function (x) { if (x.s === "P") P++; else if (x.s === "A") A++; else if (x.s === "L") L++; else return; days[x.d] = 1; if (x.s !== "A") pdays[x.d] = 1; });
+      var held = P + A + L, att = P + L, nd = Object.keys(days).length, npd = Object.keys(pdays).length;
+      var v = { ents: ents, p: P, a: A, l: L, held: held, att: att, pc: held ? Math.round(100 * att / held) : 0, days: nd, pdays: npd, adays: nd - npd, last: ents[0] || null };
+      SS.cache[key] = { t: Date.now(), v: v }; return v;
+    });
+    SS.cache[key] = { t: z ? z.t : 0, v: z ? z.v : null, p: p };
+    p.then(function () { }, function () { delete SS.cache[key]; });
+    return p;
+  }
+  function pcCls(pc) { return pc >= 75 ? "g" : pc >= 50 ? "o" : "r"; }
+  function stTxt(s) { return s === "P" ? "Present ✅" : s === "L" ? "Late ⏰ (present)" : "Absent ❌"; }
+  function summaryHtml(v) {
+    if (!v || !v.held) return '<div class="att-card"><div class="att-h"><b>📋 Meri Attendance</b></div><div class="att-empty" style="padding:10px">Abhi is batch ki attendance shuru nahi hui.</div></div>';
+    var last = v.last;
+    return '<div class="att-card att-mysum"><div class="att-h"><b>📋 Meri Attendance</b><button class="att-lk" data-att-more>Details →</button></div>' +
+      '<div class="att-mys"><div class="att-ring" style="--p:' + v.pc + '"><div><b>' + v.pc + '%</b><small>Attendance</small></div></div>' +
+      '<div class="att-mysg"><div><b>' + v.held + '</b><small>Class chali</small></div><div><b>' + v.att + '</b><small>Attend ki</small></div><div class="g"><b>' + v.p + '</b><small>Present</small></div><div class="r"><b>' + v.a + '</b><small>Absent</small></div><div class="o"><b>' + v.l + '</b><small>Late</small></div><div><b>' + v.pdays + '/' + v.days + '</b><small>Din aaye</small></div></div></div>' +
+      (last ? '<div class="att-mylast ' + (last.s === "A" ? "bad" : "ok") + '"><small>Pichli class</small><b>' + e(last.t || "Class") + (last.k ? " • " + e(last.k) : "") + '</b><span>' + e(last.d || "") + (last.st ? " • " + e(tm(last.st)) : "") + " — " + stTxt(last.s) + "</span></div>" : "") + "</div>";
+  }
+  /* student ko naya Present/Absent batana: pehli baar sirf pichle 24 ghante ki entries; baad me jo naya aaye */
+  function notifyNew(c, b, v) {
+    try {
+      var m = myMobile(c); if (!m || !v) return;
+      var k = "att_seen_" + m + "_" + b.id, seen = SS.seen && SS.seen[k] || null; try { if (!seen) seen = JSON.parse(localStorage.getItem(k) || "null"); } catch (x) {}
+      var now = Date.now(); if (!seen) seen = v.ents.filter(function (x) { return x.st < now - 864e5; }).map(function (x) { return x.id; });
+      var set = {}; seen.forEach(function (id) { set[id] = 1; });
+      var fresh = v.ents.filter(function (x) { return !set[x.id] && (x.s === "P" || x.s === "A" || x.s === "L"); });
+      var ids = v.ents.slice(0, 300).map(function (x) { return x.id; }); (SS.seen = SS.seen || {})[k] = ids;   /* storage na chale to bhi baar-baar toast na aaye */
+      try { localStorage.setItem(k, JSON.stringify(ids)); } catch (x) {}
+      fresh.slice(0, 3).forEach(function (x, i) { setTimeout(function () { try { c.toast("📋 " + bname(c, b.id) + " • " + (x.t || "Class") + " — aap " + stTxt(x.s)); } catch (y) {} }, i * 2600); });
+      if (fresh.length > 3) setTimeout(function () { try { c.toast("📋 +" + (fresh.length - 3) + " aur attendance update — Attendance tab dekhein"); } catch (y) {} }, 3 * 2600);
+    } catch (x) { console.warn("[attendance] notifyNew", x); }
+  }
+  EXT.hooks.overview = function (b, el, c) {
+    var m = myMobile(c); if (!m || !el) return;
+    var z = SS.cache[m + "|" + b.id]; if (z && z.v) el.innerHTML = summaryHtml(z.v); else el.innerHTML = '<div class="att-card"><div class="att-empty" style="padding:10px">Attendance load ho rahi hai…</div></div>';
+    var wire = function () { var bt = el.querySelector("[data-att-more]"); bt && (bt.onclick = function () { c.S.tab = "attendance"; c.sBatch(b.id); }); };
+    wire();
+    loadMy(c, b).then(function (v) { if (!el.isConnected) return; el.innerHTML = summaryHtml(v); wire(); notifyNew(c, b, v); })
+      .catch(function (x) { if (el.isConnected) el.innerHTML = ""; });
+  };
+  EXT.hooks.cards = function (list, root, c) {
+    var m = myMobile(c); if (!m) return;
+    (list || []).forEach(function (b) {
+      var el = root.querySelector('[data-xc="' + b.id + '"]'); if (!el) return;
+      var paint = function (v) { if (!el.isConnected) return; el.innerHTML = v && v.held ? '<span class="att-chip ' + pcCls(v.pc) + '">📋 ' + v.pc + '% • ' + v.att + '/' + v.held + ' class attend</span>' : ""; };
+      var z = SS.cache[m + "|" + b.id]; if (z && z.v) paint(z.v);
+      loadMy(c, b).then(function (v) { paint(v); notifyNew(c, b, v); }).catch(function () { });
+    });
+  };
+  /* app khulte hi / wapas aate hi check (batch screen na bhi khuli ho): purana prefetchBatch hook chain karke */
+  (function () {
+    var prev = EXT.prefetchBatch;
+    EXT.prefetchBatch = function (b, c) {
+      var a = null; try { a = prev && prev(b, c); } catch (x) {}
+      var mine = loadMy(c, b, true).then(function (v) { notifyNew(c, b, v); }).catch(function () { });
+      return a && a.then ? Promise.all([a, mine]) : mine;
+    };
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) return;
+      try { var c = C(), S = c.S; if (!myMobile(c)) return; (S.batches || []).slice(0, 3).forEach(function (b) { loadMy(c, b, true).then(function (v) { notifyNew(c, b, v); }).catch(function () { }); }); } catch (x) { }
+    });
+  })();
 
   window.SnapAttendance = { open: openMark, nfc: NFC };
 })();

@@ -52,3 +52,15 @@
 .att-stats3{display:flex;gap:8px;margin-top:10px}.att-stats3>div{flex:1;border-radius:12px;padding:8px}.att-stats3 b{display:block;font-size:1.3rem}.att-stats3 small{font-size:.7rem}.att-stats3 .g{background:#dcfce7}.att-stats3 .r{background:#fee2e2}.att-stats3 .o{background:#ffedd5}
 .att-hrow{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #eef2f7}.att-pill{border-radius:999px;padding:3px 10px;font-size:.68rem;font-weight:800}.att-pill.p{background:#dcfce7;color:#15803d}.att-pill.a{background:#fee2e2;color:#b91c1c}.att-pill.l{background:#ffedd5;color:#c2410c}
 @media(min-width:760px){.att-stats{grid-template-columns:repeat(4,1fr)}.att-ov{max-width:520px;left:50%;transform:translateX(-50%);box-shadow:0 0 40px rgba(0,0,0,.25)}}
+/* v315: student home summary + My Batches chip */
+.att-mys{display:flex;align-items:center;gap:12px}
+.att-mysg{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.att-mysg>div{background:#f1f5f9;border-radius:10px;padding:6px 4px;text-align:center}
+.att-mysg b{display:block;font-size:1.05rem;line-height:1.1;color:#0f172a}.att-mysg small{font-size:.66rem;color:#475569;font-weight:600}
+.att-mysg .g{background:#dcfce7}.att-mysg .r{background:#fee2e2}.att-mysg .o{background:#ffedd5}
+.att-mylast{margin-top:10px;border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;font-size:.8rem}
+.att-mylast small{color:#64748b;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.att-mylast.ok{background:#f0fdf4}.att-mylast.bad{background:#fef2f2}
+.att-chip{display:inline-block;margin-top:8px;border-radius:999px;padding:4px 10px;font-size:.74rem;font-weight:700}
+.att-chip.g{background:#dcfce7;color:#166534}.att-chip.o{background:#ffedd5;color:#9a3412}.att-chip.r{background:#fee2e2;color:#991b1b}
+@media(max-width:380px){.att-mys{flex-direction:column}.att-mysg{width:100%}}

@@ -762,7 +762,7 @@ function vPay(m) {
     var o = $("#bm-student"), live = S.batches.map(liveOf).filter(Boolean), h = S.h || "my", av = S.avail || [], body;
       S.inHome = true;
       if (h === "avail" && !S.reqFresh && !S.reqBusy) { S.reqBusy = true; var was = S.reqDone ? reqSig() : "", fin = function () { S.reqBusy = false; S.reqFresh = true; var first = !S.reqDone; S.reqDone = true; persistSnap(); if (S.inHome !== false && (first || reqSig() !== was)) sHome(); }; loadReqs().then(fin, fin); }
-    if (h === "my") body = S.batches.length ? S.batches.map(function (b) { var l = liveOf(b), n = nextOf(b); return '<div class="bm-bcard" data-b="' + b.id + '">' + (b.image ? '<img class="bx-bimg" loading="lazy" decoding="async" src="' + esc(b.image) + '" alt="">' : "") + '<span class="bm-tag"' + (l ? ' style="background:#ef4444"' : "") + '>' + (l ? "Live Now" : { live: "Live Batch", recorded: "Recorded", hybrid: "Hybrid" }[b.type] || "Batch") + '</span><b>' + esc(b.name) + '</b><small>' + esc(subjOf(b).join(" • ")) + '</small><div class="bm-meta"><span>👥 ' + (b.enrolledCount || 0) + (b.limit ? "/" + b.limit : "") + '</span><span>' + (n ? "⏰ " + fdate(n.scheduledAt) : "Koi upcoming class nahi") + '</span></div></div>'; }).join("") :
+    if (h === "my") body = S.batches.length ? S.batches.map(function (b) { var l = liveOf(b), n = nextOf(b); return '<div class="bm-bcard" data-b="' + b.id + '">' + (b.image ? '<img class="bx-bimg" loading="lazy" decoding="async" src="' + esc(b.image) + '" alt="">' : "") + '<span class="bm-tag"' + (l ? ' style="background:#ef4444"' : "") + '>' + (l ? "Live Now" : { live: "Live Batch", recorded: "Recorded", hybrid: "Hybrid" }[b.type] || "Batch") + '</span><b>' + esc(b.name) + '</b><small>' + esc(subjOf(b).join(" • ")) + '</small><div class="bm-meta"><span>👥 ' + (b.enrolledCount || 0) + (b.limit ? "/" + b.limit : "") + '</span><span>' + (n ? "⏰ " + fdate(n.scheduledAt) : "Koi upcoming class nahi") + '</span></div><div class="bm-xcard" data-xc="' + b.id + '"></div></div>'; }).join("") :
       '<div class="bm-empty">Abhi aap kisi batch me enrolled nahi hain.<br>"Available" tab se enroll request bhejein.</div>';
     else body = av.length ? av.map(function (b) {
       var full = b.limit && (b.enrolledCount || 0) >= b.limit, act = !S.reqDone ? '<span class="bm-badge">⏳ Checking…</span>' : b.req === "pending" ? '<span class="bm-badge o">⏳ Request pending — admin approve karega</span>' : b.req === "rejected" ? '<span class="bm-badge r">Request reject hui — admin se baat karein</span>' : b.enrollment === "closed" ? '<span class="bm-badge">Enrollment band hai</span>' : full ? '<span class="bm-badge r">Batch full</span>' : '<button class="bm-btn sm" data-rq="' + b.id + '">' + (b.fee ? "Enroll & Pay " + rupee(b.fee) : "Enroll Request bhejein") + '</button>';
@@ -776,6 +776,7 @@ function vPay(m) {
     o.querySelectorAll("[data-b]").forEach(function (c) { c.onclick = function () { S.tab = EXT.studentTabs.subjects ? "subjects" : "overview"; sBatch(c.dataset.b); }; });
     o.querySelectorAll("[data-rq]").forEach(function (c) { c.onclick = function () { c.disabled = true; reqEnroll(c.dataset.rq); }; });
     var j = o.querySelector("[data-j]"); j && (j.onclick = function () { sJoin(live[0]); });
+    try { EXT.hooks.cards && EXT.hooks.cards(S.batches, o, ctx()); } catch (e) { console.warn("[batch cards hook]", e); }
   }
     var TABS0 = [["overview", "Overview"], ["class", "Live Classes"], ["recording", "Recorded"], ["note", "Notes"], ["material", "Study Material"], ["ppt", "PPT"], ["tests", "Tests"], ["announcement", "Announcements"]];
   function tabsAll() { var x = Object.keys(EXT.studentTabs).map(function (k) { return [k, EXT.studentTabs[k].label]; }); return [TABS0[0]].concat(x, TABS0.slice(1)); }
@@ -797,6 +798,7 @@ function vPay(m) {
     }
     o.innerHTML = '<div class="bm-sh"><button data-back>←</button><b>' + esc(b.name) + '</b></div><div class="bm-tabs">' + tabsAll().map(function (t) { return '<button data-tab="' + t[0] + '"' + (t[0] === tab ? ' class="on"' : "") + '>' + t[1] + '</button>'; }).join("") + '</div>' + body;
     o.querySelector("[data-back]").onclick = sHome;
+    if (tab === "overview" || tab === "subjects") { try { var xo = document.createElement("div"); xo.id = "bm-xov"; var tbs = o.querySelector(".bm-tabs"); tbs && tbs.insertAdjacentElement("afterend", xo); EXT.hooks.overview && EXT.hooks.overview(b, xo, ctx()); } catch (e) { console.warn("[batch overview hook]", e); } }
     o.querySelectorAll("[data-tab]").forEach(function (t) { t.onclick = function () { S.tab = t.dataset.tab; sBatch(id); }; });
     o.querySelectorAll("[data-t]").forEach(function (t) { t.onclick = function () { S.tab = t.dataset.t; sBatch(id); }; });
     var j = o.querySelector("[data-j]"); j && (j.onclick = function () { sJoin(l); });
