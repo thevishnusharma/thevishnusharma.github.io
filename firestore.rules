@@ -1107,6 +1107,22 @@ service cloud.firestore {
           allow create, update, delete: if isSignedIn() && isAdmin() && instituteId == adminInstituteId();
         }
 
+        // ── v400: Smart Attendance (GPS + Dynamic QR). Client in dono me kabhi nahi likhta — sirf Cloudflare Worker (service account). ──
+        // attendanceLive/{sid}: chalu session ka public hissa (title/subject/status) — student apna active session isi se dekhta hai.
+        match /attendanceLive/{sid} {
+          allow read: if isSignedIn() && (
+            (isAdmin() && instituteId == adminInstituteId()) ||
+            (isInstStudent(instituteId) && (!instStrict(instituteId) || isBatchMember(instituteId, batchId))));
+          allow write: if false;
+        }
+        // attendanceRecords/{sid}_{mobile}: har student ka ek record — admin sab padhe, student sirf APNA.
+        match /attendanceRecords/{rid} {
+          allow read: if isSignedIn() && (
+            (isAdmin() && instituteId == adminInstituteId()) ||
+            (sessMobile() != null && resource.data.mobile == sessMobile() && isBatchMember(instituteId, batchId)));
+          allow write: if false;
+        }
+
         // ── v168: Progress (student apna "dekh liya" record) ──
         match /progress/{mobile} {
           allow read, write: if isSignedIn() && (
@@ -1148,11 +1164,24 @@ service cloud.firestore {
         allow create: if isAdmin() && instituteId == adminInstituteId();
       }
 
+      // ── v400: Attendance audit trail + parent-notification log — sirf admin padhe; likhta sirf Worker (append-only). ──
+      match /attendanceAudit/{aid} {
+        allow read: if isSignedIn() && isAdmin() && instituteId == adminInstituteId();
+        allow write: if false;
+      }
+      match /attendanceNotifications/{nid} {
+        allow read: if isSignedIn() && isAdmin() && instituteId == adminInstituteId();
+        allow write: if false;
+      }
+
       // ── v157b: Payments (UPI QR, manual verify) ──────────────────
       // batchSettings/payment: QR image + UPI ID — students ko dikhana hai (read signedIn), likhta sirf admin.
       match /batchSettings/{docId} {
-        allow read: if isSignedIn() && (docId == 'security' || !instStrict(instituteId) || isInstStudent(instituteId) || (isAdmin() && instituteId == adminInstituteId()));
-        allow write: if isAdmin() && instituteId == adminInstituteId() &&
+        // v400: 'attendance' doc me school ki GPS location hai — students ko nahi dikhni; likhna sirf Worker se (validation ke saath).
+        allow read: if isSignedIn() && (
+          (docId != 'attendance' && (docId == 'security' || !instStrict(instituteId) || isInstStudent(instituteId))) ||
+          (isAdmin() && instituteId == adminInstituteId()));
+        allow write: if isAdmin() && instituteId == adminInstituteId() && docId != 'attendance' &&
           (!('qr' in request.resource.data) || request.resource.data.qr.size() <= 400000);
       }
       // payments: admin approve karte waqt record banta hai — sirf admin padh/likh sakta hai.

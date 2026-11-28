@@ -1946,6 +1946,458 @@ async function rdOwner(request, env, o, pathname) {
 }
 
 
+/* =====================================================================
+   v400 — Smart Attendance (GPS + Dynamic QR + Manual)  —  /attendance/*
+   Sab sensitive kaam yahin (server) hota hai; browser par bharosa nahi.
+   Endpoints (POST JSON, Authorization: Bearer <Firebase ID token>):
+     Admin  : /attendance/settings /attendance/start /attendance/token /attendance/manual
+              /attendance/review /attendance/end /attendance/finalize
+     Student: /attendance/verify /attendance/pending /attendance/config
+   Secrets (optional): ATT_SECRET (QR signing key; na ho to SERVICE_ACCOUNT_JSON se bana leta hai)
+                       ATT_NOTIFY_URL (parent notification webhook; na ho to sirf log banta hai)
+   QR token = stateless HMAC (SA1.<issued>.<nonce>.<sig>) — koi student data nahi, session se bandha, kuch second me expire.
+   ===================================================================== */
+const ATT_DEF = {
+  geoEnabled: true, lat: 0, lng: 0, radiusM: 150, maxAccM: 50, locPolicy: 'pending', retry: true,
+  qrEnabled: true, qrRotateSec: 30, qrValiditySec: 30, qrGraceSec: 10,
+  startTime: '00:00', endTime: '23:59', lateMin: 10, autoMin: 15,
+  manualEnabled: true, teacherCorrection: true, pendingPolicy: 'review', dupPrevent: true,
+  notify: { enabled: true, present: false, absent: true, late: false }
+};
+const ATT_REASONS = {
+  gps_missing: 'Location nahi mili (permission band ya GPS off).',
+  gps_denied: 'Location permission nahi di gayi.',
+  gps_accuracy: 'GPS accuracy kam hai (khuli jagah par jakar dobara try karein).',
+  gps_stale: 'Location purani thi.',
+  outside: 'Aap school ke area se bahar dikhe.',
+  geo_not_configured: 'School ki location abhi set nahi hai (admin ko batayein).',
+  camera: 'Camera uplabdh nahi tha.',
+  qr_failed: 'QR scan nahi ho paya.',
+  qr_expired: 'QR expire ho gaya.',
+  other: 'Technical samasya.'
+};
+const ATT_CODE = { present: 'P', late: 'L', absent: 'A', pending: 'W' };
+const attBuckets = new Map();
+function attRate(key, limit, windowMs) {
+  const now = Date.now();
+  if (attBuckets.size > 2000) for (const [k, v] of attBuckets) if (now - v.start >= windowMs) attBuckets.delete(k);
+  const v = attBuckets.get(key);
+  if (v && now - v.start < windowMs) { if (v.count >= limit) throw new HttpErr(429, 'Bahut zyada koshish — thodi der baad dobara try karein.'); v.count++; }
+  else attBuckets.set(key, { start: now, count: 1 });
+}
+function attId(v, what, re) {
+  v = String(v == null ? '' : v);
+  if (!(re || /^[A-Za-z0-9_\-]{1,120}$/).test(v)) throw new HttpErr(400, (what || 'id') + ' galat hai');
+  return v;
+}
+const attMobile = (v) => attId(v, 'mobile', /^[A-Za-z0-9_\-.:]{3,80}$/);
+const attNum = (v, lo, hi, what) => { const n = Number(v); if (!Number.isFinite(n) || n < lo || n > hi) throw new HttpErr(400, (what || 'value') + ' ' + lo + ' se ' + hi + ' ke beech honi chahiye'); return n; };
+const attHM = (v, what) => { v = String(v || ''); if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(v)) throw new HttpErr(400, (what || 'time') + ' HH:MM format me chahiye'); return v; };
+const attDate = (v) => { v = String(v || ''); if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) throw new HttpErr(400, 'date YYYY-MM-DD chahiye'); return v; };
+const attStr = (v, max) => String(v == null ? '' : v).replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, max || 120);
+function attHav(lat1, lng1, lat2, lng2) {
+  const R = 6371000, r = (d) => d * Math.PI / 180, dLat = r(lat2 - lat1), dLng = r(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(r(lat1)) * Math.cos(r(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+function attIstHM(ms) { const d = new Date(ms + 5.5 * 3600 * 1000); return String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0'); }
+
+/* ---- Firestore REST (batch reads/writes: Cloudflare free plan me subrequest limit chhoti hoti hai) ---- */
+const attPid = (env) => env.PROJECT_ID || JSON.parse(env.SERVICE_ACCOUNT_JSON).project_id;
+const attName = (env, path) => 'projects/' + attPid(env) + '/databases/(default)/documents/' + path;
+const attP = (...seg) => seg.map(encodeURIComponent).join('/');
+const attBase = (inst, b) => 'institutes/' + encodeURIComponent(inst) + (b ? '/batches/' + encodeURIComponent(b) : '');
+async function attFetch(env, suffix, body) {
+  const sa = JSON.parse(env.SERVICE_ACCOUNT_JSON), at = await googleAccessToken(sa);
+  return fetch('https://firestore.googleapis.com/v1/projects/' + attPid(env) + '/databases/(default)/documents' + suffix, { method: 'POST', headers: { Authorization: 'Bearer ' + at, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+}
+async function attGet(env, path) { const r = await aiCallGet(env, path); return r ? aiCallUnwrap(r.fields || {}) : null; }
+async function attBatchGet(env, paths) {
+  const out = {};
+  for (let i = 0; i < paths.length; i += 100) {
+    const part = paths.slice(i, i + 100);
+    const r = await attFetch(env, ':batchGet', { documents: part.map((p) => attName(env, p)) });
+    if (!r.ok) throw new HttpErr(502, 'Firestore read fail (' + r.status + ')');
+    const rows = await r.json(); part.forEach((p) => { out[p] = null; });
+    for (const row of rows) if (row.found) { const nm = row.found.name, p = nm.slice(nm.indexOf('/documents/') + 11); out[p] = aiCallUnwrap(row.found.fields || {}); }
+  }
+  return out;
+}
+async function attQuery(env, parentPath, collectionId, field, value, limit) {
+  const q = { from: [{ collectionId }], limit: limit || 1000 };
+  if (field) q.where = { fieldFilter: { field: { fieldPath: field }, op: 'EQUAL', value: aiCallField(value) } };
+  const r = await attFetch(env, '/' + parentPath + ':runQuery', { structuredQuery: q });
+  if (!r.ok) throw new HttpErr(502, 'Firestore query fail (' + r.status + ')');
+  const rows = await r.json();
+  return rows.filter((x) => x.document).map((x) => { const nm = x.document.name; return { id: decodeURIComponent(nm.slice(nm.lastIndexOf('/') + 1)), ...aiCallUnwrap(x.document.fields || {}) }; });
+}
+const attSet = (env, path, obj, o) => { const w = { update: { name: attName(env, path), fields: aiCallFields(obj) } }; if (o && o.create) w.currentDocument = { exists: false }; if (o && o.mustExist) w.currentDocument = { exists: true }; return w; };
+const attMerge = (env, path, obj, paths) => ({ update: { name: attName(env, path), fields: aiCallFields(obj) }, updateMask: { fieldPaths: paths || Object.keys(obj) } });
+const attDel = (env, path) => ({ delete: attName(env, path) });
+async function attCommit(env, writes) {
+  for (let i = 0; i < writes.length; i += 400) {
+    const r = await attFetch(env, ':commit', { writes: writes.slice(i, i + 400) });
+    if (!r.ok) { let j = {}; try { j = await r.json(); } catch (e) {} const st = (j.error && j.error.status) || ''; const e = new HttpErr(r.status === 409 || st === 'ALREADY_EXISTS' ? 409 : 502, 'Firestore write fail (' + (st || r.status) + ')'); e.fs = st; throw e; }
+  }
+}
+const attRid = () => [...crypto.getRandomValues(new Uint8Array(10))].map((x) => x.toString(16).padStart(2, '0')).join('');
+const attYm = (d) => String(d).replace(/-/g, '').slice(0, 6);
+
+/* ---- identity ---- */
+async function attAdmin(request, env) {
+  const a = await adminFromRequest(request, env);
+  if (!a.instituteId) throw new HttpErr(403, 'Admin ka institute set nahi hai');
+  return a;
+}
+async function attStudent(request, env) {
+  if (!env.SERVICE_ACCOUNT_JSON) throw new HttpErr(500, 'SERVICE_ACCOUNT_JSON secret set nahi hai');
+  const pid = attPid(env), user = await verifyIdToken((request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, ''), pid);
+  let mobile = user.role === 'student' && user.mobile ? String(user.mobile) : '';
+  if (!mobile) { const s = await fsGetFields(env, 'studentSessions/' + encodeURIComponent(String(user.sub || ''))); mobile = fsStr(s, 'mobile'); }
+  if (!mobile) throw new HttpErr(403, 'Student login verify nahi hua. Dobara login karein.');
+  const st = await fsGetFields(env, 'students/' + encodeURIComponent(mobile));
+  const instituteId = fsStr(st, 'instituteId');
+  if (!st || !instituteId) throw new HttpErr(403, 'Student ka institute verify nahi hua');
+  return { mobile: attMobile(mobile), instituteId, name: fsStr(st, 'name') || mobile };
+}
+async function attSettings(env, inst) {
+  const d = (await attGet(env, attBase(inst) + '/batchSettings/attendance')) || {};
+  const out = { ...ATT_DEF, ...d, notify: { ...ATT_DEF.notify, ...(d.notify || {}) } };
+  ['lat', 'lng', 'radiusM', 'maxAccM', 'qrRotateSec', 'qrValiditySec', 'qrGraceSec', 'lateMin', 'autoMin'].forEach((k) => { out[k] = Number(out[k]); if (!Number.isFinite(out[k])) out[k] = ATT_DEF[k]; });
+  return out;
+}
+
+/* ---- QR token (stateless HMAC) ---- */
+let attKeyCache = null;
+async function attKey(env) {
+  if (attKeyCache) return attKeyCache;
+  const sa = env.SERVICE_ACCOUNT_JSON ? JSON.parse(env.SERVICE_ACCOUNT_JSON) : {};
+  const base = String(env.ATT_SECRET || ('att:' + (sa.private_key || '')));
+  if (base.length < 24) throw new HttpErr(500, 'ATT_SECRET ya SERVICE_ACCOUNT_JSON set karein');
+  attKeyCache = await crypto.subtle.importKey('raw', await crypto.subtle.digest('SHA-256', te.encode(base)), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return attKeyCache;
+}
+async function attSig(env, inst, b, sid, iss, nonce) { return b64u(await crypto.subtle.sign('HMAC', await attKey(env), te.encode([inst, b, sid, iss, nonce].join('|')))).slice(0, 22); }
+async function attMakeToken(env, inst, b, sid) {
+  const iss = Math.floor(Date.now() / 1000), nonce = b64u(crypto.getRandomValues(new Uint8Array(6)));
+  return { token: 'SA1.' + iss.toString(36) + '.' + nonce + '.' + await attSig(env, inst, b, sid, iss, nonce), issuedAt: iss * 1000 };
+}
+async function attCheckToken(env, inst, b, sid, token, cfg) {
+  const p = String(token || '').trim().split('.');
+  if (p.length !== 4 || p[0] !== 'SA1' || !/^[0-9a-z]{4,10}$/.test(p[1]) || !/^[A-Za-z0-9_-]{4,12}$/.test(p[2]) || p[3].length !== 22) return 'invalid';
+  const iss = parseInt(p[1], 36), want = await attSig(env, inst, b, sid, iss, p[2]);
+  let diff = 0; for (let i = 0; i < 22; i++) diff |= want.charCodeAt(i) ^ p[3].charCodeAt(i);
+  if (diff) return 'invalid';
+  const age = Date.now() - iss * 1000;
+  if (age < -15000) return 'invalid';
+  return age <= (cfg.qrValiditySec + cfg.qrGraceSec) * 1000 ? 'ok' : 'expired';
+}
+
+/* ---- shared builders ---- */
+function attLegacy(env, inst, b, mobile, sid, status, s) {
+  return attMerge(env, attBase(inst, b) + '/attendanceStudents/' + attP(mobile + '_' + attYm(s.date)),
+    { mobile, ym: attYm(s.date), instituteId: inst, batchId: b, updatedAt: new Date(), days: { [sid]: { s: ATT_CODE[status], d: s.date, st: s.startMs || 0, t: s.title || '', k: s.subject || '' } } },
+    ['mobile', 'ym', 'instituteId', 'batchId', 'updatedAt', 'days.`' + sid + '`']);
+}
+const attLegacyDel = (env, inst, b, mobile, sid, s) => attMerge(env, attBase(inst, b) + '/attendanceStudents/' + attP(mobile + '_' + attYm(s.date)), { updatedAt: new Date() }, ['updatedAt', 'days.`' + sid + '`']);
+function attAuditW(env, inst, o) { return attSet(env, attBase(inst) + '/attendanceAudit/' + attRid(), { instituteId: inst, at: new Date(), atMs: Date.now(), ...o }); }
+const attRecPath = (inst, b, sid, mobile) => attBase(inst, b) + '/attendanceRecords/' + attP(sid + '_' + mobile);
+async function attLoadSession(env, inst, b, sid) {
+  const s = await attGet(env, attBase(inst, b) + '/attendanceSessions/' + attP(sid));
+  if (!s) throw new HttpErr(404, 'Session nahi mila');
+  return s;
+}
+async function attMembers(env, inst, b) {
+  const rows = await attQuery(env, attBase(inst, b), 'members', null, null, 1000);
+  return rows.map((m) => ({ mobile: m.id, name: m.name || m.id }));
+}
+function attCounts(recs, members) {
+  const c = { present: 0, late: 0, absent: 0, pending: 0, total: members.length };
+  recs.forEach((r) => { if (c[r.status] !== undefined) c[r.status]++; });
+  c.notMarked = Math.max(0, c.total - c.present - c.late - c.absent - c.pending);
+  return c;
+}
+function attSessionBody(env, inst, b, sid, o, email, qrOn) {
+  return {
+    sessionId: sid, classId: o.classId || sid, batchId: b, instituteId: inst, title: o.title, subject: o.subject, teacher: o.teacher, period: o.period,
+    date: o.date, ym: attYm(o.date), startMs: o.startMs, endMs: o.endMs, liveStatus: 'active', status: 'live', qrOn: !!qrOn, startedAtMs: Date.now(), startedBy: email, updatedAt: new Date()
+  };
+}
+function attSessionInput(o) {
+  const date = attDate(o.date), startMs = attNum(o.startMs || Date.now(), 1e12, 4e12, 'startMs'), endMs = attNum(o.endMs || startMs + 3600000, 1e12, 4e12, 'endMs');
+  return { date, startMs, endMs, title: attStr(o.title || 'Class', 120) || 'Class', subject: attStr(o.subject, 80), teacher: attStr(o.teacher, 80), period: attStr(o.period, 20), classId: o.classId ? attId(o.classId, 'classId') : '' };
+}
+const attPublic = (s) => ({ sessionId: s.sessionId, batchId: s.batchId, instituteId: s.instituteId, title: s.title, subject: s.subject || '', teacher: s.teacher || '', period: s.period || '', date: s.date, startMs: s.startMs, status: s.liveStatus, qrOn: !!s.qrOn, startedAtMs: s.startedAtMs || 0, endedAtMs: s.endedAtMs || 0, updatedAt: new Date() });
+const attPubCfg = (c) => ({ geoEnabled: c.geoEnabled && c.locPolicy !== 'off', maxAccM: c.maxAccM, radiusM: c.radiusM, retry: c.retry, qrEnabled: c.qrEnabled, qrRotateSec: c.qrRotateSec });
+
+async function attBody(request) {
+  const txt = await request.text();
+  if (txt.length > 400000) throw new HttpErr(413, 'Request bahut badi hai');
+  try { return JSON.parse(txt || '{}'); } catch (e) { throw new HttpErr(400, 'JSON galat hai'); }
+}
+
+/* ======================= ADMIN ======================= */
+async function attOpSettings(request, env, body) {
+  const a = await attAdmin(request, env), inst = a.instituteId;
+  if (body.get) return { ok: true, settings: await attSettings(env, inst) };
+  attRate('attset:' + a.email, 30, 60000);
+  const s = body.settings || {}, bool = (v) => v === true || v === 'true';
+  const out = {
+    geoEnabled: bool(s.geoEnabled), lat: attNum(s.lat, -90, 90, 'Latitude'), lng: attNum(s.lng, -180, 180, 'Longitude'),
+    radiusM: attNum(s.radiusM, 20, 2000, 'Radius (m)'), maxAccM: attNum(s.maxAccM, 5, 500, 'GPS accuracy (m)'),
+    locPolicy: ['pending', 'reject', 'off'].includes(s.locPolicy) ? s.locPolicy : (() => { throw new HttpErr(400, 'Location policy galat hai'); })(), retry: bool(s.retry),
+    qrEnabled: bool(s.qrEnabled), qrRotateSec: attNum(s.qrRotateSec, 10, 120, 'QR rotation (sec)'), qrValiditySec: attNum(s.qrValiditySec, 10, 300, 'QR validity (sec)'), qrGraceSec: attNum(s.qrGraceSec, 0, 60, 'Grace (sec)'),
+    startTime: attHM(s.startTime, 'Start time'), endTime: attHM(s.endTime, 'End time'), lateMin: attNum(s.lateMin, 0, 240, 'Late (min)'), autoMin: attNum(s.autoMin == null ? ATT_DEF.autoMin : s.autoMin, 1, 600, 'Auto (min)'),
+    manualEnabled: bool(s.manualEnabled), teacherCorrection: bool(s.teacherCorrection), dupPrevent: true,
+    pendingPolicy: ['review', 'auto_absent_24h'].includes(s.pendingPolicy) ? s.pendingPolicy : (() => { throw new HttpErr(400, 'Pending policy galat hai'); })(),
+    notify: { enabled: bool((s.notify || {}).enabled), present: bool((s.notify || {}).present), absent: bool((s.notify || {}).absent), late: bool((s.notify || {}).late) }
+  };
+  if (out.qrValiditySec < out.qrRotateSec) throw new HttpErr(400, 'QR validity, rotation se kam nahi ho sakti');
+  if (out.startTime >= out.endTime) throw new HttpErr(400, 'Attendance start time, end time se pehle hona chahiye');
+  const prev = (await attGet(env, attBase(inst) + '/batchSettings/attendance')) || {};
+  await attCommit(env, [attMerge(env, attBase(inst) + '/batchSettings/attendance', { ...out, updatedBy: a.email, updatedAt: new Date() }), attAuditW(env, inst, { action: 'settings.update', by: a.email, reason: '', prevStatus: '', newStatus: '', detail: attStr(JSON.stringify({ from: { r: prev.radiusM, a: prev.maxAccM, q: prev.qrRotateSec }, to: { r: out.radiusM, a: out.maxAccM, q: out.qrRotateSec } }), 300) })]);
+  return { ok: true, settings: await attSettings(env, inst) };
+}
+
+async function attOpStart(request, env, body) {
+  const a = await attAdmin(request, env), inst = a.instituteId, b = attId(body.batchId, 'batchId'), sid = attId(body.sessionId, 'sessionId');
+  attRate('attstart:' + a.email, 20, 60000);
+  const batch = await attGet(env, attBase(inst, b));
+  if (!batch) throw new HttpErr(404, 'Batch nahi mila ya ye aapke institute ka nahi hai');
+  const cfg = await attSettings(env, inst), qrOn = body.qr !== false && cfg.qrEnabled;
+  const inp = attSessionInput(body), cur = await attGet(env, attBase(inst, b) + '/attendanceSessions/' + attP(sid));
+  if (cur && (cur.status === 'submitted' || cur.status === 'auto')) throw new HttpErr(409, 'Is class ki attendance final ho chuki hai. Badlav ke liye Manual (correction) use karein.');
+  if (cur && cur.liveStatus === 'active') {
+    const t = qrOn ? await attMakeToken(env, inst, b, sid) : null;
+    return { ok: true, resumed: true, session: attPublic(cur), settings: attPubCfg(cfg), token: t && t.token, issuedAt: t && t.issuedAt };
+  }
+  const active = (await attQuery(env, attBase(inst, b), 'attendanceSessions', 'liveStatus', 'active', 20)).filter((x) => x.id !== sid);
+  const clash = active.find((x) => !inp.period || !x.period || x.period === inp.period);
+  if (clash) throw new HttpErr(409, 'Is batch me dusra session abhi chalu hai (' + (clash.title || clash.id) + '). Pehle use End karein.');
+  const body2 = attSessionBody(env, inst, b, sid, inp, a.email, qrOn);
+  const full = { ...(cur || {}), ...body2 };
+  await attCommit(env, [attSet(env, attBase(inst, b) + '/attendanceSessions/' + attP(sid), full), attSet(env, attBase(inst, b) + '/attendanceLive/' + attP(sid), attPublic(full)), attAuditW(env, inst, { action: 'session.start', by: a.email, batchId: b, sessionId: sid, reason: '', prevStatus: '', newStatus: 'active' })]);
+  const t = qrOn ? await attMakeToken(env, inst, b, sid) : null;
+  return { ok: true, session: attPublic(full), settings: attPubCfg(cfg), token: t && t.token, issuedAt: t && t.issuedAt };
+}
+
+async function attOpToken(request, env, body) {
+  const a = await attAdmin(request, env), inst = a.instituteId, b = attId(body.batchId, 'batchId'), sid = attId(body.sessionId, 'sessionId');
+  attRate('atttok:' + a.email + ':' + sid, 12, 60000);
+  const [s, cfg] = await Promise.all([attLoadSession(env, inst, b, sid), attSettings(env, inst)]);
+  if (s.liveStatus !== 'active') throw new HttpErr(409, 'Session chalu nahi hai');
+  if (!s.qrOn) throw new HttpErr(409, 'Is session me QR band hai');
+  const t = await attMakeToken(env, inst, b, sid);
+  return { ok: true, token: t.token, issuedAt: t.issuedAt, rotateSec: cfg.qrRotateSec, validitySec: cfg.qrValiditySec, graceSec: cfg.qrGraceSec };
+}
+
+function attRecBody(inst, b, sid, s, mobile, name, status, method, extra) {
+  const now = Date.now();
+  return { mobile, name, sessionId: sid, batchId: b, instituteId: inst, date: s.date, status, method, markedMs: now, markedAt: new Date(), createdAt: new Date(), updatedAt: new Date(), ...(extra || {}) };
+}
+
+async function attOpManual(request, env, body) {
+  const a = await attAdmin(request, env), inst = a.instituteId, b = attId(body.batchId, 'batchId');
+  attRate('attman:' + a.email, 30, 60000);
+  const cfg = await attSettings(env, inst);
+  if (!cfg.manualEnabled) throw new HttpErr(403, 'Manual attendance band hai (Settings me chalu karein)');
+  const so = body.session || {}, sid = attId(so.sessionId, 'sessionId'), inp = attSessionInput(so);
+  const changes = Array.isArray(body.changes) ? body.changes : [];
+  if (!changes.length) throw new HttpErr(400, 'Koi badlav nahi bheja gaya');
+  if (changes.length > 800) throw new HttpErr(400, 'Ek baar me 800 se zyada badlav nahi');
+  const batch = await attGet(env, attBase(inst, b));
+  if (!batch) throw new HttpErr(404, 'Batch nahi mila');
+  let s = await attGet(env, attBase(inst, b) + '/attendanceSessions/' + attP(sid));
+  if (s && (s.status === 'submitted' || s.status === 'auto') && !cfg.teacherCorrection) throw new HttpErr(403, 'Final attendance me correction ki anumati band hai');
+  const writes = [];
+  if (!s) { s = { ...attSessionBody(env, inst, b, sid, inp, a.email, false), liveStatus: 'manual' }; writes.push(attSet(env, attBase(inst, b) + '/attendanceSessions/' + attP(sid), s)); }
+  else if (!s.date) s = { ...s, date: inp.date, startMs: s.startMs || inp.startMs, title: s.title || inp.title, subject: s.subject || inp.subject };
+  const [members, recs] = await Promise.all([attMembers(env, inst, b), attQuery(env, attBase(inst, b), 'attendanceRecords', 'sessionId', sid, 1000)]);
+  const mm = Object.fromEntries(members.map((m) => [m.mobile, m.name])), rm = Object.fromEntries(recs.map((r) => [r.mobile, r]));
+  const bad = [], seen = {}; let saved = 0;
+  for (const ch of changes) {
+    const mobile = attMobile(ch.mobile), status = ch.status;
+    if (!['present', 'absent', 'late'].includes(status)) { bad.push({ mobile, error: 'status galat' }); continue; }
+    if (!mm[mobile]) { bad.push({ mobile, error: 'student is batch me nahi hai' }); continue; }
+    if (seen[mobile]) continue; seen[mobile] = 1;
+    const prior = rm[mobile], reason = attStr(ch.reason, 300), confirmed = prior && ['present', 'late', 'absent'].includes(prior.status);
+    if (prior && prior.status === status && prior.method) continue;
+    if (confirmed && reason.length < 3) { bad.push({ mobile, error: 'Confirmed attendance badalne ke liye kaaran chahiye' }); continue; }
+    const method = confirmed ? 'admin_correction' : (prior && prior.method === 'gps_qr' ? 'gps_qr' : 'manual');
+    const rec = prior ? { ...prior, status, method, verifiedBy: a.email, reviewNote: reason || prior.reviewNote || '', markedMs: Date.now(), markedAt: new Date(), updatedAt: new Date() }
+      : attRecBody(inst, b, sid, s, mobile, mm[mobile], status, 'manual', { verifiedBy: a.email, reviewNote: reason });
+    delete rec.id;
+    writes.push(attSet(env, attRecPath(inst, b, sid, mobile), rec), attLegacy(env, inst, b, mobile, sid, status, s),
+      attAuditW(env, inst, { action: confirmed ? 'attendance.correction' : 'attendance.manual', by: a.email, batchId: b, sessionId: sid, mobile, studentName: mm[mobile], prevStatus: prior ? prior.status : 'not_marked', newStatus: status, reason }));
+    saved++;
+  }
+  if (writes.length) await attCommit(env, writes);
+  return { ok: true, saved, skipped: bad };
+}
+
+async function attOpReview(request, env, body) {
+  const a = await attAdmin(request, env), inst = a.instituteId, b = attId(body.batchId, 'batchId'), sid = attId(body.sessionId, 'sessionId'), mobile = attMobile(body.mobile);
+  attRate('attrev:' + a.email, 60, 60000);
+  const action = String(body.action || ''), note = attStr(body.note, 300);
+  if (!['present', 'late', 'absent', 'retry'].includes(action)) throw new HttpErr(400, 'action galat hai');
+  const [s, prior] = await Promise.all([attLoadSession(env, inst, b, sid), attGet(env, attRecPath(inst, b, sid, mobile))]);
+  if (!prior) throw new HttpErr(404, 'Record nahi mila');
+  if (prior.status !== 'pending') throw new HttpErr(409, 'Ye record Pending nahi hai (' + prior.status + ')');
+  const w = [];
+  if (action === 'retry') {
+    w.push(attDel(env, attRecPath(inst, b, sid, mobile)), attLegacyDel(env, inst, b, mobile, sid, s));
+  } else {
+    w.push(attSet(env, attRecPath(inst, b, sid, mobile), { ...prior, status: action, verifiedBy: a.email, reviewNote: note, reviewedMs: Date.now(), updatedAt: new Date() }), attLegacy(env, inst, b, mobile, sid, action, s));
+  }
+  w.push(attAuditW(env, inst, { action: 'pending.' + action, by: a.email, batchId: b, sessionId: sid, mobile, studentName: prior.name || '', prevStatus: 'pending', newStatus: action === 'retry' ? 'retry' : action, reason: note }));
+  await attCommit(env, w);
+  return { ok: true, status: action };
+}
+
+async function attOpEnd(request, env, body) {
+  const a = await attAdmin(request, env), inst = a.instituteId, b = attId(body.batchId, 'batchId'), sid = attId(body.sessionId, 'sessionId');
+  const s = await attLoadSession(env, inst, b, sid);
+  if (s.liveStatus === 'completed') { const [m, r] = await Promise.all([attMembers(env, inst, b), attQuery(env, attBase(inst, b), 'attendanceRecords', 'sessionId', sid, 1000)]); return { ok: true, already: true, counts: attCounts(r, m) }; }
+  const upd = { ...s, liveStatus: 'completed', endedAtMs: Date.now(), updatedAt: new Date() };
+  await attCommit(env, [attSet(env, attBase(inst, b) + '/attendanceSessions/' + attP(sid), upd), attSet(env, attBase(inst, b) + '/attendanceLive/' + attP(sid), attPublic(upd)), attAuditW(env, inst, { action: 'session.end', by: a.email, batchId: b, sessionId: sid, prevStatus: 'active', newStatus: 'completed', reason: '' })]);
+  const [m, r] = await Promise.all([attMembers(env, inst, b), attQuery(env, attBase(inst, b), 'attendanceRecords', 'sessionId', sid, 1000)]);
+  return { ok: true, counts: attCounts(r, m) };
+}
+
+async function attNotify(env, inst, b, sid, s, items, cfg) {
+  if (!cfg.notify.enabled || !items.length) return { queued: 0 };
+  const have = new Set((await attQuery(env, attBase(inst), 'attendanceNotifications', 'sessionId', sid, 1000)).map((x) => x.id));
+  const fresh = items.filter((x) => cfg.notify[x.type] && !have.has(sid + '_' + x.mobile + '_' + x.type));
+  if (!fresh.length) return { queued: 0 };
+  let delivery = 'not_configured', ref = '';
+  if (env.ATT_NOTIFY_URL) {
+    try {
+      const r = await fetch(env.ATT_NOTIFY_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ instituteId: inst, batchId: b, sessionId: sid, title: s.title, subject: s.subject, date: s.date, items: fresh }) });
+      delivery = r.ok ? 'sent' : 'failed'; ref = String(r.status);
+    } catch (e) { delivery = 'failed'; ref = 'network'; }
+  }
+  await attCommit(env, fresh.map((x) => attSet(env, attBase(inst) + '/attendanceNotifications/' + attP(sid + '_' + x.mobile + '_' + x.type), { instituteId: inst, batchId: b, sessionId: sid, mobile: x.mobile, name: x.name, type: x.type, delivery, providerRef: ref, createdAt: new Date() })));
+  return { queued: fresh.length, delivery };
+}
+
+async function attOpFinalize(request, env, body) {
+  const a = await attAdmin(request, env), inst = a.instituteId, b = attId(body.batchId, 'batchId'), sid = attId(body.sessionId, 'sessionId');
+  attRate('attfin:' + a.email, 20, 60000);
+  const [s, cfg, members, recs] = await Promise.all([attLoadSession(env, inst, b, sid), attSettings(env, inst), attMembers(env, inst, b), attQuery(env, attBase(inst, b), 'attendanceRecords', 'sessionId', sid, 1000)]);
+  if (s.status === 'submitted' || s.status === 'auto') throw new HttpErr(409, 'Ye session pehle hi final ho chuka hai');
+  const pend = recs.filter((r) => r.status === 'pending');
+  if (pend.length && !body.force) { const e = new HttpErr(409, pend.length + ' students Pending hain. Pehle review karein ya "force" se final karein (Pending Absent nahi gine jayenge).'); e.pending = pend.length; throw e; }
+  const rm = Object.fromEntries(recs.map((r) => [r.mobile, r])), writes = [], marks = {}, via = {}, notes = [];
+  const autoAbs = cfg.pendingPolicy === 'auto_absent_24h' && Date.now() - (s.startedAtMs || s.startMs || 0) >= 24 * 3600 * 1000;
+  for (const m of members) {
+    let r = rm[m.mobile];
+    if (!r) {
+      r = attRecBody(inst, b, sid, s, m.mobile, m.name, 'absent', 'auto_final', { verifiedBy: a.email });
+      writes.push(attSet(env, attRecPath(inst, b, sid, m.mobile), r), attLegacy(env, inst, b, m.mobile, sid, 'absent', s));
+    } else if (r.status === 'pending' && autoAbs) {
+      writes.push(attSet(env, attRecPath(inst, b, sid, m.mobile), { ...r, status: 'absent', method: r.method, verifiedBy: a.email, reviewNote: 'Auto-absent (24h policy)', updatedAt: new Date() }), attLegacy(env, inst, b, m.mobile, sid, 'absent', s));
+      r = { ...r, status: 'absent' };
+    }
+    if (r.status === 'present') marks[m.mobile] = 'P'; else if (r.status === 'late') marks[m.mobile] = 'L'; else if (r.status === 'absent') marks[m.mobile] = 'A';
+    if (marks[m.mobile]) via[m.mobile] = r.method === 'gps_qr' ? 'qr' : r.method === 'nfc' ? 'nfc' : 'manual';
+    if (r.status === 'present' || r.status === 'late' || r.status === 'absent') notes.push({ mobile: m.mobile, name: m.name, type: r.status });
+  }
+  const cn = { p: 0, a: 0, l: 0, total: members.length }; Object.values(marks).forEach((v) => { cn[v.toLowerCase()]++; });
+  const done = { ...s, status: 'submitted', liveStatus: 'completed', endedAtMs: s.endedAtMs || Date.now(), marks, via, counts: cn, submittedBy: a.email, submittedAt: new Date(), updatedAt: new Date(), pendingLeft: pend.length && !autoAbs ? pend.length : 0 };
+  writes.push(attSet(env, attBase(inst, b) + '/attendanceSessions/' + attP(sid), done), attSet(env, attBase(inst, b) + '/attendanceLive/' + attP(sid), attPublic(done)), attAuditW(env, inst, { action: 'session.finalize', by: a.email, batchId: b, sessionId: sid, prevStatus: s.liveStatus || '', newStatus: 'final', reason: pend.length ? pend.length + ' pending rakhe gaye' : '' }));
+  await attCommit(env, writes);
+  let nt = { queued: 0 }; try { nt = await attNotify(env, inst, b, sid, s, notes, cfg); } catch (e) { nt = { queued: 0, error: true }; }
+  return { ok: true, counts: cn, pending: pend.length && !autoAbs ? pend.length : 0, notifications: nt };
+}
+
+/* ======================= STUDENT ======================= */
+async function attOpConfig(request, env) {
+  const st = await attStudent(request, env), cfg = await attSettings(env, st.instituteId);
+  return { ok: true, config: attPubCfg(cfg) };
+}
+
+async function attOpVerify(request, env, body) {
+  const st = await attStudent(request, env), inst = st.instituteId, b = attId(body.batchId, 'batchId'), sid = attId(body.sessionId, 'sessionId');
+  attRate('attver:' + inst + ':' + st.mobile, 15, 60000);
+  const paths = [attBase(inst, b) + '/members/' + attP(st.mobile), attBase(inst, b) + '/attendanceSessions/' + attP(sid), attRecPath(inst, b, sid, st.mobile)];
+  const [got, cfg] = await Promise.all([attBatchGet(env, paths), attSettings(env, inst)]);
+  const member = got[paths[0]], s = got[paths[1]], prior = got[paths[2]];
+  if (!member) throw new HttpErr(403, 'Aap is batch me enrolled nahi hain.');
+  if (!s) throw new HttpErr(404, 'Attendance session nahi mila.');
+  if (s.liveStatus !== 'active') throw new HttpErr(409, 'Ye attendance session ab chalu nahi hai.');
+  if (!s.qrOn || !cfg.qrEnabled) throw new HttpErr(409, 'Is session me QR attendance band hai. Teacher se manual lagwayein.');
+  const info = { title: s.title, subject: s.subject || '', period: s.period || '', date: s.date };
+  if (prior && (prior.status === 'present' || prior.status === 'late')) return { ok: true, already: true, status: prior.status, markedMs: prior.markedMs, session: info, student: { name: st.name } };
+  if (prior && prior.status === 'absent') throw new HttpErr(409, 'Teacher ne aapki attendance pehle hi tay kar di hai.');
+  const tk = await attCheckToken(env, inst, b, sid, body.token, cfg);
+  if (tk === 'invalid') { const e = new HttpErr(400, 'Ye QR is class ka nahi hai ya galat hai. Teacher ki screen ka QR scan karein.'); e.code = 'qr_invalid'; throw e; }
+  if (tk === 'expired') { const e = new HttpErr(409, 'QR expire ho gaya. Screen par naya QR dekhkar dobara scan karein.'); e.code = 'qr_expired'; e.retry = true; throw e; }
+  const nowMs = Date.now(), hm = attIstHM(nowMs);
+  if (hm < cfg.startTime || hm > cfg.endTime) { const e = new HttpErr(403, 'Abhi attendance ka samay nahi hai (' + cfg.startTime + ' – ' + cfg.endTime + ').'); e.code = 'time_window'; throw e; }
+  let reason = '', dist = null, acc = null, locAge = null;
+  if (cfg.geoEnabled && cfg.locPolicy !== 'off') {
+    const lat = Number(body.lat), lng = Number(body.lng), has = body.lat != null && body.lng != null && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+    acc = Number(body.accuracy); if (!Number.isFinite(acc) || acc < 0) acc = null;
+    const ts = Number(body.locTs); locAge = Number.isFinite(ts) ? nowMs - ts : null;
+    if (cfg.lat === 0 && cfg.lng === 0) reason = 'geo_not_configured';
+    else if (!has) reason = body.gpsDenied ? 'gps_denied' : 'gps_missing';
+    else {
+      dist = Math.round(attHav(lat, lng, cfg.lat, cfg.lng));
+      if (acc == null || acc > cfg.maxAccM) reason = 'gps_accuracy';
+      else if (locAge == null || locAge > 180000 || locAge < -60000) reason = 'gps_stale';
+      else if (dist > cfg.radiusM) reason = 'outside';
+    }
+    if (reason && cfg.locPolicy === 'reject' && reason !== 'geo_not_configured') { const e = new HttpErr(403, ATT_REASONS[reason]); e.code = reason; e.distanceM = dist; e.retry = !!cfg.retry; throw e; }
+  }
+  const late = nowMs > (s.startMs || s.startedAtMs || nowMs) + cfg.lateMin * 60000;
+  const status = reason ? 'pending' : (late ? 'late' : 'present');
+  const extra = { accuracy: acc, distanceM: dist, locAgeMs: locAge, verificationResult: reason || 'ok', ...(reason ? { pendingReason: reason } : {}) };
+  const rec = prior ? { ...prior, status, method: 'gps_qr', ...extra, markedMs: nowMs, markedAt: new Date(), updatedAt: new Date() } : attRecBody(inst, b, sid, s, st.mobile, st.name, status, 'gps_qr', extra);
+  const base = { date: s.date, startMs: s.startMs, title: s.title, subject: s.subject };
+  try { await attCommit(env, [attSet(env, attRecPath(inst, b, sid, st.mobile), rec, prior ? { mustExist: true } : { create: true }), attLegacy(env, inst, b, st.mobile, sid, status, base)]); }
+  catch (e) { if (e.status === 409) return { ok: true, already: true, status: 'present', session: info, student: { name: st.name } }; throw e; }
+  return { ok: true, status, reason, message: reason ? ATT_REASONS[reason] : '', distanceM: dist, accuracy: acc, retry: !!(reason && cfg.retry), markedMs: nowMs, session: info, student: { name: st.name } };
+}
+
+async function attOpPending(request, env, body) {
+  const st = await attStudent(request, env), inst = st.instituteId, b = attId(body.batchId, 'batchId'), sid = attId(body.sessionId, 'sessionId');
+  attRate('attpen:' + inst + ':' + st.mobile, 8, 60000);
+  const reason = ATT_REASONS[body.reason] ? body.reason : 'other';
+  const paths = [attBase(inst, b) + '/members/' + attP(st.mobile), attBase(inst, b) + '/attendanceSessions/' + attP(sid), attRecPath(inst, b, sid, st.mobile)];
+  const got = await attBatchGet(env, paths), s = got[paths[1]];
+  if (!got[paths[0]]) throw new HttpErr(403, 'Aap is batch me enrolled nahi hain.');
+  if (!s || s.liveStatus !== 'active') throw new HttpErr(409, 'Ye attendance session chalu nahi hai.');
+  if (got[paths[2]]) return { ok: true, already: true, status: got[paths[2]].status };
+  const rec = attRecBody(inst, b, sid, s, st.mobile, st.name, 'pending', 'gps_qr', { verificationResult: reason, pendingReason: reason, accuracy: null, distanceM: null });
+  try { await attCommit(env, [attSet(env, attRecPath(inst, b, sid, st.mobile), rec, { create: true }), attLegacy(env, inst, b, st.mobile, sid, 'pending', { date: s.date, startMs: s.startMs, title: s.title, subject: s.subject })]); }
+  catch (e) { if (e.status === 409) return { ok: true, already: true }; throw e; }
+  return { ok: true, status: 'pending', reason, message: ATT_REASONS[reason] };
+}
+
+async function handleAttendance(request, env, pathname) {
+  if (request.method !== 'POST') throw new HttpErr(405, 'POST chahiye');
+  if (!env.SERVICE_ACCOUNT_JSON) throw new HttpErr(500, 'SERVICE_ACCOUNT_JSON secret set nahi hai');
+  const op = pathname.slice('/attendance/'.length), body = await attBody(request);
+  try {
+    switch (op) {
+      case 'settings': return json(await attOpSettings(request, env, body));
+      case 'start': return json(await attOpStart(request, env, body));
+      case 'token': return json(await attOpToken(request, env, body));
+      case 'manual': return json(await attOpManual(request, env, body));
+      case 'review': return json(await attOpReview(request, env, body));
+      case 'end': return json(await attOpEnd(request, env, body));
+      case 'finalize': return json(await attOpFinalize(request, env, body));
+      case 'config': return json(await attOpConfig(request, env));
+      case 'verify': return json(await attOpVerify(request, env, body));
+      case 'pending': return json(await attOpPending(request, env, body));
+      default: throw new HttpErr(404, 'Unknown attendance endpoint');
+    }
+  } catch (e) {
+    if (e instanceof HttpErr || e.status) { const o = { ok: false, error: e.message }; ['code', 'retry', 'pending', 'distanceM'].forEach((k) => { if (e[k] !== undefined) o[k] = e[k]; }); return json(o, e.status || 500); }
+    throw e;
+  }
+}
+
 const worker = {
   async scheduled(event, env, ctx) {
     ctx.waitUntil((async () => {   // v236: ek ke baad ek, taaki Firestore reads ka label (kaun sa cron) sahi aaye
@@ -1984,6 +2436,7 @@ const worker = {
       if (pathname === '/alerts' || pathname === '/alerts/clear') return json(await handleAlertsList(request, env, pathname));
       if (pathname === '/broadcast') return json(await handleBroadcast(request, env));
       if (pathname.indexOf('/owner/') === 0) return json(await handleOwner(request, env, pathname));
+      if (pathname.indexOf('/attendance/') === 0) return await handleAttendance(request, env, pathname);
       if (pathname.indexOf('/ai-call/') === 0) return await handleAICalls(request, env, pathname);
       if (request.method !== 'POST') return json({ ok: true, service: 'snaptestpro-push' });
       return json(await handle(request, env));

@@ -164,7 +164,8 @@
   }
   function draft() { if (!M || (M.sub && !M.edit)) return; M.dirty = true; clearTimeout(M.dt); M.dt = setTimeout(flushDraft, 1500); }
   function tally() { var o = { p: 0, a: 0, l: 0, u: 0 }; M.ro.forEach(function (r) { var s = M.marks[r.mobile]; if (s === "P") o.p++; else if (s === "A") o.a++; else if (s === "L") o.l++; else o.u++; }); return o; }
-  function openMark(c, it) {
+  function openMark(c, it, legacy) {
+    if (!legacy && it && window.SnapAttV2) return window.SnapAttV2.openClass(c, it);   /* v2: naya Manual/QR screen */
     closeMark();
     var o = document.createElement("div"); o.id = "att-mark"; o.className = "att-ov"; o.innerHTML = '<div class="att-hd"><button data-x aria-label="Back">←</button><b>Mark Attendance</b></div><div class="att-load">Loading…</div>';
     document.body.appendChild(o); o.querySelector("[data-x]").onclick = closeMark;
@@ -437,10 +438,10 @@
   }
   EXT.adminViews.att_set = { icon: "📡", label: "NFC Cards & Settings", render: function (m, c) {
     var F = c.A.attS = c.A.attS || { b: (c.A.batches[0] || {}).id || "" };
-    m.innerHTML = '<div class="att-card"><div class="att-h"><b>⚙️ Attendance Settings</b></div><div class="att-fr"><label>Late (class shuru hone ke baad, min)<input type="number" min="0" data-late></label><label>Auto-submit (class shuru hone ke baad, min)<input type="number" min="1" data-auto></label><button class="att-b" data-save>Save</button></div></div>' +
+    m.innerHTML = '<div class="att-note">⚙️ Attendance settings (GPS, QR, Late, Notifications) ab <b>Attendance Settings</b> menu me hain.</div>' +
       '<div class="att-card"><div class="att-h"><b>📡 NFC ID Cards</b></div><div class="att-note">NFC: ' + (NFC.kind() === "native" ? "App plugin mila ✔" : NFC.kind() === "web" ? "Chrome Web NFC ✔" : "Is device/app me available nahi — UID haath se likh kar bhi jod sakte hain") + '</div><select class="att-sel" data-b>' + (c.A.batches || []).map(function (b) { return '<option value="' + e(b.id) + '"' + (F.b === b.id ? " selected" : "") + ">" + e(b.name) + "</option>"; }).join("") + '</select><div id="att-cl" class="att-empty">Loading…</div></div>';
     loadCfg(c).then(function (cfg) { var l = m.querySelector("[data-late]"), a = m.querySelector("[data-auto]"); if (l) { l.value = cfg.lateMin; a.value = cfg.autoMin; } });
-    m.querySelector("[data-save]").onclick = function () {
+    var legSave = m.querySelector("[data-save]"); if (legSave) legSave.onclick = function () {
       var l = Math.max(0, +m.querySelector("[data-late]").value || 0), a = Math.max(1, +m.querySelector("[data-auto]").value || DEF.autoMin);
       cfgRef(c).set({ lateMin: l, autoMin: a, updatedAt: c.FV().serverTimestamp(), by: c.adminEmail() }, { merge: true }).then(function () { X.cfg = { lateMin: l, autoMin: a }; X.cfgInst = inst(c); c.toast("✅ Settings save ho gayi"); }).catch(function (x) { c.toast("Save nahi hua: " + (x.code || x.message)); });
     };
@@ -601,5 +602,6 @@
     });
   })();
 
-  window.SnapAttendance = { open: openMark, nfc: NFC };
+  window.SnapAttendance = { open: openMark, openLegacy: function (c, it) { openMark(c, it, true); }, nfc: NFC,
+    x: { baseOf: baseOf, classesIn: classesIn, roster: roster, sessRange: sessRange, counts: counts, clearCache: function () { X.sc = {}; X.ro = {}; } } };
 })();
