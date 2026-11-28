@@ -734,7 +734,7 @@ function vTests(m) {
   function reqEnroll(id) {
     var b0 = S.avail.filter(function (x) { return x.id === id; })[0];
     var s = sess(); bref(S.inst, id).collection("requests").doc(String(s.mobile)).set({ mobile: String(s.mobile), name: s.name || "", status: "pending", createdAt: FV().serverTimestamp() })
-      .then(function () { var b = S.avail.filter(function (x) { return x.id === id; })[0]; b && (b.req = "pending"); toast("✅ Request bhej di — admin approve karega"); sHome(); }).catch(function (e) { toast("Request nahi gayi: " + (e.code || e.message)); });
+      .then(function () { var b = S.avail.filter(function (x) { return x.id === id; })[0]; b && (b.req = "pending"); toast("✅ Request bhej di — admin approve karega"); sHome(); }).catch(function (e) { toast(e && e.code === "permission-denied" ? "Request nahi gayi (permission). Ek baar logout/login karke dobara try karein. Phir bhi na ho to admin se Firebase me naye Firestore Rules publish karne ko kahein." : "Request nahi gayi: " + ((e && (e.code || e.message)) || "error")); });
   }
   function liveOf(b) { return (S.items[b.id] || []).filter(function (i) { return i.kind === "class" && i.status === "live" && (i.liveRoom || i.liveUrl || i.ytId || i._lv); })[0]; }
   function nextOf(b) { var n = Date.now() - 36e5; return (S.items[b.id] || []).filter(function (i) { return i.kind === "class" && i.status === "upcoming" && ms(i.scheduledAt) >= n; }).sort(function (a, c) { return ms(a.scheduledAt) - ms(c.scheduledAt); })[0]; }
