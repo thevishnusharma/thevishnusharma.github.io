@@ -487,7 +487,7 @@
       function row(t, s, k, v) { return '<div class="av2-row"><div>' + t + (s ? "<small>" + s + "</small>" : "") + "</div>" + tg(k, v) + "</div>"; }
       m.innerHTML = (g.lat === 0 && g.lng === 0 ? '<div class="av2-note warn">⚠️ School ki GPS location abhi set nahi hai. Jab tak set nahi hogi, GPS wale attendance attempts Pending me jayenge.</div>' : "") +
         '<div class="av2-grid2"><div class="av2-card"><div class="av2-h"><b>📍 GPS Settings</b>' + tg("geoEnabled", g.geoEnabled) + '</div><div class="av2-fg"><label>School Latitude<input data-k="lat" type="number" step="any" value="' + g.lat + '"></label><label>School Longitude<input data-k="lng" type="number" step="any" value="' + g.lng + '"></label></div>' +
-        '<button class="av2-b sm sec" data-here>📡 Meri abhi ki location lagayein</button><small class="av2-note" data-hs></small>' +
+        '<div class="av2-loc"><button class="av2-b sec" data-here>📡 Meri abhi ki location lagayein</button><div class="av2-note" data-hs style="display:none"></div><label class="av2-rg">Ya Google Maps se paste karein<input data-paste placeholder="25.5941, 85.1376  ya Maps ka link"></label><small class="av2-hint">Google Maps me school par lamba dabayein → upar jo numbers aayein unhe copy karke yahan paste karein.</small></div>' +
         '<label class="av2-rg">Geofence radius: <b data-rv>' + g.radiusM + ' m</b><input type="range" min="30" max="500" data-k="radiusM" value="' + Math.min(500, g.radiusM) + '"></label><label class="av2-rg">Max GPS accuracy: <b data-av>' + g.maxAccM + ' m</b><input type="range" min="10" max="150" data-k="maxAccM" value="' + Math.min(150, g.maxAccM) + '"></label>' +
         row("GPS retry ki anumati", "Student dobara try kar sake", "retry", g.retry) + '<label class="av2-rg">Location policy<select data-k="locPolicy"><option value="pending"' + (g.locPolicy === "pending" ? " selected" : "") + '>Bahar / kharab GPS → Pending (teacher review)</option><option value="reject"' + (g.locPolicy === "reject" ? " selected" : "") + '>Bahar → seedha reject</option><option value="off"' + (g.locPolicy === "off" ? " selected" : "") + ">GPS check band (sirf QR)</option></select></label></div>" +
         '<div><div class="av2-card"><div class="av2-h"><b>🔳 QR Settings</b>' + tg("qrEnabled", g.qrEnabled) + '</div><div class="av2-fg c3"><label>Rotation (sec)<input data-k="qrRotateSec" type="number" value="' + g.qrRotateSec + '"></label><label>Validity (sec)<input data-k="qrValiditySec" type="number" value="' + g.qrValiditySec + '"></label><label>Grace (sec)<input data-k="qrGraceSec" type="number" value="' + g.qrGraceSec + '"></label></div></div>' +
@@ -498,9 +498,20 @@
         '<div class="av2-save"><span style="flex:1" class="av2-note">Save par server har field jaanchta hai aur badlav Audit Log me jata hai.</span><button class="av2-b" data-save>💾 Save Settings</button></div>';
       $$(".av2-tg", m).forEach(function (b) { b.onclick = function () { if (b.dataset.tg === "dup") return; b.classList.toggle("on"); }; });
       $$("[data-k]", m).forEach(function (el) { if (el.type === "range") el.oninput = function () { var t = m.querySelector(el.dataset.k === "radiusM" ? "[data-rv]" : "[data-av]"); t.textContent = el.value + " m"; }; });
+      function say(t, bad) { var s = $("[data-hs]", m); s.style.display = ""; s.className = "av2-note" + (bad ? " warn" : ""); s.innerHTML = t; }
+      function setLL(la, ln) { $('[data-k="lat"]', m).value = (+la).toFixed(6); $('[data-k="lng"]', m).value = (+ln).toFixed(6); }
       $("[data-here]", m).onclick = function () {
-        var s = $("[data-hs]", m); if (!navigator.geolocation) { s.textContent = "Is browser me location nahi hai"; return; } s.textContent = "Location dhoondh rahe hain…";
-        navigator.geolocation.getCurrentPosition(function (p) { $('[data-k="lat"]', m).value = p.coords.latitude.toFixed(6); $('[data-k="lng"]', m).value = p.coords.longitude.toFixed(6); s.textContent = "Mil gayi (accuracy ±" + Math.round(p.coords.accuracy) + " m). School ke andar khade hokar lagayein, phir Save karein."; }, function (er) { s.textContent = "Location nahi mili: " + er.message; }, { enableHighAccuracy: true, timeout: 20000 });
+        if (!navigator.geolocation) return say("Is browser/app me location available nahi hai. Neeche Google Maps se coordinates paste karein.", true);
+        say("Location dhoondh rahe hain… (permission aaye to <b>Allow</b> dabayein)");
+        navigator.geolocation.getCurrentPosition(function (p) { setLL(p.coords.latitude, p.coords.longitude); say("✅ Mil gayi (accuracy ±" + Math.round(p.coords.accuracy) + " m). School ke andar khade hokar lagayi ho to <b>Save Settings</b> dabayein."); },
+          function (er) {
+            var den = er && er.code === 1;
+            say(den ? "❌ <b>Location permission band hai.</b><br>• Chrome me: address bar ke 🔒 par dabayein → Permissions → Location → Allow.<br>• ऐप (APK) me: Phone Settings → Apps → is app → Permissions → Location → <b>Allow</b> (naya APK update karna pad sakta hai).<br>• Abhi ke liye: neeche <b>Google Maps se coordinates paste</b> karke bhi set kar sakte hain." : "Location nahi mili (" + e((er && er.message) || "error") + "). Khule me jaakar dobara try karein, ya neeche coordinates paste karein.", true);
+          }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+      };
+      $("[data-paste]", m).oninput = function () {
+        var t = this.value, r = /@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/.exec(t) || /[?&](?:q|ll)=(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/.exec(t) || /(-?\d{1,2}\.\d{3,})\s*[, ]\s*(-?\d{1,3}\.\d{3,})/.exec(t);
+        if (r && Math.abs(+r[1]) <= 90 && Math.abs(+r[2]) <= 180) { setLL(r[1], r[2]); say("✅ Coordinates mil gaye: " + (+r[1]).toFixed(6) + ", " + (+r[2]).toFixed(6) + ". Ab <b>Save Settings</b> dabayein."); }
       };
       $("[data-save]", m).onclick = function () {
         var v = function (k) { return $('[data-k="' + k + '"]', m).value; }, on = function (k) { return $('[data-tg="' + k + '"]', m).classList.contains("on"); };

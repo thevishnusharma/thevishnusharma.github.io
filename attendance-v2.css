@@ -71,3 +71,32 @@
 .av2-sring{display:flex;gap:14px;align-items:center}.av2-sstat{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .av2-sstat>div{background:#fff;border:1px solid #e5e9f2;border-radius:12px;padding:10px;text-align:center}.av2-sstat b{display:block;font-size:1.2rem}.av2-sstat small{font-size:.66rem;color:#64748b}
 .av2-sm{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #f1f5f9;font-size:.8rem}.av2-sm small{display:block;color:#64748b;font-size:.68rem}
+/* ===== mobile hardening (v2.1) ===== */
+.av2-card,.av2-stat,.av2-grid2>*,.av2-grid21>*,.av2-fg>*,.av2-proj>*,.av2-s>*{min-width:0;box-sizing:border-box}
+.av2-card{max-width:100%}
+.av2-fg input,.av2-fg select,.av2-rg select,.av2-rg input:not([type=range]),.av2-loc input{width:100%;box-sizing:border-box}
+.av2-loc{display:flex;flex-direction:column;gap:8px;margin-top:10px}.av2-loc .av2-b{width:100%}.av2-hint{color:#64748b;font-size:.7rem;line-height:1.4}
+.av2-note{overflow-wrap:anywhere}
+.av2-h .av2-tg{margin-left:auto}
+@media(max-width:600px){
+  .av2-card{padding:12px;border-radius:14px}
+  .av2-fg,.av2-fg.c3{grid-template-columns:1fr}
+  .av2-stats,.av2-stats.s4{grid-template-columns:repeat(2,1fr)}
+  .av2-filters>*{flex:1 1 calc(50% - 8px);min-width:0}.av2-filters input[data-q]{flex-basis:100%}
+  .av2-acts{justify-content:stretch}.av2-acts .av2-b{flex:1 1 auto}
+  .av2-save{position:static;border-top:0;padding-top:6px}.av2-save>.av2-note,.av2-save>span[style]{flex-basis:100%}.av2-save .av2-b{flex:1 1 100%}
+  .av2-sum{margin-left:0;width:100%}
+  .av2-pc{grid-template-columns:repeat(2,1fr)}.av2-proj{padding:14px;border-radius:16px}.av2-pr h3{font-size:1.15rem}
+  .av2-hb{grid-template-columns:78px 1fr 36px}
+  .av2-row{align-items:flex-start}
+  .av2-quick button{flex:1 1 auto}
+  .av2-seg{width:100%}.av2-seg button{flex:1}
+  .av2-cal{gap:3px}.av2-cal button{font-size:.7rem;border-radius:8px}
+  .av2-tw table{font-size:.74rem}.av2-tw th,.av2-tw td{padding:6px}
+  .av2-cls{flex-wrap:wrap}.av2-cls .av2-g{flex-basis:50%}
+  .av2-prow{flex-direction:column;align-items:flex-start}.av2-acts.left.wrap .av2-note-in{flex-basis:100%}
+  .av2-modal{align-items:flex-end;padding:0}.av2-sheet{border-radius:18px 18px 0 0;max-width:none}
+  .av2-sstat{grid-template-columns:repeat(2,1fr)}
+}
+small.av2-note{display:block}
+.av2-loc input{border:1px solid #cbd5e1;border-radius:10px;padding:10px;font-size:.84rem;background:#fff;font-family:inherit}

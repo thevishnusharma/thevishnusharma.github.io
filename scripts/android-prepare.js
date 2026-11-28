@@ -11,8 +11,8 @@ const feats = ['<uses-feature android:name="android.hardware.camera" android:req
                '<uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />',
                '<uses-feature android:name="android.hardware.microphone" android:required="false" />',
                '<uses-feature android:name="android.hardware.location.gps" android:required="false" />'];
-// Owner app (customer system): GPS location permission (APP_URL owner-app.html wale build me hi)
-if (/owner-app\.html/.test(process.env.APP_URL || '')) perms.push('android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION');
+// GPS location permission: Owner app (customer system) + Smart Attendance (student GPS+QR, admin school-location set) — har build me
+perms.push('android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION');
 let add = '';
 perms.forEach(p => { if (!m.includes(p)) add += `    <uses-permission android:name="${p}" />\n`; });
 feats.forEach(f => { if (!m.includes(f.slice(0, 60))) add += `    ${f}\n`; });

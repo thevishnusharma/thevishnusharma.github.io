@@ -27,3 +27,9 @@ Student: Attendance tab → Live card → GPS check → QR scan → Present / La
 
 ## Defaults jo maine liye
 Firebase + Cloudflare Worker (Supabase nahi) · Admin = Teacher · Batch = Class+Section · School GPS Settings me.
+
+## Android APK: location permission (IMPORTANT)
+`scripts/android-prepare.js` ab har APK build me `ACCESS_FINE_LOCATION` + `ACCESS_COARSE_LOCATION` jodta hai (pehle sirf Owner app me tha — isi wajah se "User denied Geolocation" aata tha). **APK dobara build karke install karein** (GitHub Actions → build-android). Install ke baad pehli baar location maangne par **Allow** dabayein.
+Website (Chrome) par: address bar ke 🔒 → Permissions → Location → Allow.
+Jab tak naya APK na bane: Attendance Settings me Google Maps se coordinates paste karke school location set ho sakti hai.
+Play Store par location use ki privacy policy/declaration update karni pad sakti hai.

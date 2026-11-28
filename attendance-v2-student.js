@@ -82,7 +82,7 @@
       if (cfg.maxAccM && acc > cfg.maxAccM) return gpsFail("gps_accuracy", "GPS accuracy kam hai (±" + Math.round(acc) + " m, chahiye ±" + cfg.maxAccM + " m). Khule me aakar dobara try karein.", true);
       frame(1, "Location mili ✔", '<div class="av2-ic g">✔</div><h3>Location mil gayi</h3><p>Accuracy ±' + Math.round(acc) + " m. Ab teacher ka QR scan karein.</p>");
       setTimeout(function () { step_qr(); }, 700);
-    }, function (er) { gpsFail(er && er.code === 1 ? "gps_denied" : "gps_missing", er && er.code === 1 ? "Location permission band hai. Browser/App settings me Location Allow karein." : "Location nahi mil paayi."); }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 });
+    }, function (er) { gpsFail(er && er.code === 1 ? "gps_denied" : "gps_missing", er && er.code === 1 ? "Location permission band hai. Phone Settings → Apps → (is app/Chrome) → Permissions → Location → Allow karein, phir \"Dobara try karein\" dabayein." : "Location nahi mil paayi."); }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 });
   }
   function gpsFail(reason, msg, hasGeo) {
     var F = W.flow; if (!F) return; F.pendingReason = reason; var cfg = W.cfg || {};
