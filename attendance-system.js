@@ -29,7 +29,7 @@
   function flat(a) { return a.reduce(function (s, x) { return s.concat(x); }, []); }
   function digits(s) { return String(s || "").replace(/\D/g, ""); }
   function phone(s) { var d = digits(s); if (d.length > 10) d = d.slice(-10); return d.length === 10 ? d : ""; }
-  function guard(name, c) { return c.A.view === name && document.getElementById("bm-main"); }
+  function guard(name, c) { return (c.A.view === name || (c.A.attSub === name && c.A.attHost === c.A.view)) && document.getElementById("bm-main"); }
   function rollNum(r) { var n = parseInt(r.roll, 10); return isNaN(n) ? 1e9 : n; }
 
   /* ---------------- settings ---------------- */
@@ -438,7 +438,7 @@
   }
   EXT.adminViews.att_set = { icon: "📡", label: "NFC Cards & Settings", render: function (m, c) {
     var F = c.A.attS = c.A.attS || { b: (c.A.batches[0] || {}).id || "" };
-    m.innerHTML = '<div class="att-note">⚙️ Attendance settings (GPS, QR, Late, Notifications) ab <b>Attendance Settings</b> menu me hain.</div>' +
+    m.innerHTML = '<div class="att-note">⚙️ Attendance settings (GPS, QR, Late, Notifications) ab <b>Settings → Attendance Settings</b> tab me hain.</div>' +
       '<div class="att-card"><div class="att-h"><b>📡 NFC ID Cards</b></div><div class="att-note">NFC: ' + (NFC.kind() === "native" ? "App plugin mila ✔" : NFC.kind() === "web" ? "Chrome Web NFC ✔" : "Is device/app me available nahi — UID haath se likh kar bhi jod sakte hain") + '</div><select class="att-sel" data-b>' + (c.A.batches || []).map(function (b) { return '<option value="' + e(b.id) + '"' + (F.b === b.id ? " selected" : "") + ">" + e(b.name) + "</option>"; }).join("") + '</select><div id="att-cl" class="att-empty">Loading…</div></div>';
     loadCfg(c).then(function (cfg) { var l = m.querySelector("[data-late]"), a = m.querySelector("[data-auto]"); if (l) { l.value = cfg.lateMin; a.value = cfg.autoMin; } });
     var legSave = m.querySelector("[data-save]"); if (legSave) legSave.onclick = function () {

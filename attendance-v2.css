@@ -100,3 +100,10 @@
 }
 small.av2-note{display:block}
 .av2-loc input{border:1px solid #cbd5e1;border-radius:10px;padding:10px;font-size:.84rem;background:#fff;font-family:inherit}
+/* ===== simple menu: tabs + advanced ===== */
+.av2-tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 12px;margin:0 0 4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}.av2-tabs::-webkit-scrollbar{display:none}
+.av2-tabs button{flex:0 0 auto;border:1px solid #dbe3f5;background:#fff;border-radius:99px;padding:9px 16px;font-weight:800;font-size:.82rem;cursor:pointer;color:#475569;font-family:inherit;white-space:nowrap}.av2-tabs button.on{background:linear-gradient(135deg,#2563eb,#7c3aed);border-color:transparent;color:#fff}
+.av2-bd{display:inline-block;background:#f97316;color:#fff;border-radius:99px;padding:0 7px;font-size:.7rem;margin-left:4px}
+.av2-more{margin:0 0 12px}.av2-more>summary{cursor:pointer;font-weight:800;font-size:.82rem;color:#475569;padding:10px 12px;background:#f1f5f9;border-radius:12px;list-style:none}.av2-more>summary::-webkit-details-marker{display:none}.av2-more[open]>summary{margin-bottom:10px}
+.av2-more .av2-filters{margin-bottom:0}
+.av2-rg input[type=number],.av2-rg input[type=time]{border:1px solid #cbd5e1;border-radius:10px;padding:10px;font-size:.84rem;background:#fff;font-family:inherit;width:100%;box-sizing:border-box}

@@ -10,8 +10,11 @@ Purane attendance system (`attendance-system.js`) ke upar upgrade. Purana data/N
 3. **Site deploy** (GitHub Pages): naye files `attendance-v2.js`, `attendance-v2-student.js`, `attendance-v2.css`, `qr-lite.js`; `index.html` aur `sw.js` update.
 4. **Admin → Attendance Settings** me school ki GPS location lagayein ("Meri abhi ki location lagayein" school ke andar khade hokar) aur Save karein.
 
-## Admin menu
-Attendance (Overview) · Start Session (Live QR) · Manual Attendance · Pending Review · Class Schedule · Absent Students · Student Profile · Attendance Reports (11 types, CSV/Print/PDF) · Attendance Settings · NFC Cards · Audit Log.
+## Admin menu (sirf 4, baaki tabs ke andar)
+- **🗓️ Attendance** → Aaj ka haal (7 cards, charts) | Class Schedule
+- **▶️ Attendance Lagayein** → 📱 QR se (Start Session / Live QR) | ✍️ Haath se (Manual) | ⏳ Jaanch baaki (Pending)
+- **📊 Reports** → Reports (11 types) | Student ka record | Absent list | Badlav ka record (Audit + Notifications)
+- **⚙️ Settings** → Attendance Settings (3 basic cheezein + Advanced) | NFC Cards
 
 ## Flow
 Teacher: Start Session → projector par QR (har 30s naya) → students scan → live counter → End → Pending review → Final Submit (absent ab tay hote hain).

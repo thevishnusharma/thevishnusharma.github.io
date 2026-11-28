@@ -30,7 +30,9 @@
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return [].slice.call((r || document).querySelectorAll(s)); }
   function flat(a) { return a.reduce(function (s, x) { return s.concat(x); }, []); }
-  function guard(v, c) { return c.A.view === v && document.getElementById("bm-main"); }
+  function guard(v, c) { return (c.A.view === v || (c.A.attSub === v && c.A.attHost === c.A.view)) && document.getElementById("bm-main"); }
+  var HOSTOF = {};   /* child view -> sidebar host */
+  function go(c, k) { var h = HOSTOF[k] || k; c.A.attTab = c.A.attTab || {}; if (HOSTOF[k]) c.A.attTab[h] = k; c.adminGo(h); }
   function toast(c, t) { try { c.toast(t); } catch (x) { alert(t); } }
   function safeId(s) { return String(s).replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 100); }
   var LBL = { present: "Present", absent: "Absent", late: "Late", pending: "Pending", u: "Not Marked" };
@@ -109,7 +111,7 @@
     var F = c.A.av2F = c.A.av2F || { date: ymd(Date.now()), b: "all", sub: "", teacher: "", st: "all", me: "all", tr: "d" };
     F.date = F.date || ymd(Date.now());
     m.innerHTML = '<div class="av2-empty">Loading…</div>';
-    EXT.attRefresh = function () { if (guard("att_dash", c)) EXT.adminViews.att_dash.render(document.getElementById("bm-main"), C()); };
+    EXT.attRefresh = function () { if (guard("att_dash", c)) { var t = document.getElementById("av2-tab"); t && EXT.adminViews.att_dash.render(t, C()); } };
     var bs = bids(c, F.b), now = Date.now();
     Promise.all([
       H.sessRange(c, bs, F.date, F.date, true),
@@ -138,10 +140,10 @@
       function stat(k, ic, v, l) { return '<div class="av2-stat ' + k + '"><span>' + ic + "</span><b>" + v + "</b><small>" + l + "</small></div>"; }
       m.innerHTML =
         '<div class="av2-filters"><input type="date" data-f="date" value="' + e(F.date) + '">' + batchSelect(c, F.b, true).replace("data-b", 'data-f="b"') +
-        '<select data-f="sub"><option value="">Sabhi Subject</option>' + Object.keys(subs).map(function (s) { return '<option' + (F.sub === s ? " selected" : "") + ">" + e(s) + "</option>"; }).join("") + "</select>" +
+        '</div><details class="av2-more"><summary>Aur filter (subject / teacher / status / method)</summary><div class="av2-filters">' + '<select data-f="sub"><option value="">Sabhi Subject</option>' + Object.keys(subs).map(function (s) { return '<option' + (F.sub === s ? " selected" : "") + ">" + e(s) + "</option>"; }).join("") + "</select>" +
         '<select data-f="teacher"><option value="">Sabhi Teacher</option>' + Object.keys(tchs).map(function (s) { return '<option' + (F.teacher === s ? " selected" : "") + ">" + e(s) + "</option>"; }).join("") + "</select>" +
         '<select data-f="st">' + [["all", "Sabhi Status"], ["present", "Present"], ["absent", "Absent"], ["late", "Late"], ["pending", "Pending"]].map(function (o) { return '<option value="' + o[0] + '"' + (F.st === o[0] ? " selected" : "") + ">" + o[1] + "</option>"; }).join("") + "</select>" +
-        '<select data-f="me">' + [["all", "Sabhi Method"], ["gps_qr", "GPS + QR"], ["manual", "Manual"], ["nfc", "NFC"], ["admin_correction", "Correction"], ["auto_final", "Auto (final)"]].map(function (o) { return '<option value="' + o[0] + '"' + (F.me === o[0] ? " selected" : "") + ">" + o[1] + "</option>"; }).join("") + "</select></div>" +
+        '<select data-f="me">' + [["all", "Sabhi Method"], ["gps_qr", "GPS + QR"], ["manual", "Manual"], ["nfc", "NFC"], ["admin_correction", "Correction"], ["auto_final", "Auto (final)"]].map(function (o) { return '<option value="' + o[0] + '"' + (F.me === o[0] ? " selected" : "") + ">" + o[1] + "</option>"; }).join("") + "</select></div></details>" +
         '<div class="av2-stats">' + stat("b", "👥", total || "—", "Total Students") + stat("g", "✅", n.present, "Present") + stat("r", "✖", n.absent, "Absent") + stat("o", "🕒", n.late, "Late") + stat("y", "⏳", n.pending, "Pending") + stat("p", "📈", rate + "%", "Attendance %") + stat("n", "🔴", active.length, "Active Sessions") + "</div>" +
         '<div class="av2-grid21"><div class="av2-card"><div class="av2-h"><div><b>Attendance Trend</b><small>Final ho chuke sessions se</small></div><div class="av2-seg">' + [["d", "Daily"], ["w", "Weekly"], ["m", "Monthly"]].map(function (t) { return '<button data-tr="' + t[0] + '" class="' + (F.tr === t[0] ? "on" : "") + '">' + t[1] + "</button>"; }).join("") + "</div></div>" +
         (td.length ? '<div class="av2-bars">' + td.map(function (o) { return '<div><em>' + o.pct + '%</em><i class="' + (o.pct < 75 ? "lo" : "") + '" style="height:' + Math.max(4, o.pct * 1.2) + 'px"></i><span>' + e(o.lab) + "</span></div>"; }).join("") + "</div>" : '<div class="av2-empty">Is range me abhi final attendance nahi hai.</div>') + "</div>" +
@@ -155,19 +157,19 @@
         (n.absent ? '<div class="av2-al bad"><i>!</i><div><b>' + n.absent + " students absent</b><small>Absent Students me jaakar parents ko call/WhatsApp karein</small></div><button class=\"av2-b sm sec\" data-go=\"att_abs\">Open</button></div>" : "") +
         notFin.slice(0, 4).map(function (s) { return '<div class="av2-al warn"><i>📝</i><div><b>Final submit baaki</b><small>' + e(bname(c, s.batchId)) + " – " + e(s.subject || s.title) + '</small></div><button class="av2-b sm" data-man="' + e(s.classId || s.id) + '" data-bb="' + e(s.batchId) + '">Finalize</button></div>'; }).join("") +
         (!n.pending && !n.absent && !notFin.length ? '<div class="av2-empty">Abhi koi alert nahi.</div>' : "") + "</div>" +
-        '<div class="av2-quick">' + [["att_manual", "Today's Attendance"], ["att_stu", "Student Records"], ["att_rep", "Class Reports"], ["att_live", "Teacher Sessions"], ["att_pend", "Pending Cases"], ["att_cfg", "Settings"], ["att_audit", "Audit Logs"]].map(function (q) { return '<button data-go="' + q[0] + '">' + q[1] + "</button>"; }).join("") + "</div>";
+        "";
       $$("[data-f]", m).forEach(function (el) { el.onchange = function () { F[el.dataset.f] = el.value; EXT.adminViews.att_dash.render(m, c); }; });
       $$("[data-tr]", m).forEach(function (b) { b.onclick = function () { F.tr = b.dataset.tr; EXT.adminViews.att_dash.render(m, c); }; });
-      $$("[data-go]", m).forEach(function (b) { b.onclick = function () { c.adminGo(b.dataset.go); }; });
+      $$("[data-go]", m).forEach(function (b) { b.onclick = function () { go(c, b.dataset.go); }; });
       $$("[data-live]", m).forEach(function (b) { b.onclick = function () { var it = cl.filter(function (i) { return i.id === b.dataset.live; })[0]; it && startFor(c, it); }; });
-      $$("[data-man]", m).forEach(function (b) { b.onclick = function () { var it = cl.filter(function (i) { return i.id === b.dataset.man; })[0]; if (it) OLDOPEN(c, it); else { V.pre = { b: b.dataset.bb, sid: b.dataset.man, date: F.date }; c.adminGo("att_manual"); } }; });
+      $$("[data-man]", m).forEach(function (b) { b.onclick = function () { var it = cl.filter(function (i) { return i.id === b.dataset.man; })[0]; if (it) OLDOPEN(c, it); else { V.pre = { b: b.dataset.bb, sid: b.dataset.man, date: F.date }; go(c, "att_manual"); } }; });
     }).catch(function (x) { m.innerHTML = '<div class="av2-empty">Load nahi hua: ' + e(x && (x.code || x.message) || x) + "<br>Firestore Rules publish kiye?</div>"; });
   } };
 
   /* =====================================================================
      START SESSION + LIVE QR
      ===================================================================== */
-  function startFor(c, it) { V.pre = { b: it.batchId, classId: it.id, date: ymd(H.baseOf(c, it).startMs), go: true }; c.adminGo("att_live"); }
+  function startFor(c, it) { V.pre = { b: it.batchId, classId: it.id, date: ymd(H.baseOf(c, it).startMs), go: true }; go(c, "att_live"); }
   function stopLive(full) {
     var L = V.live; if (!L) return;
     clearInterval(L.tick); L.tick = null; try { L.unsub && L.unsub(); } catch (x) {} L.unsub = null;
@@ -200,7 +202,7 @@
         return sessionFor(c, b, it, { title: $("[data-xt]", m).value.trim(), subject: $("[data-xs]", m).value.trim(), teacher: $("[data-xe]", m).value.trim(), period: $("[data-xp]", m).value.trim() }, sd.value);
       }
       $("[data-go]", m).onclick = function () { runStart(c, sb.value, pick(), this); };
-      $("[data-man]", m).onclick = function () { var s = pick(); V.pre = { b: sb.value, sid: s.sid, date: s.date, meta: s, classId: scl.value === "__x" ? "" : scl.value }; c.adminGo("att_manual"); };
+      $("[data-man]", m).onclick = function () { var s = pick(); V.pre = { b: sb.value, sid: s.sid, date: s.date, meta: s, classId: scl.value === "__x" ? "" : scl.value }; go(c, "att_manual"); };
       $$("[data-res]", m).forEach(function (b) { b.onclick = function () { var s = act.filter(function (x) { return x.id === b.dataset.res; })[0]; runStart(c, b.dataset.bb, { sid: s.id, classId: s.classId || "", title: s.title, subject: s.subject, teacher: s.teacher, startMs: s.startMs, endMs: s.endMs, date: s.date, period: s.period || "" }, b); }; });
       if (F.go) $("[data-go]", m).click();
     });
@@ -209,7 +211,7 @@
     btn && (btn.disabled = true);
     api("start", sessBody(b, s)).then(function (r) {
       stopLive(true); V.live = { b: b, sid: s.sid, meta: s, s: r.session, cfg: r.settings, token: r.token, at: Date.now(), recs: {}, ro: [], feed: [], first: true };
-      return H.roster(c, b, true).then(function (ro) { V.live.ro = ro; c.adminGo("att_live"); });
+      return H.roster(c, b, true).then(function (ro) { V.live.ro = ro; go(c, "att_live"); });
     }).catch(function (x) { btn && (btn.disabled = false); toast(c, "❌ " + (x.message || x)); });
   }
   function showLive(m, c) {
@@ -238,7 +240,7 @@
     function rotate() {
       if (fetching) return; fetching = true;
       api("token", { batchId: L.b, sessionId: L.sid }).then(function (r) { L.token = r.token; L.at = Date.now(); rot = r.rotateSec || rot; failSince = 0; paintQR(); var w = $("#av2-warn"); w && w.classList.remove("on"); })
-        .catch(function (x) { if (!failSince) failSince = Date.now(); var w = $("#av2-warn"); w && w.classList.add("on"); if (x.status === 409) { toast(c, "Session ab chalu nahi hai"); stopLive(true); c.adminGo("att_live"); } })
+        .catch(function (x) { if (!failSince) failSince = Date.now(); var w = $("#av2-warn"); w && w.classList.add("on"); if (x.status === 409) { toast(c, "Session ab chalu nahi hai"); stopLive(true); go(c, "att_live"); } })
         .then(function () { fetching = false; });
     }
     L.tick = setInterval(function () {
@@ -248,10 +250,10 @@
     }, 1000);
     try { navigator.wakeLock && navigator.wakeLock.request("screen").then(function (w) { L.wl = w; }).catch(function () {}); } catch (x) {}
     $("#av2-fs").onclick = function () { var el = $("#av2-live"); try { (el.requestFullscreen || el.webkitRequestFullscreen).call(el); } catch (x) { toast(c, "Fullscreen is device par nahi chala"); } };
-    $$("[data-go]", m).forEach(function (b) { b.onclick = function () { c.adminGo(b.dataset.go); }; });
+    $$("[data-go]", m).forEach(function (b) { b.onclick = function () { go(c, b.dataset.go); }; });
     $("#av2-end").onclick = function () {
       confirmD("Session khatam karein?", "QR band ho jayega. Phir Pending students review karke Final submit kar sakte hain.", "End Session", function () {
-        api("end", { batchId: L.b, sessionId: L.sid }).then(function (r) { stopLive(false); L.ended = true; L.counts = r.counts; c.adminGo("att_live"); }).catch(function (x) { toast(c, "❌ " + x.message); });
+        api("end", { batchId: L.b, sessionId: L.sid }).then(function (r) { stopLive(false); L.ended = true; L.counts = r.counts; go(c, "att_live"); }).catch(function (x) { toast(c, "❌ " + x.message); });
       });
     };
   }
@@ -261,9 +263,9 @@
       '<div class="av2-stats s4"><div class="av2-stat g"><b>' + (n.present || 0) + '</b><small>Present</small></div><div class="av2-stat o"><b>' + (n.late || 0) + '</b><small>Late</small></div><div class="av2-stat y"><b>' + (n.pending || 0) + '</b><small>Pending</small></div><div class="av2-stat n"><b>' + (n.notMarked || 0) + '</b><small>Not marked</small></div></div>' +
       '<p class="av2-note">Final submit par jin students ne attendance nahi lagayi unhe Absent gina jayega. <b>Pending</b> students Absent nahi gine jaate — pehle unka review karein.</p>' +
       '<div class="av2-acts"><button class="av2-b sec" data-p>⏳ Pending Review (' + (n.pending || 0) + ')</button><button class="av2-b sec" data-m>✍ Manual / Correction</button><button class="av2-b" data-f>✅ Final Submit</button></div></div>';
-    $("[data-p]", m).onclick = function () { V.live = null; c.adminGo("att_pend"); };
-    $("[data-m]", m).onclick = function () { V.pre = { b: L.b, sid: L.sid, date: L.s.date, meta: L.meta, classId: L.meta.classId }; V.live = null; c.adminGo("att_manual"); };
-    $("[data-f]", m).onclick = function () { finalize(c, L.b, L.sid, function () { V.live = null; c.adminGo("att_dash"); }); };
+    $("[data-p]", m).onclick = function () { V.live = null; go(c, "att_pend"); };
+    $("[data-m]", m).onclick = function () { V.pre = { b: L.b, sid: L.sid, date: L.s.date, meta: L.meta, classId: L.meta.classId }; V.live = null; go(c, "att_manual"); };
+    $("[data-f]", m).onclick = function () { finalize(c, L.b, L.sid, function () { V.live = null; go(c, "att_dash"); }); };
   }
   function finalize(c, b, sid, done) {
     api("finalize", { batchId: b, sessionId: sid }).then(function (r) { toast(c, "✅ Final submit ho gaya • Absent " + (r.counts.a || 0) + (r.pending ? " • Pending " + r.pending + " baaki" : "")); H.clearCache && H.clearCache(); done && done(r); })
@@ -276,7 +278,7 @@
   /* =====================================================================
      MANUAL ATTENDANCE
      ===================================================================== */
-  function OLDOPEN(c, it) { V.pre = { b: it.batchId, classId: it.id, date: ymd(H.baseOf(c, it).startMs) }; c.adminGo("att_manual"); }
+  function OLDOPEN(c, it) { V.pre = { b: it.batchId, classId: it.id, date: ymd(H.baseOf(c, it).startMs) }; go(c, "att_manual"); }
   EXT.adminViews.att_manual = { icon: "✍️", label: "Manual Attendance", render: function (m, c) {
     var F = V.pre || {}; V.pre = null;
     var st = V.man = { b: F.b || (V.man && V.man.b) || (c.A.batches[0] || {}).id || "", date: F.date || ymd(Date.now()), classId: F.classId || "", sid: F.sid || "", meta: F.meta || null, loc: {}, sel: {}, q: "", f: "all", ro: [], recs: {}, leg: null };
@@ -333,7 +335,7 @@
       function selApply(v) { var ks = Object.keys(st.sel); if (!ks.length) return toast(c, "Pehle students chunein"); ks.forEach(function (k) { st.loc[k] = v; }); st.sel = {}; paint(); }
       $("[data-sp]", body).onclick = function () { selApply("present"); }; $("[data-sl]", body).onclick = function () { selApply("late"); }; $("[data-sa]", body).onclick = function () { selApply("absent"); };
       $("[data-rs]", body).onclick = function () { if (!dn) return; confirmD("Badlav hataein?", "Bina save kiye " + dn + " badlav hat jayenge.", "Reset", function () { st.loc = {}; paint(); }); };
-      $("[data-qr]", body).onclick = function () { V.pre = { b: st.b, classId: st.it ? st.it.id : "", date: st.date }; c.adminGo("att_live"); };
+      $("[data-qr]", body).onclick = function () { V.pre = { b: st.b, classId: st.it ? st.it.id : "", date: st.date }; go(c, "att_live"); };
       var nf = $("[data-nfc]", body); nf && (nf.onclick = function () { OLD.openLegacy(c, st.it); });
       $("[data-sv]", body).onclick = function () { save(false); };
       $("[data-fin]", body).onclick = function () { if (dirtyN()) return toast(c, "Pehle Save Attendance karein"); finalize(c, st.b, st.meta.sid, function () { setTimeout(function () { load(); }, 600); }); };
@@ -367,7 +369,7 @@
     }).then(function (list) {
       if (!guard("att_pend", c)) return;
       list.sort(function (a, b) { return (a.markedMs || 0) - (b.markedMs || 0); });
-      function badge() { var nb = $('#bm-admin .bm-nav[data-v="att_pend"]'); if (nb) nb.innerHTML = "<span>⏳</span>Pending Review" + (list.length ? ' <span class="bm-badge o">' + list.length + "</span>" : ""); }
+      function badge() { var tb = document.querySelector('[data-tab="att_pend"]'); if (tb) tb.innerHTML = "⏳ Jaanch baaki" + (list.length ? ' <b class="av2-bd">' + list.length + "</b>" : ""); }
       function paint() {
         badge();
         m.innerHTML = '<div class="av2-note">Pending ≠ Absent. Jab tak aap tay na karein (ya Final policy na chale), student ko Absent nahi gina jata aur parent ko absent ka message nahi jata.</div>' +
@@ -485,18 +487,23 @@
       if (!guard("att_cfg", c)) return;
       function tg(k, v) { return '<button class="av2-tg' + (v ? " on" : "") + '" data-tg="' + k + '" aria-label="' + k + '"></button>'; }
       function row(t, s, k, v) { return '<div class="av2-row"><div>' + t + (s ? "<small>" + s + "</small>" : "") + "</div>" + tg(k, v) + "</div>"; }
-      m.innerHTML = (g.lat === 0 && g.lng === 0 ? '<div class="av2-note warn">⚠️ School ki GPS location abhi set nahi hai. Jab tak set nahi hogi, GPS wale attendance attempts Pending me jayenge.</div>' : "") +
-        '<div class="av2-grid2"><div class="av2-card"><div class="av2-h"><b>📍 GPS Settings</b>' + tg("geoEnabled", g.geoEnabled) + '</div><div class="av2-fg"><label>School Latitude<input data-k="lat" type="number" step="any" value="' + g.lat + '"></label><label>School Longitude<input data-k="lng" type="number" step="any" value="' + g.lng + '"></label></div>' +
+      var sel = function (k, opts) { return '<select data-k="' + k + '">' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (g[k] === o[0] ? " selected" : "") + ">" + o[1] + "</option>"; }).join("") + "</select>"; };
+      m.innerHTML = (g.lat === 0 && g.lng === 0 ? '<div class="av2-note warn">⚠️ <b>Pehle school ki location set karein.</b> Jab tak set nahi hogi, GPS wale attendance Pending me jayenge.</div>' : "") +
+        '<div class="av2-card"><div class="av2-h"><b>📍 1. School ki location</b>' + tg("geoEnabled", g.geoEnabled) + '</div>' +
+        '<div class="av2-fg"><label>Latitude<input data-k="lat" type="number" step="any" value="' + g.lat + '"></label><label>Longitude<input data-k="lng" type="number" step="any" value="' + g.lng + '"></label></div>' +
         '<div class="av2-loc"><button class="av2-b sec" data-here>📡 Meri abhi ki location lagayein</button><div class="av2-note" data-hs style="display:none"></div><label class="av2-rg">Ya Google Maps se paste karein<input data-paste placeholder="25.5941, 85.1376  ya Maps ka link"></label><small class="av2-hint">Google Maps me school par lamba dabayein → upar jo numbers aayein unhe copy karke yahan paste karein.</small></div>' +
-        '<label class="av2-rg">Geofence radius: <b data-rv>' + g.radiusM + ' m</b><input type="range" min="30" max="500" data-k="radiusM" value="' + Math.min(500, g.radiusM) + '"></label><label class="av2-rg">Max GPS accuracy: <b data-av>' + g.maxAccM + ' m</b><input type="range" min="10" max="150" data-k="maxAccM" value="' + Math.min(150, g.maxAccM) + '"></label>' +
-        row("GPS retry ki anumati", "Student dobara try kar sake", "retry", g.retry) + '<label class="av2-rg">Location policy<select data-k="locPolicy"><option value="pending"' + (g.locPolicy === "pending" ? " selected" : "") + '>Bahar / kharab GPS → Pending (teacher review)</option><option value="reject"' + (g.locPolicy === "reject" ? " selected" : "") + '>Bahar → seedha reject</option><option value="off"' + (g.locPolicy === "off" ? " selected" : "") + ">GPS check band (sirf QR)</option></select></label></div>" +
-        '<div><div class="av2-card"><div class="av2-h"><b>🔳 QR Settings</b>' + tg("qrEnabled", g.qrEnabled) + '</div><div class="av2-fg c3"><label>Rotation (sec)<input data-k="qrRotateSec" type="number" value="' + g.qrRotateSec + '"></label><label>Validity (sec)<input data-k="qrValiditySec" type="number" value="' + g.qrValiditySec + '"></label><label>Grace (sec)<input data-k="qrGraceSec" type="number" value="' + g.qrGraceSec + '"></label></div></div>' +
-        '<div class="av2-card"><div class="av2-h"><b>📋 Attendance Rules</b></div><div class="av2-fg c3"><label>Shuru time<input data-k="startTime" type="time" value="' + e(g.startTime) + '"></label><label>Aakhri time<input data-k="endTime" type="time" value="' + e(g.endTime) + '"></label><label>Late (min)<input data-k="lateMin" type="number" value="' + g.lateMin + '"></label></div>' +
-        row("Manual attendance chalu", "Fallback + correction", "manualEnabled", g.manualEnabled) + row("Teacher correction ki anumati", "Final attendance me badlav", "teacherCorrection", g.teacherCorrection) + row("Duplicate rokna", "Ek session me ek student = ek record (hamesha chalu)", "dup", true) +
-        '<label class="av2-rg">Pending policy<select data-k="pendingPolicy"><option value="review"' + (g.pendingPolicy === "review" ? " selected" : "") + '>Teacher review ke baad hi final</option><option value="auto_absent_24h"' + (g.pendingPolicy === "auto_absent_24h" ? " selected" : "") + ">24 ghante baad Final par Absent</option></select></label></div>" +
-        '<div class="av2-card"><div class="av2-h"><b>🔔 Parent Notifications</b>' + tg("n.enabled", g.notify.enabled) + "</div>" + row("Present", "", "n.present", g.notify.present) + row("Absent (sirf final ke baad)", "", "n.absent", g.notify.absent) + row("Late", "", "n.late", g.notify.late) + '<small class="av2-note">Abhi log banta hai (queued). SMS/WhatsApp bhejne ke liye Worker me ATT_NOTIFY_URL webhook set karein — docs/ATTENDANCE_V2.md dekhein.</small></div></div></div>' +
+        '<label class="av2-rg">School se kitni door tak attendance mane: <b data-rv>' + g.radiusM + ' m</b><input type="range" min="30" max="500" data-k="radiusM" value="' + Math.min(500, g.radiusM) + '"></label></div>' +
+        '<div class="av2-card"><div class="av2-h"><b>⏰ 2. Late ka samay</b></div><label class="av2-rg">Class shuru hone ke itne minute baad aane wale ko Late maano<input data-k="lateMin" type="number" value="' + g.lateMin + '"></label></div>' +
+        '<div class="av2-card"><div class="av2-h"><b>🔔 3. Parents ko message</b>' + tg("n.enabled", g.notify.enabled) + '</div>' + row("Bachha Absent ho to message", "Final submit ke baad hi jayega", "n.absent", g.notify.absent) + '<small class="av2-note">Abhi message log me jama hota hai. SMS/WhatsApp bhejne ke liye alag setup chahiye (docs dekhein).</small></div>' +
+        '<details class="av2-more"><summary>⚙️ Advanced settings (zaroorat ho tabhi kholein)</summary>' +
+        '<div class="av2-card"><div class="av2-h"><b>GPS (advanced)</b></div><label class="av2-rg">Kam se kam GPS accuracy: <b data-av>' + g.maxAccM + ' m</b><input type="range" min="10" max="150" data-k="maxAccM" value="' + Math.min(150, g.maxAccM) + '"></label>' + row("GPS dobara try karne dein", "", "retry", g.retry) +
+        '<label class="av2-rg">Student school ke bahar ho to' + sel("locPolicy", [["pending", "Pending (teacher jaanche)"], ["reject", "Seedha reject"], ["off", "GPS check band (sirf QR)"]]) + '</label></div>' +
+        '<div class="av2-card"><div class="av2-h"><b>QR (advanced)</b>' + tg("qrEnabled", g.qrEnabled) + '</div><div class="av2-fg c3"><label>QR kitne sec me badle<input data-k="qrRotateSec" type="number" value="' + g.qrRotateSec + '"></label><label>QR kitne sec chale<input data-k="qrValiditySec" type="number" value="' + g.qrValiditySec + '"></label><label>Grace (sec)<input data-k="qrGraceSec" type="number" value="' + g.qrGraceSec + '"></label></div></div>' +
+        '<div class="av2-card"><div class="av2-h"><b>Niyam (advanced)</b></div><div class="av2-fg"><label>Attendance shuru time<input data-k="startTime" type="time" value="' + e(g.startTime) + '"></label><label>Attendance aakhri time<input data-k="endTime" type="time" value="' + e(g.endTime) + '"></label></div>' +
+        row("Haath se attendance chalu", "", "manualEnabled", g.manualEnabled) + row("Teacher ko correction ki anumati", "", "teacherCorrection", g.teacherCorrection) + row("Present hone par parent ko message", "", "n.present", g.notify.present) + row("Late hone par parent ko message", "", "n.late", g.notify.late) +
+        '<label class="av2-rg">Pending wale ka kya ho' + sel("pendingPolicy", [["review", "Teacher jaanch ke baad hi final"], ["auto_absent_24h", "24 ghante baad Final par Absent"]]) + '</label></div></details>' +
         '<div class="av2-save"><span style="flex:1" class="av2-note">Save par server har field jaanchta hai aur badlav Audit Log me jata hai.</span><button class="av2-b" data-save>💾 Save Settings</button></div>';
-      $$(".av2-tg", m).forEach(function (b) { b.onclick = function () { if (b.dataset.tg === "dup") return; b.classList.toggle("on"); }; });
+      $$(".av2-tg", m).forEach(function (b) { b.onclick = function () { b.classList.toggle("on"); }; });
       $$("[data-k]", m).forEach(function (el) { if (el.type === "range") el.oninput = function () { var t = m.querySelector(el.dataset.k === "radiusM" ? "[data-rv]" : "[data-av]"); t.textContent = el.value + " m"; }; });
       function say(t, bad) { var s = $("[data-hs]", m); s.style.display = ""; s.className = "av2-note" + (bad ? " warn" : ""); s.innerHTML = t; }
       function setLL(la, ln) { $('[data-k="lat"]', m).value = (+la).toFixed(6); $('[data-k="lng"]', m).value = (+ln).toFixed(6); }
@@ -544,12 +551,27 @@
     }).catch(function (x) { $("#av2-ab", m).innerHTML = '<div class="av2-empty">Load nahi hua: ' + e(x.code || x.message) + "<br>Firestore Rules publish kiye?</div>"; });
   } };
 
-  /* ---------------- menu order + purane views ka naam ---------------- */
-  (function order() {
-    var av = EXT.adminViews, keep = {}, ks = ["att_dash", "att_live", "att_manual", "att_pend", "att_sched", "att_abs", "att_stu", "att_rep", "att_cfg", "att_set", "att_audit"];
-    ks.forEach(function (k) { if (av[k]) { keep[k] = av[k]; delete av[k]; } });
-    if (keep.att_set) { keep.att_set.label = "NFC Cards"; keep.att_set.icon = "📡"; }
-    ks.forEach(function (k) { if (keep[k]) av[k] = keep[k]; });
-  })();
-  window.SnapAttV2 = { openClass: OLDOPEN, startFor: startFor, api: api, openStudent: function (c, b, mob) { V.pre = { stuB: b, stuM: mob }; c.adminGo("att_stu"); } };
+  /* ---------------- SIMPLE MENU: sirf 4 sidebar items, baaki tabs ke andar ---------------- */
+  var HOSTS = [
+    ["att_home", "🗓️", "Attendance", [["att_dash", "Aaj ka haal"], ["att_sched", "Class Schedule"]]],
+    ["att_take", "▶️", "Attendance Lagayein", [["att_live", "📱 QR se"], ["att_manual", "✍️ Haath se"], ["att_pend", "⏳ Jaanch baaki"]]],
+    ["att_reports", "📊", "Reports", [["att_rep", "Reports"], ["att_stu", "Student ka record"], ["att_abs", "Absent list"], ["att_audit", "Badlav ka record"]]],
+    ["att_settings", "⚙️", "Settings", [["att_cfg", "Attendance Settings"], ["att_set", "NFC Cards"]]]
+  ];
+  var av = EXT.adminViews;
+  if (av.att_set) { av.att_set.label = "NFC Cards"; }
+  HOSTS.forEach(function (h) { h[3].forEach(function (t) { if (av[t[0]]) { av[t[0]].hidden = true; HOSTOF[t[0]] = h[0]; } }); });
+  HOSTS.forEach(function (h) {
+    HOSTOF[h[0]] = null; delete HOSTOF[h[0]];
+    av[h[0]] = { icon: h[1], label: h[2], render: function (m, c) {
+      c.A.attTab = c.A.attTab || {}; var tabs = h[3].filter(function (t) { return av[t[0]]; }), cur = c.A.attTab[h[0]];
+      if (!tabs.some(function (t) { return t[0] === cur; })) cur = tabs[0][0];
+      c.A.attTab[h[0]] = cur; c.A.attHost = h[0]; c.A.attSub = cur;
+      m.innerHTML = '<div class="av2-tabs">' + tabs.map(function (t) { return '<button data-tab="' + t[0] + '" class="' + (t[0] === cur ? "on" : "") + '">' + t[1] + "</button>"; }).join("") + '</div><div id="av2-tab"></div>';
+      $$(".av2-tabs [data-tab]", m).forEach(function (b) { b.onclick = function () { c.A.attTab[h[0]] = b.dataset.tab; av[h[0]].render(m, C()); }; });
+      try { av[cur].render($("#av2-tab", m), c); } catch (x) { console.warn(x); $("#av2-tab", m).innerHTML = '<div class="av2-empty">Ye section load nahi hua: ' + e(x.message || x) + "</div>"; }
+    } };
+  });
+  /* sidebar me sirf 4 host (purane views ke baad naye keys add hue, hidden wale sidebar me nahi aate) */
+  window.SnapAttV2 = { openClass: OLDOPEN, startFor: startFor, api: api, openStudent: function (c, b, mob) { V.pre = { stuB: b, stuM: mob }; go(c, "att_stu"); } };
 })();

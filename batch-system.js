@@ -236,7 +236,7 @@
   var EXT = { adminViews: {}, studentTabs: {}, hooks: {} };
   function navAll() {
     var base = NAV.map(function (n) { var x = EXT.adminViews[n[0]]; return x && x.label ? [n[0], x.icon || n[1], x.label] : n; });
-    Object.keys(EXT.adminViews).forEach(function (k) { if (!NAV.some(function (n) { return n[0] === k; })) base.push([k, EXT.adminViews[k].icon || "•", EXT.adminViews[k].label || k]); });
+    Object.keys(EXT.adminViews).forEach(function (k) { if (!EXT.adminViews[k].hidden && !NAV.some(function (n) { return n[0] === k; })) base.push([k, EXT.adminViews[k].icon || "•", EXT.adminViews[k].label || k]); });
     return base;
   }
   function ctx() { return { A: A, S: S, DB: DB, FV: FV, bref: bref, esc: esc, ms: ms, fdate: fdate, toast: toast, form: form, sure: sure, audit: audit, adminEmail: adminEmail, ytId: ytId, ytWatch: ytWatch, authReady: authReady, loadAll: loadAll, adminGo: adminGo, driveBanner: driveBanner, openItem: openItem, hasFile: hasFile, sess: sess, rnd: rnd, shrink: shrink, subjOf: subjOf, batchName: batchName, topBtn: topBtn, stBadge: stBadge, rupee: rupee, sBatch: sBatch, sHome: sHome, closeStudent: closeStudent, allItems: allItems, joinLive: joinLive, $: $ }; }
