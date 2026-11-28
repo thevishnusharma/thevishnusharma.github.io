@@ -731,10 +731,31 @@ function vTests(m) {
   
   /* v170: request-status aur payment doc tabhi padhe jaate hain jab student "Available" tab kholta hai */
   function loadReqs() { var s = sess(); S.reqs = S.reqs || {}; return Promise.all(((S.avail || []).map(function (b) { return bref(S.inst, b.id).collection("requests").doc(String(s.mobile)).get().then(function (r) { b.req = r.exists ? r.data().status : null; S.reqs[b.id] = b.req; }).catch(function () {}); }))); }
+  /* v402: "Enroll request" permission-denied aaye to app khud jaanch kar kaaran batati hai (kya login hai, student record, strict mode, pehle ki request) */
+  function enrollDiag(id) {
+    var v = window.vishnuFirebase || {}, u = v.auth && v.auth.currentUser, s = sess() || {}, mob = String(s.mobile || ""), db = DB(), L = [], hint = [];
+    function add(k, val) { L.push(k + ": " + val); }
+    var chain = Promise.resolve();
+    function step(fn) { chain = chain.then(fn).catch(function (e) { add("  (jaanch fail)", (e && (e.code || e.message)) || "error"); }); }
+    add("Mobile", mob || "❌ nahi mila"); add("Institute (ऐप me)", S.inst || "❌ nahi mila");
+    add("Firebase login", u ? (u.isAnonymous ? "anonymous" : "custom") + " ✔" : "❌ NAHI HAI"); if (!u) hint.push("Firebase login bana hi nahi — internet/login dobara karein (logout → login).");
+    if (u) step(function () { return u.getIdTokenResult().then(function (r) { var c = r.claims || {}; add("Token", "role=" + (c.role || "—") + ", mobile=" + (c.mobile ? "✔" : "—") + ", institute=" + (c.instituteId || "—")); if (c.mobile && String(c.mobile) !== mob) hint.push("Token ka mobile aur ऐप ka mobile alag hain — logout karke dobara login karein."); }); });
+    step(function () { return db.collection("students").doc(mob).get().then(function (d) { var x = d.exists ? d.data() : null; add("students/" + mob, x ? "✔ instituteId=" + (x.instituteId || "—") : "❌ record nahi"); if (!x) hint.push("Is mobile ka student record Firestore me nahi hai."); else if (x.instituteId !== S.inst) hint.push("Student ka instituteId (" + (x.instituteId || "khaali") + ") batch ke institute (" + S.inst + ") se match nahi karta — rules isi wajah se rokte hain."); }); });
+    if (u) step(function () { return db.collection("studentSessions").doc(u.uid).get().then(function (d) { add("studentSessions", d.exists ? "✔ mobile=" + d.data().mobile : "❌ nahi"); }); });
+    step(function () { return db.collection("institutes").doc(S.inst).collection("batchSettings").doc("security").get().then(function (d) { var st = d.exists && d.data().strict === true; add("Strict mode", st ? "ON" : "OFF"); if (st && u) hint.push("Strict mode ON hai: student ka session/instituteId sahi hona zaroori hai (upar dekhein)."); }); });
+    step(function () { return bref(S.inst, id).get().then(function (d) { var x = d.exists ? d.data() : null; add("Batch", x ? "published=" + x.published + ", enrollment=" + (x.enrollment || "request") : "❌ nahi mila"); if (x && x.published !== true) hint.push("Batch 'published' nahi hai."); if (x && x.enrollment === "closed") hint.push("Is batch ki enrollment band hai."); }); });
+    step(function () { return bref(S.inst, id).collection("requests").doc(mob).get().then(function (d) { add("Pehle ki request", d.exists ? "HAI (status=" + d.data().status + ")" : "nahi"); if (d.exists) hint.push("Is batch ke liye pehle se request maujood hai (" + d.data().status + ") — student dobara nahi bhej sakta; admin approve/delete kare."); }); });
+    return chain.then(function () {
+      var txt = L.join("\n"), md = document.createElement("div"); md.className = "bm-modal";
+      md.innerHTML = '<div class="bm-sheet"><h3>Request kyon nahi gayi?</h3><div class="bm-note" style="font-weight:700;color:#b91c1c">' + (hint.length ? hint.map(esc).join("<br>") : "Koi saaf kaaran nahi mila — Firestore Rules me 'requests' wala hissa dobara publish karein, aur ye screen admin ko bhejein.") + '</div><pre style="white-space:pre-wrap;font-size:.72rem;background:#f1f5f9;border-radius:10px;padding:10px;max-height:40vh;overflow:auto">' + esc(txt) + '</pre><div class="acts"><button class="bm-btn sec" data-c>Band</button><button class="bm-btn" data-cp>Copy</button></div></div>';
+      document.body.appendChild(md); md.querySelector("[data-c]").onclick = function () { md.remove(); };
+      md.querySelector("[data-cp]").onclick = function () { try { navigator.clipboard.writeText(txt); toast("Copy ho gaya"); } catch (e) {} };
+    });
+  }
   function reqEnroll(id) {
-    var b0 = S.avail.filter(function (x) { return x.id === id; })[0];
     var s = sess(); bref(S.inst, id).collection("requests").doc(String(s.mobile)).set({ mobile: String(s.mobile), name: s.name || "", status: "pending", createdAt: FV().serverTimestamp() })
-      .then(function () { var b = S.avail.filter(function (x) { return x.id === id; })[0]; b && (b.req = "pending"); toast("✅ Request bhej di — admin approve karega"); sHome(); }).catch(function (e) { toast(e && e.code === "permission-denied" ? "Request nahi gayi (permission). Ek baar logout/login karke dobara try karein. Phir bhi na ho to admin se Firebase me naye Firestore Rules publish karne ko kahein." : "Request nahi gayi: " + ((e && (e.code || e.message)) || "error")); });
+      .then(function () { var b = S.avail.filter(function (x) { return x.id === id; })[0]; b && (b.req = "pending"); toast("✅ Request bhej di — admin approve karega"); sHome(); })
+      .catch(function (e) { if (e && e.code === "permission-denied") { toast("Request nahi gayi (permission) — kaaran jaanch rahe hain…"); try { enrollDiag(id); } catch (x) { console.warn(x); } } else toast("Request nahi gayi: " + ((e && (e.code || e.message)) || "error")); sHome(); });
   }
   function liveOf(b) { return (S.items[b.id] || []).filter(function (i) { return i.kind === "class" && i.status === "live" && (i.liveRoom || i.liveUrl || i.ytId || i._lv); })[0]; }
   function nextOf(b) { var n = Date.now() - 36e5; return (S.items[b.id] || []).filter(function (i) { return i.kind === "class" && i.status === "upcoming" && ms(i.scheduledAt) >= n; }).sort(function (a, c) { return ms(a.scheduledAt) - ms(c.scheduledAt); })[0]; }
