@@ -80,12 +80,8 @@
     ov.querySelector("#sau-go").onclick = function () { openDownload(); };
     var later = ov.querySelector("#sau-later"); if (later) later.onclick = function () { snooze(state.build); ov.remove(); };
   }
-  function fastUrl(u) {                                   /* v288: Cloudflare ke raste tez download (ping ok ho tabhi) */
-    var W = "https://vishnupush.thevishnusharmaapp.workers.dev", m = /^https:\/\/github\.com\/[^\/]+\/[^\/]+\/releases\/download\/([^\/]+)\/([^\/]+\.apk)$/.exec(u);
-    if (!m) return Promise.resolve(u);
-    var ctrl = window.AbortController ? new AbortController() : null, t = setTimeout(function () { try { ctrl && ctrl.abort(); } catch (e) {} }, 3000);
-    var p = W + "/apk/" + m[1] + "/" + m[2];
-    return fetch(p, { method: "HEAD", signal: ctrl ? ctrl.signal : undefined }).then(function (r) { clearTimeout(t); return r.ok ? p : u; }).catch(function () { return u; });
+  function fastUrl(u) {                                   /* v402: Worker proxy band — workers.dev par Chrome "File might be harmful" dikhata tha; seedha GitHub link */
+    return Promise.resolve(u);
   }
   function openDownload() {
     var url = state.url; if (!url || !/^https:\/\/github\.com\//.test(url)) return;
