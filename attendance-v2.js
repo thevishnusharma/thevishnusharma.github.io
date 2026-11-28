@@ -30,9 +30,14 @@
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return [].slice.call((r || document).querySelectorAll(s)); }
   function flat(a) { return a.reduce(function (s, x) { return s.concat(x); }, []); }
-  function guard(v, c) { return (c.A.view === v || (c.A.attSub === v && c.A.attHost === c.A.view)) && document.getElementById("bm-main"); }
+  function guard(v, c) { return (c.A.view === v || (c.A.attSub === v && (c.A.attHost === c.A.view || (c.A.view === "att" && c.A.attHost === "att_take")))) && document.getElementById("bm-main"); }
   var HOSTOF = {};   /* child view -> sidebar host */
-  function go(c, k) { var h = HOSTOF[k] || k; c.A.attTab = c.A.attTab || {}; if (HOSTOF[k]) c.A.attTab[h] = k; c.adminGo(h); }
+  function curB(c) { return c.A.wsOn ? c.A.f.batch : ""; }
+  function go(c, k) {
+    var h = HOSTOF[k] || k; c.A.attTab = c.A.attTab || {}; if (HOSTOF[k]) c.A.attTab[h] = k;
+    if (h === "att_take" && c.wsOpen) { var b = (V.pre && V.pre.b) || curB(c) || (c.A.batches[0] || {}).id; if (b) return c.wsOpen(b, "att"); }   /* QR / Manual / Pending hamesha batch ke andar */
+    c.adminGo(h);
+  }
   function toast(c, t) { try { c.toast(t); } catch (x) { alert(t); } }
   function safeId(s) { return String(s).replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 100); }
   var LBL = { present: "Present", absent: "Absent", late: "Late", pending: "Pending", u: "Not Marked" };
@@ -68,7 +73,7 @@
     if (!force && V.cfg && Date.now() - V.cfgAt < 60000 && V.cfgI === inst(c)) return Promise.resolve(V.cfg);
     return isub(c, "batchSettings").doc("attendance").get().then(function (d) { var v = d.exists ? d.data() : {}; V.cfg = Object.assign({}, DEFC, v, { notify: Object.assign({}, DEFC.notify, v.notify || {}) }); V.cfgAt = Date.now(); V.cfgI = inst(c); return V.cfg; });
   }
-  function bids(c, f) { return f && f !== "all" ? [f] : (c.A.batches || []).map(function (b) { return b.id; }); }
+  function bids(c, f) { if (f && f !== "all") return [f]; var cb = curB(c); return cb ? [cb] : (c.A.batches || []).map(function (b) { return b.id; }); }
   function batchSelect(c, val, all) { return '<select data-b>' + (all ? '<option value="all">Sabhi Batch</option>' : "") + (c.A.batches || []).map(function (b) { return '<option value="' + e(b.id) + '"' + (b.id === val ? " selected" : "") + ">" + e(b.name) + "</option>"; }).join("") + "</select>"; }
   function statusOf(rec, legacy) { return rec ? rec.status : legacy ? legacyToStatus(legacy) : ""; }
 
@@ -183,7 +188,7 @@
     var bs = bids(c, "all");
     Promise.all(bs.map(function (b) { return bsub(c, b, "attendanceSessions").where("liveStatus", "==", "active").get().then(function (q) { return q.docs.map(function (d) { return Object.assign({ id: d.id, batchId: b }, d.data()); }); }).catch(function () { return []; }); })).then(flat).then(function (act) {
       if (!guard("att_live", c)) return;
-      var b0 = F.b || (c.A.batches[0] || {}).id || "", date = F.date || ymd(Date.now());
+      var b0 = F.b || curB(c) || (c.A.batches[0] || {}).id || "", date = F.date || ymd(Date.now());
       m.innerHTML = (act.length ? '<div class="av2-card"><div class="av2-h"><b>Chalu Sessions</b></div>' + act.map(function (s) { return '<div class="av2-cls"><div class="av2-g"><b>' + e(s.subject || s.title) + "</b><small>" + e(bname(c, s.batchId)) + " • shuru " + tm(s.startedAtMs) + '</small></div><button class="av2-b sm" data-res="' + e(s.id) + '" data-bb="' + e(s.batchId) + '">Resume QR</button></div>'; }).join("") + "</div>" : "") +
         '<div class="av2-card" style="max-width:760px"><div class="av2-h"><div><b>Attendance Session shuru karein</b><small>QR + GPS se students khud attendance lagayenge</small></div></div>' +
         '<div class="av2-fg"><label>Batch / Class' + batchSelect(c, b0, false) + '</label><label>Date<input type="date" data-d value="' + e(date) + '"></label><label class="full">Class (schedule se)<select data-cl></select></label>' +
@@ -281,7 +286,7 @@
   function OLDOPEN(c, it) { V.pre = { b: it.batchId, classId: it.id, date: ymd(H.baseOf(c, it).startMs) }; go(c, "att_manual"); }
   EXT.adminViews.att_manual = { icon: "✍️", label: "Manual Attendance", render: function (m, c) {
     var F = V.pre || {}; V.pre = null;
-    var st = V.man = { b: F.b || (V.man && V.man.b) || (c.A.batches[0] || {}).id || "", date: F.date || ymd(Date.now()), classId: F.classId || "", sid: F.sid || "", meta: F.meta || null, loc: {}, sel: {}, q: "", f: "all", ro: [], recs: {}, leg: null };
+    var st = V.man = { b: F.b || curB(c) || (V.man && V.man.b) || (c.A.batches[0] || {}).id || "", date: F.date || ymd(Date.now()), classId: F.classId || "", sid: F.sid || "", meta: F.meta || null, loc: {}, sel: {}, q: "", f: "all", ro: [], recs: {}, leg: null };
     m.innerHTML = '<div class="av2-card"><div class="av2-fg c3"><label>Batch / Class' + batchSelect(c, st.b, false) + '</label><label>Date<input type="date" data-d value="' + e(st.date) + '"></label><label>Class / Session<select data-cl></select></label></div></div><div id="av2-mbody"></div>';
     var sb = $("[data-b]", m), sd = $("[data-d]", m), scl = $("[data-cl]", m);
     function fill() {
@@ -553,25 +558,27 @@
 
   /* ---------------- SIMPLE MENU: sirf 4 sidebar items, baaki tabs ke andar ---------------- */
   var HOSTS = [
-    ["att_home", "🗓️", "Attendance", [["att_dash", "Aaj ka haal"], ["att_sched", "Class Schedule"]]],
-    ["att_take", "▶️", "Attendance Lagayein", [["att_live", "📱 QR se"], ["att_manual", "✍️ Haath se"], ["att_pend", "⏳ Jaanch baaki"]]],
-    ["att_reports", "📊", "Reports", [["att_rep", "Reports"], ["att_stu", "Student ka record"], ["att_abs", "Absent list"], ["att_audit", "Badlav ka record"]]],
-    ["att_settings", "⚙️", "Settings", [["att_cfg", "Attendance Settings"], ["att_set", "NFC Cards"]]]
+    ["att_home", "🗓️", "Attendance", [["att_dash", "Aaj ka haal"], ["att_rep", "Reports"], ["att_cfg", "Settings"]], [["att_stu", "Student ka record"], ["att_abs", "Absent list"], ["att_audit", "Badlav ka record"], ["att_set", "NFC Cards"], ["att_sched", "Class Schedule"]]],
+    ["att_take", "▶️", "Attendance Lagayein", [["att_live", "📱 QR se"], ["att_manual", "✍️ Haath se"], ["att_pend", "⏳ Jaanch baaki"]], []]
   ];
   var av = EXT.adminViews;
   if (av.att_set) { av.att_set.label = "NFC Cards"; }
-  HOSTS.forEach(function (h) { h[3].forEach(function (t) { if (av[t[0]]) { av[t[0]].hidden = true; HOSTOF[t[0]] = h[0]; } }); });
+  HOSTS.forEach(function (h) { h[3].concat(h[4]).forEach(function (t) { if (av[t[0]]) { av[t[0]].hidden = true; HOSTOF[t[0]] = h[0]; } }); });
   HOSTS.forEach(function (h) {
     HOSTOF[h[0]] = null; delete HOSTOF[h[0]];
     av[h[0]] = { icon: h[1], label: h[2], render: function (m, c) {
-      c.A.attTab = c.A.attTab || {}; var tabs = h[3].filter(function (t) { return av[t[0]]; }), cur = c.A.attTab[h[0]];
+      c.A.attTab = c.A.attTab || {}; var tabs = h[3].concat(h[4]).filter(function (t) { return av[t[0]]; }), cur = c.A.attTab[h[0]];
       if (!tabs.some(function (t) { return t[0] === cur; })) cur = tabs[0][0];
       c.A.attTab[h[0]] = cur; c.A.attHost = h[0]; c.A.attSub = cur;
-      m.innerHTML = '<div class="av2-tabs">' + tabs.map(function (t) { return '<button data-tab="' + t[0] + '" class="' + (t[0] === cur ? "on" : "") + '">' + t[1] + "</button>"; }).join("") + '</div><div id="av2-tab"></div>';
-      $$(".av2-tabs [data-tab]", m).forEach(function (b) { b.onclick = function () { c.A.attTab[h[0]] = b.dataset.tab; av[h[0]].render(m, C()); }; });
+      var prim = h[3].filter(function (t) { return av[t[0]]; }), more = h[4].filter(function (t) { return av[t[0]]; }), inMore = more.some(function (t) { return t[0] === cur; });
+      function tb(t) { return '<button data-tab="' + t[0] + '" class="' + (t[0] === cur ? "on" : "") + '">' + t[1] + "</button>"; }
+      m.innerHTML = '<div class="av2-tabs">' + prim.map(tb).join("") + (more.length ? '<button data-more class="' + (inMore ? "on" : "") + '">⋯ Aur</button>' : "") + '</div>' + (more.length ? '<div class="av2-tabs av2-morebar" style="display:' + (inMore ? "flex" : "none") + '">' + more.map(tb).join("") + "</div>" : "") + '<div id="av2-tab"></div>';
+      $$("[data-tab]", m).forEach(function (b) { b.onclick = function () { c.A.attTab[h[0]] = b.dataset.tab; av[h[0]].render(m, C()); }; });
+      var mb = $("[data-more]", m); mb && (mb.onclick = function () { var bar = $(".av2-morebar", m); bar.style.display = bar.style.display === "none" ? "flex" : "none"; });
       try { av[cur].render($("#av2-tab", m), c); } catch (x) { console.warn(x); $("#av2-tab", m).innerHTML = '<div class="av2-empty">Ye section load nahi hua: ' + e(x.message || x) + "</div>"; }
     } };
   });
+  if (av.att_take) av.att_take.hidden = true;   /* QR/Manual/Pending sirf batch ke andar */
   /* sidebar me sirf 4 host (purane views ke baad naye keys add hue, hidden wale sidebar me nahi aate) */
   window.SnapAttV2 = { openClass: OLDOPEN, startFor: startFor, api: api, openStudent: function (c, b, mob) { V.pre = { stuB: b, stuM: mob }; go(c, "att_stu"); } };
 })();

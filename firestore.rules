@@ -998,17 +998,12 @@ service cloud.firestore {
           allow get: if isSignedIn() && (!instStrict(instituteId) || sessMobile() == mobile || (isAdmin() && instituteId == adminInstituteId()));
           allow list: if isAdmin() && instituteId == adminInstituteId();
           allow create: if isSignedIn() && (!instStrict(instituteId) || (sessMobile() == mobile && isInstStudent(instituteId))) &&
-            request.resource.data.keys().hasOnly(['mobile', 'name', 'status', 'createdAt', 'amount', 'utr', 'shot']) &&
+            request.resource.data.keys().hasOnly(['mobile', 'name', 'status', 'createdAt']) &&
             request.resource.data.mobile == mobile && request.resource.data.status == 'pending' &&
             request.resource.data.name is string && request.resource.data.name.size() <= 80 &&
             request.resource.data.createdAt == request.time &&
             get(/databases/$(database)/documents/institutes/$(instituteId)/batches/$(batchId)).data.published == true &&
-            get(/databases/$(database)/documents/institutes/$(instituteId)/batches/$(batchId)).data.get('enrollment', 'request') != 'closed' &&
-            // Paid batch: amount batch ki fee ke barabar + UTR zaroori (free batch me payment fields nahi chahiye)
-            (get(/databases/$(database)/documents/institutes/$(instituteId)/batches/$(batchId)).data.get('fee', 0) == 0 ||
-              (request.resource.data.amount == get(/databases/$(database)/documents/institutes/$(instituteId)/batches/$(batchId)).data.fee &&
-               request.resource.data.utr is string && request.resource.data.utr.size() >= 6 && request.resource.data.utr.size() <= 30 &&
-               (!('shot' in request.resource.data) || request.resource.data.shot.size() <= 400000)));
+            get(/databases/$(database)/documents/institutes/$(instituteId)/batches/$(batchId)).data.get('enrollment', 'request') != 'closed';
           allow update, delete: if isAdmin() && instituteId == adminInstituteId();
         }
         match /members/{mobile} {
@@ -1174,22 +1169,14 @@ service cloud.firestore {
         allow write: if false;
       }
 
-      // ── v157b: Payments (UPI QR, manual verify) ──────────────────
-      // batchSettings/payment: QR image + UPI ID — students ko dikhana hai (read signedIn), likhta sirf admin.
+      // batchSettings: institute ki settings (payment system hata diya gaya hai).
       match /batchSettings/{docId} {
         // v400: 'attendance' doc me school ki GPS location hai — students ko nahi dikhni; likhna sirf Worker se (validation ke saath).
         allow read: if isSignedIn() && (
           (docId != 'attendance' && (docId == 'security' || !instStrict(instituteId) || isInstStudent(instituteId))) ||
           (isAdmin() && instituteId == adminInstituteId()));
-        allow write: if isAdmin() && instituteId == adminInstituteId() && docId != 'attendance' &&
-          (!('qr' in request.resource.data) || request.resource.data.qr.size() <= 400000);
+        allow write: if isAdmin() && instituteId == adminInstituteId() && docId != 'attendance';
       }
-      // payments: admin approve karte waqt record banta hai — sirf admin padh/likh sakta hai.
-      match /payments/{pid} {
-        allow read, create: if isAdmin() && instituteId == adminInstituteId();
-        allow update, delete: if false;
-      }
-
       // ── v155: Notifications (admin -> students) ───────────────────
       // institutes/{id}/notifications/{nid}: students read karte hain
       // (signed-in), sirf us institute ka admin likh/delete kar sakta hai.
