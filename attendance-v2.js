@@ -497,6 +497,7 @@
         '<div class="av2-card"><div class="av2-h"><b>📍 1. School ki location</b>' + tg("geoEnabled", g.geoEnabled) + '</div>' +
         '<div class="av2-fg"><label>Latitude<input data-k="lat" type="number" step="any" value="' + g.lat + '"></label><label>Longitude<input data-k="lng" type="number" step="any" value="' + g.lng + '"></label></div>' +
         '<div class="av2-loc"><button class="av2-b sec" data-here>📡 Meri abhi ki location lagayein</button><div class="av2-note" data-hs style="display:none"></div><label class="av2-rg">Ya Google Maps se paste karein<input data-paste placeholder="25.5941, 85.1376  ya Maps ka link"></label><small class="av2-hint">Google Maps me school par lamba dabayein → upar jo numbers aayein unhe copy karke yahan paste karein.</small></div>' +
+        '<div class="av2-map" data-mapbox><iframe data-map title="School ki location" loading="lazy" referrerpolicy="no-referrer-when-downgrade" style="width:100%;height:260px;border:0;border-radius:12px;display:block;background:#e5e7eb"></iframe><a data-maplink target="_blank" rel="noopener" class="av2-hint" style="display:inline-block;margin-top:6px">🗺️ Bade Google Maps me kholein</a><small class="av2-hint" style="display:block">Map ka laal pin hi school ki saved location hai. Galat jagah ho to Maps me asli jagah par lamba dabayein aur numbers upar paste karein.</small></div>' +
         '<label class="av2-rg">School se kitni door tak attendance mane: <b data-rv>' + g.radiusM + ' m</b><input type="range" min="30" max="500" data-k="radiusM" value="' + Math.min(500, g.radiusM) + '"></label></div>' +
         '<div class="av2-card"><div class="av2-h"><b>⏰ 2. Late ka samay</b></div><label class="av2-rg">Class shuru hone ke itne minute baad aane wale ko Late maano<input data-k="lateMin" type="number" value="' + g.lateMin + '"></label></div>' +
         '<div class="av2-card"><div class="av2-h"><b>🔔 3. Parents ko message</b>' + tg("n.enabled", g.notify.enabled) + '</div>' + row("Bachha Absent ho to message", "Final submit ke baad hi jayega", "n.absent", g.notify.absent) + '<small class="av2-note">Abhi message log me jama hota hai. SMS/WhatsApp bhejne ke liye alag setup chahiye (docs dekhein).</small></div>' +
@@ -511,15 +512,37 @@
       $$(".av2-tg", m).forEach(function (b) { b.onclick = function () { b.classList.toggle("on"); }; });
       $$("[data-k]", m).forEach(function (el) { if (el.type === "range") el.oninput = function () { var t = m.querySelector(el.dataset.k === "radiusM" ? "[data-rv]" : "[data-av]"); t.textContent = el.value + " m"; }; });
       function say(t, bad) { var s = $("[data-hs]", m); s.style.display = ""; s.className = "av2-note" + (bad ? " warn" : ""); s.innerHTML = t; }
-      function setLL(la, ln) { $('[data-k="lat"]', m).value = (+la).toFixed(6); $('[data-k="lng"]', m).value = (+ln).toFixed(6); }
+      function showMap() {
+        var la = +$('[data-k="lat"]', m).value, ln = +$('[data-k="lng"]', m).value, box = $("[data-mapbox]", m);
+        if (!la && !ln || Math.abs(la) > 90 || Math.abs(ln) > 180) { box.style.display = "none"; return; }
+        box.style.display = "";
+        var u = "https://maps.google.com/maps?q=" + la + "," + ln + "&z=18&t=k&output=embed", f = $("[data-map]", m);
+        if (f.getAttribute("src") !== u) f.setAttribute("src", u);
+        $("[data-maplink]", m).href = "https://www.google.com/maps?q=" + la + "," + ln;
+      }
+      function setLL(la, ln) { $('[data-k="lat"]', m).value = (+la).toFixed(6); $('[data-k="lng"]', m).value = (+ln).toFixed(6); showMap(); }
+      var mapT; ["lat", "lng"].forEach(function (k) { $('[data-k="' + k + '"]', m).addEventListener("input", function () { clearTimeout(mapT); mapT = setTimeout(showMap, 700); }); });
+      showMap();
       $("[data-here]", m).onclick = function () {
         if (!navigator.geolocation) return say("Is browser/app me location available nahi hai. Neeche Google Maps se coordinates paste karein.", true);
-        say("Location dhoondh rahe hain… (permission aaye to <b>Allow</b> dabayein)");
-        navigator.geolocation.getCurrentPosition(function (p) { setLL(p.coords.latitude, p.coords.longitude); say("✅ Mil gayi (accuracy ±" + Math.round(p.coords.accuracy) + " m). School ke andar khade hokar lagayi ho to <b>Save Settings</b> dabayein."); },
-          function (er) {
-            var den = er && er.code === 1;
-            say(den ? "❌ <b>Location permission band hai.</b><br>• Chrome me: address bar ke 🔒 par dabayein → Permissions → Location → Allow.<br>• ऐप (APK) me: Phone Settings → Apps → is app → Permissions → Location → <b>Allow</b> (naya APK update karna pad sakta hai).<br>• Abhi ke liye: neeche <b>Google Maps se coordinates paste</b> karke bhi set kar sakte hain." : "Location nahi mili (" + e((er && er.message) || "error") + "). Khule me jaakar dobara try karein, ya neeche coordinates paste karein.", true);
-          }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+        var btn = this, best = null, wid = null, tmo = null, done = false;
+        btn.disabled = true;
+        say("Sahi location dhoondh rahe hain… 20-25 second khule me rukein (permission aaye to <b>Allow</b> dabayein)");
+        function finish(err) {
+          if (done) return; done = true; clearTimeout(tmo); try { navigator.geolocation.clearWatch(wid); } catch (x) {} btn.disabled = false;
+          if (best) {
+            setLL(best.latitude, best.longitude); var a = Math.round(best.accuracy);
+            say((a <= 30 ? "✅ " : "⚠️ ") + "Mil gayi (accuracy ±" + a + " m). " + (a <= 30 ? "Map me pin check karke " : "Accuracy kam hai — laptop/andar me location Wi-Fi se aati hai. <b>Phone me, khule me</b> dobara dabayein, ya Maps se paste karein. Phir bhi chahein to ") + "<b>Save Settings</b> dabayein.");
+            return;
+          }
+          var den = err && err.code === 1;
+          say(den ? "❌ <b>Location permission band hai.</b><br>• Chrome me: address bar ke 🔒 par dabayein → Permissions → Location → Allow.<br>• ऐप (APK) me: Phone Settings → Apps → is app → Permissions → Location → <b>Allow</b>.<br>• Abhi ke liye: neeche <b>Google Maps se coordinates paste</b> karke bhi set kar sakte hain." : "Location nahi mili (" + e((err && err.message) || "error") + "). Khule me jaakar dobara try karein, ya neeche coordinates paste karein.", true);
+        }
+        wid = navigator.geolocation.watchPosition(function (p) {
+          if (!best || p.coords.accuracy < best.accuracy) { best = p.coords; setLL(best.latitude, best.longitude); say("📡 Abhi ±" + Math.round(best.accuracy) + " m… aur behtar ho rahi hai, thoda ruko"); }
+          if (best.accuracy <= 15) finish();
+        }, function (er) { if (er && er.code === 1) finish(er); else if (!best && er) { /* timeout/unavailable: tmo handle karega */ } }, { enableHighAccuracy: true, timeout: 25000, maximumAge: 0 });
+        tmo = setTimeout(function () { finish(null); }, 25000);
       };
       $("[data-paste]", m).oninput = function () {
         var t = this.value, r = /@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/.exec(t) || /[?&](?:q|ll)=(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/.exec(t) || /(-?\d{1,2}\.\d{3,})\s*[, ]\s*(-?\d{1,3}\.\d{3,})/.exec(t);

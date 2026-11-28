@@ -107,3 +107,4 @@ small.av2-note{display:block}
 .av2-more{margin:0 0 12px}.av2-more>summary{cursor:pointer;font-weight:800;font-size:.82rem;color:#475569;padding:10px 12px;background:#f1f5f9;border-radius:12px;list-style:none}.av2-more>summary::-webkit-details-marker{display:none}.av2-more[open]>summary{margin-bottom:10px}
 .av2-more .av2-filters{margin-bottom:0}
 .av2-rg input[type=number],.av2-rg input[type=time]{border:1px solid #cbd5e1;border-radius:10px;padding:10px;font-size:.84rem;background:#fff;font-family:inherit;width:100%;box-sizing:border-box}
+.av2-map{margin-top:12px}
