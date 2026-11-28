@@ -53,11 +53,18 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Naya build number (app-version.json + 1)
+      - name: Naya build number (max(app-version.json, existing releases) + 1)
         id: ver
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           CUR=$(node -e "try{console.log(JSON.parse(require('fs').readFileSync('app-version.json','utf8')).apk.build||0)}catch(e){console.log(0)}")
+          # GitHub par jo app-bNN release/tag pehle se hai, usse bada number lo (warna "release already exists" error aata hai)
+          MAXTAG=$( { gh release list --limit 200 --json tagName --jq '.[].tagName' 2>/dev/null; git tag -l 'app-b*' 2>/dev/null; } | grep -E '^app-b[0-9]+$' | sed 's/^app-b//' | sort -n | tail -1)
+          [ -z "$MAXTAG" ] && MAXTAG=0
+          [ "$MAXTAG" -gt "$CUR" ] && CUR=$MAXTAG
           echo "code=$(( CUR + 1 ))" >> "$GITHUB_OUTPUT"
+          echo "Build number: $(( CUR + 1 ))"
 
       - name: Dependencies
         run: npm ci --no-audit --no-fund
